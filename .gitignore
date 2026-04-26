@@ -2,13 +2,7 @@
 .dirtydata
 **/*.rs.bk
 .DS_Store
-<<<<<<< Updated upstream
-/dist
-/DirtyRack.app
-/DirtyRack.clap
-/DirtyRack.vst3
-=======
 *.txt
 *.log
 /build/
->>>>>>> Stashed changes
+/dist/

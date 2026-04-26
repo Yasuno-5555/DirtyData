@@ -6,7 +6,7 @@
 //! Observer が物理ファイルシステムや外部状態を観測し、
 //! その結果を `Observation` として記録する。
 //!
-//! これは `dirtydata doctor` や `status` の基礎データとなる。
+//! これは `dirty doctor` や `status` の基礎データとなる。
 
 pub mod divergence;
 
