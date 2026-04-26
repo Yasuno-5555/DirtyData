@@ -13,3 +13,15 @@ dirtydata-host = { path = "../dirtydata-host" }
 dirtydata-runtime = { path = "../dirtydata-runtime" }
 dirtydata-intent = { path = "../dirtydata-intent" }
 anyhow = "1.0"
+
+# DSP Crates
+dirtydata-dsp-spectral = { path = "../dirtydata-dsp-spectral" }
+dirtydata-dsp-reaction = { path = "../dirtydata-dsp-reaction" }
+dirtydata-dsp-destruction = { path = "../dirtydata-dsp-destruction" }
+dirtydata-dsp-control = { path = "../dirtydata-dsp-control" }
+dirtydata-dsp-matrix = { path = "../dirtydata-dsp-matrix" }
+dirtydata-dsp-cv = { path = "../dirtydata-dsp-cv" }
+dirtydata-dsp-zdf = { path = "../dirtydata-dsp-zdf" }
+dirtydata-dsp-svf = { path = "../dirtydata-dsp-svf" }
+dirtydata-dsp-ks = { path = "../dirtydata-dsp-ks" }
+dirtydata-dsp-tape = { path = "../dirtydata-dsp-tape" }

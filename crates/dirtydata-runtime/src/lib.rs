@@ -194,6 +194,11 @@ impl DspRunner {
                             "MackeyGlass" => Box::new(MackeyGlassNode::new(10.0, sample_rate)),
                             "GrayScott" | "ReactionDiffusion" => Box::new(GrayScottNode::new(256)),
                             
+                            // Destruction
+                            "BitCrush" => Box::new(BitCrushNode::new()),
+                            "WaveShaper" => Box::new(WaveShaperNode::new()),
+                            "Pll" => Box::new(PllNode::new()),
+
                             // Legacy & Specialized Nodes
                             "SlewLimiter" | "Slew" => Box::new(SlewLimiterNode::new()),
                             "SampleHold" | "S&H" => Box::new(SampleHoldNode::new()),

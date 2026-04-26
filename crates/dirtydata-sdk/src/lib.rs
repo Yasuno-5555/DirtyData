@@ -8,6 +8,18 @@ pub use dirtydata_host::{Workspace, AuditReport};
 pub use dirtydata_runtime::AudioEngine;
 pub use dirtydata_intent::{IntentNode, IntentState, IntentStrategy};
 
+// DSP re-exports
+pub use dirtydata_dsp_spectral as spectral;
+pub use dirtydata_dsp_reaction as reaction;
+pub use dirtydata_dsp_destruction as destruction;
+pub use dirtydata_dsp_control as control;
+pub use dirtydata_dsp_matrix as matrix;
+pub use dirtydata_dsp_cv as cv;
+pub use dirtydata_dsp_zdf as zdf;
+pub use dirtydata_dsp_svf as svf;
+pub use dirtydata_dsp_ks as ks;
+pub use dirtydata_dsp_tape as tape;
+
 pub mod merge {
     use super::*;
     use anyhow::{Result, anyhow};
@@ -46,6 +58,44 @@ pub mod merge {
             
             Ok(())
         }
+    }
+}
+
+/// §SSS: NodeFactory — Fluent API for building the forensic soundscape.
+pub struct NodeFactory;
+
+impl NodeFactory {
+    pub fn oscillator(freq: f32) -> Node {
+        let mut n = Node::new_processor("Oscillator");
+        n.config.insert("frequency".into(), ConfigValue::Float(freq as f64));
+        n
+    }
+
+    pub fn bit_crush(bits: f32, sr_div: f32) -> Node {
+        let mut n = Node::new_processor("BitCrush");
+        n.config.insert("bits".into(), ConfigValue::Float(bits as f64));
+        n.config.insert("sr_div".into(), ConfigValue::Float(sr_div as f64));
+        n
+    }
+
+    pub fn spectral_freeze() -> Node {
+        Node::new_processor("SpectralFreeze")
+    }
+
+    pub fn wave_shaper(amount: f32) -> Node {
+        let mut n = Node::new_processor("WaveShaper");
+        n.config.insert("amount".into(), ConfigValue::Float(amount as f64));
+        n
+    }
+
+    pub fn bbd_delay(delay_ms: f32) -> Node {
+        let mut n = Node::new_processor("BbdDelay");
+        n.config.insert("delay_ms".into(), ConfigValue::Float(delay_ms as f64));
+        n
+    }
+    
+    pub fn tape_machine() -> Node {
+        Node::new_processor("TapeMachine")
     }
 }
 

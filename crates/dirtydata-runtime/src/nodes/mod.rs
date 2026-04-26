@@ -10,6 +10,9 @@ pub use processors::*;
 pub mod nonlinear;
 pub use nonlinear::*;
 
+pub mod destruction;
+pub use destruction::*;
+
 pub mod legacy;
 pub use legacy::MidiEvent;
 // pub use legacy::*; // Avoid glob export to prevent name collisions with base
