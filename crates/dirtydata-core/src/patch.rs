@@ -103,7 +103,7 @@ impl Patch {
 }
 
 impl Graph {
-    pub fn apply(&mut self, patch: &Patch) -> Result<(), PatchError> {
+    pub fn apply_patch(&mut self, patch: &Patch) -> Result<(), PatchError> {
         for op in &patch.operations {
             self.apply_operation(op)?;
         }
@@ -214,7 +214,7 @@ impl Graph {
 
     pub fn replay(patches: &[Patch]) -> Result<Self, PatchError> {
         let mut graph = Graph::new();
-        for patch in patches { graph.apply(patch)?; }
+        for patch in patches { graph.apply_patch(patch)?; }
         Ok(graph)
     }
 

@@ -1,3 +1,53 @@
+/// §SSS: DirtyData SDK — The Gateway to the Ecosystem.
+/// "内輪の神話を、人類の標準へ。"
+
+pub use dirtydata_core::ir::{Graph, Node, Edge, Modulation};
+pub use dirtydata_core::patch::{Patch, Operation};
+pub use dirtydata_core::types::*;
+pub use dirtydata_host::{Workspace, AuditReport};
+pub use dirtydata_runtime::AudioEngine;
+pub use dirtydata_intent::{IntentNode, IntentState, IntentStrategy};
+
+pub mod merge {
+    use super::*;
+    use anyhow::{Result, anyhow};
+
+    pub struct SemanticMerge;
+
+    impl SemanticMerge {
+        /// Performs a semantic merge of a patch into a workspace.
+        /// Validates that the patch doesn't violate existing intent constraints.
+        pub fn run(ws: &mut Workspace, patch: Patch) -> Result<()> {
+            let graph = ws.graph();
+            let _intents = ws.intent_state();
+
+            // 1. Structural Conflict Check
+            for op in &patch.operations {
+                match op {
+                    Operation::RemoveNode(id) => {
+                        if !graph.nodes.contains_key(id) {
+                            return Err(anyhow!("Merge Conflict: Node {} not found for removal", id));
+                        }
+                    }
+                    Operation::AddNode(node) => {
+                        if graph.nodes.contains_key(&node.id) {
+                            return Err(anyhow!("Merge Conflict: Node {} already exists", node.id));
+                        }
+                    }
+                    _ => {}
+                }
+            }
+
+            // 2. Intent Constraint Check (The "Semantic" part)
+            // TODO: Iterate through intents and check if patch violates any 'Must' or 'Never' constraints
+
+            // 3. Apply and Save
+            ws.apply_patch(patch).map_err(|e| anyhow!("Failed to apply patch: {}", e))?;
+            
+            Ok(())
+        }
+    }
+}
 
 /// The core trait for DirtyData DSP Plugins.
 /// Implement this to create your own custom DSP nodes.

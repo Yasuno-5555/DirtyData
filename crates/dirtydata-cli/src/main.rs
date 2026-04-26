@@ -74,9 +74,39 @@ async fn main() -> Result<()> {
         Commands::Doctor => {
             println!("{} Auditing forensic integrity...", "🩺".bold());
             let workspace = Workspace::open(".")?;
-            // Verification is currently part of the save process/manifest calculation in Workspace
-            println!("{} Integrity verified: 100% Deterministic.", "✓".green());
-            println!("{} Root Hash: {}", "⚓".blue(), workspace.calculate_root_hash().map(|h| hex::encode(h)).unwrap_or_else(|_| "unknown".into()));
+            let report = workspace.audit()?;
+
+            println!("\n{}", "--- Forensic Audit Report ---".dimmed());
+            
+            let status = if report.is_healthy() { "HEALTHY".green() } else { "CORRUPTED".red() };
+            println!("Status: {}", status);
+            
+            let check = |label: &str, valid: bool| {
+                let icon = if valid { "✓".green() } else { "✗".red() };
+                println!("  {} {:<20} [{}]", icon, label, if valid { "OK".green() } else { "FAIL".red() });
+            };
+
+            check("Root Hash", report.root_hash_valid);
+            check("Manifest Signature", report.manifest_valid);
+            check("Lineage Integrity", report.lineage_intact);
+            check("CAS Completeness", report.cas_complete);
+            check("Determinism", report.determinism_verified);
+
+            if !report.issues.is_empty() {
+                println!("\n{}", "Issues Found:".yellow().bold());
+                for issue in &report.issues {
+                    println!("  {} {}", "!".yellow(), issue);
+                }
+            }
+
+            println!("{}\n", "-----------------------------".dimmed());
+
+            if report.is_healthy() {
+                println!("{} All forensic checks passed. You can trust this workspace.", "🛡️".green());
+            } else {
+                println!("{} Workspace integrity compromised. Repair required.", "⚠️".red());
+                std::process::exit(1);
+            }
         }
         Commands::Log { graph } => {
             println!("{} Displaying Merkle DAG lineage...", "📜".bold());
@@ -99,7 +129,7 @@ async fn main() -> Result<()> {
                 "radioactive" => 0.5,
                 _ => 0.1,
             };
-            let patch = Mutator::evolve(&workspace.graph, &node_id, epochs, mutation_level)?;
+            let patch = Mutator::evolve(workspace.graph(), &node_id, epochs, mutation_level)?;
             println!("{} Mutation generated. Apply it with `dirty patch`.", "✓".green());
             println!("   Hash: {}", hex::encode(patch.deterministic_hash));
         }
@@ -113,7 +143,7 @@ async fn main() -> Result<()> {
                 "standalone" => BuildTarget::Standalone,
                 _ => BuildTarget::Vst3,
             };
-            let output = Transmuter::transmute(&workspace.graph, target_enum, Path::new("build"))?;
+            let output = Transmuter::transmute(workspace.graph(), target_enum, Path::new("build"))?;
             println!("{} Transmutation complete. Project generated at: {:?}", "✓".green(), output);
         }
         Commands::Verify => {

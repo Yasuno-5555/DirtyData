@@ -90,7 +90,7 @@ impl OfflineRenderer {
             // Compare outputs of all nodes that exist in both runners
             let ids: Vec<_> = r_a.get_graph().nodes.keys().cloned().collect();
             for id in ids {
-                if let (Some(out_a), Some(out_b)) = (r_a.node_outputs.get(&id), r_b.node_outputs.get(&id)) {
+                if let (Some(out_a), Some(out_b)) = (r_a.get_node_outputs(&id), r_b.get_node_outputs(&id)) {
                     for (p_idx, (v_a, v_b)) in out_a.iter().zip(out_b.iter()).enumerate() {
                         let diff_l = (v_a[0] - v_b[0]).abs();
                         let diff_r = (v_a[1] - v_b[1]).abs();

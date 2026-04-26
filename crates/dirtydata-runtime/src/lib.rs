@@ -68,14 +68,14 @@ pub enum DiagnosticSeverity {
 }
 
 pub struct SharedState {
-    pub node_metrics: Arc<dashmap::DashMap<StableId, SignalMetrics>>,
-    pub scope_buffer: Arc<crossbeam_queue::ArrayQueue<f32>>,
-    pub probe_buffers: Arc<dashmap::DashMap<StableId, Arc<crossbeam_queue::ArrayQueue<f32>>>>,
-    pub convergence_info: Arc<dashmap::DashMap<StableId, usize>>,
-    pub circuit_instability: Arc<dashmap::DashMap<StableId, f32>>,
-    pub parameter_provenance: Arc<dashmap::DashMap<StableId, HashMap<String, Vec<String>>>>,
-    pub node_diagnostics: Arc<dashmap::DashMap<StableId, DiagnosticRecord>>,
-    pub engine_logs: Arc<crossbeam_queue::ArrayQueue<String>>,
+    node_metrics: Arc<dashmap::DashMap<StableId, SignalMetrics>>,
+    scope_buffer: Arc<crossbeam_queue::ArrayQueue<f32>>,
+    probe_buffers: Arc<dashmap::DashMap<StableId, Arc<crossbeam_queue::ArrayQueue<f32>>>>,
+    convergence_info: Arc<dashmap::DashMap<StableId, usize>>,
+    circuit_instability: Arc<dashmap::DashMap<StableId, f32>>,
+    parameter_provenance: Arc<dashmap::DashMap<StableId, HashMap<String, Vec<String>>>>,
+    node_diagnostics: Arc<dashmap::DashMap<StableId, DiagnosticRecord>>,
+    engine_logs: Arc<crossbeam_queue::ArrayQueue<String>>,
 }
 
 impl SharedState {
@@ -95,6 +95,22 @@ impl SharedState {
     pub fn log(&self, msg: impl Into<String>) {
         let _ = self.engine_logs.push(msg.into());
     }
+
+    pub fn get_node_metrics(&self, node_id: &StableId) -> Option<SignalMetrics> {
+        self.node_metrics.get(node_id).map(|m| *m)
+    }
+
+    pub fn get_diagnostic(&self, node_id: &StableId) -> Option<DiagnosticRecord> {
+        self.node_diagnostics.get(node_id).map(|d| d.clone())
+    }
+
+    pub fn scope_buffer(&self) -> Arc<crossbeam_queue::ArrayQueue<f32>> {
+        self.scope_buffer.clone()
+    }
+
+    pub fn get_circuit_instability(&self, node_id: &StableId) -> Option<f32> {
+        self.circuit_instability.get(node_id).map(|i| *i)
+    }
 }
 
 pub struct ModulationMapping {
@@ -107,7 +123,7 @@ pub struct ModulationMapping {
 
 pub struct DspRunner {
     nodes: Vec<(StableId, Box<dyn base::DspNode>)>,
-    pub node_outputs: HashMap<StableId, Vec<[f32; 2]>>,
+    node_outputs: HashMap<StableId, Vec<[f32; 2]>>,
     graph: Graph,
     feedback_latches: Vec<[f32; 2]>,
     feedback_reads: Vec<Vec<(usize, usize)>>,
@@ -356,6 +372,10 @@ impl DspRunner {
             }
         }
     }
+
+    pub fn get_node_outputs(&self, id: &StableId) -> Option<&Vec<[f32; 2]>> {
+        self.node_outputs.get(id)
+    }
 }
 
 impl std::fmt::Debug for DspRunner {
@@ -370,8 +390,8 @@ impl std::fmt::Debug for DspRunner {
 
 pub struct AudioEngine {
     _stream: cpal::Stream,
-    pub command_tx: Sender<EngineCommand>,
-    pub shared_state: Arc<SharedState>,
+    command_tx: Sender<EngineCommand>,
+    shared_state: Arc<SharedState>,
 }
 
 impl AudioEngine {
@@ -495,5 +515,22 @@ impl AudioEngine {
 
         stream.play().unwrap();
         Self { _stream: stream, command_tx, shared_state }
+    }
+
+    pub fn shared_state(&self) -> Arc<SharedState> {
+        self.shared_state.clone()
+    }
+
+    pub fn update_parameter(&self, node_id: StableId, param: String, value: f32) {
+        let _ = self.command_tx.send(EngineCommand::UpdateParameter(ParameterUpdate {
+            node_id,
+            param,
+            value,
+            provenance: vec!["host".to_string()],
+        }));
+    }
+
+    pub fn replace_graph(&self, graph: Graph, jit_prog: Option<jit::JitProgram>) {
+        let _ = self.command_tx.send(EngineCommand::ReplaceGraph(graph, jit_prog));
     }
 }

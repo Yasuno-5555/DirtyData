@@ -310,6 +310,56 @@ impl Graph {
             .map(|n| n.ports.iter().any(|p| p.name == port_ref.port_name))
             .unwrap_or(false)
     }
+
+    // --- High Level API ---
+
+    pub fn add_node(&mut self, node: Node) {
+        self.topology.nodes.insert(node.id, node);
+        self.sync();
+    }
+
+    pub fn remove_node(&mut self, id: StableId) {
+        self.topology.nodes.remove(&id);
+        // Remove associated edges
+        let edge_ids: Vec<StableId> = self.topology.edges.iter()
+            .filter(|(_, e)| e.source.node_id == id || e.target.node_id == id)
+            .map(|(&eid, _)| eid)
+            .collect();
+        for eid in edge_ids {
+            self.topology.edges.remove(&eid);
+        }
+        self.sync();
+    }
+
+    pub fn connect(&mut self, source: PortRef, target: PortRef) -> Result<StableId, String> {
+        if !self.validate_port_ref(&source) { return Err(format!("Invalid source port: {:?}", source)); }
+        if !self.validate_port_ref(&target) { return Err(format!("Invalid target port: {:?}", target)); }
+        
+        let edge = Edge::new(source, target);
+        let id = edge.id;
+        self.topology.edges.insert(id, edge);
+        self.sync();
+        Ok(id)
+    }
+
+    pub fn disconnect(&mut self, edge_id: StableId) -> Result<(), String> {
+        if self.topology.edges.remove(&edge_id).is_some() {
+            self.sync();
+            Ok(())
+        } else {
+            Err("Edge not found".into())
+        }
+    }
+
+    pub fn set_config(&mut self, node_id: StableId, key: &str, value: ConfigValue) -> Result<(), String> {
+        if let Some(node) = self.topology.nodes.get_mut(&node_id) {
+            node.config.insert(key.to_string(), value);
+            self.sync();
+            Ok(())
+        } else {
+            Err("Node not found".into())
+        }
+    }
 }
 
 impl Default for Graph {

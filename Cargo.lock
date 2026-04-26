@@ -1134,7 +1134,12 @@ dependencies = [
 name = "dirtydata-sdk"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "bytemuck",
+ "dirtydata-core",
+ "dirtydata-host",
+ "dirtydata-intent",
+ "dirtydata-runtime",
  "serde",
  "serde_json",
 ]
