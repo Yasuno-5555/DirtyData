@@ -60,4 +60,5 @@ dirty build --target vst3
 - **RFC 002**: [API Stability Policy](docs/RFC_002_API_STABILITY.md)
 - **RFC 003**: [Architecture Manifesto](docs/RFC_003_ARCHITECTURE_MANIFESTO.md)
 - **Architecture**: [コア設計](docs/ja/architecture.md)
+- **API Reference**: [SDKリファレンス](docs/ja/api_reference.md)
 - **Plugin Development**: [SDKガイド](docs/ja/plugin_development.md)
