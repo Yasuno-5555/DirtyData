@@ -1,9 +1,8 @@
-use std::sync::Arc;
 use std::net::UdpSocket;
 use rosc::{OscPacket, OscMessage as RoscMessage};
 use crossbeam_channel::{Sender, Receiver};
-use crate::nodes::{OscMessage, MidiEvent};
-use crate::{EngineCommand, ParameterUpdate, SharedState, StableId};
+use crate::nodes::OscMessage;
+use crate::{EngineCommand, ParameterUpdate, StableId};
 
 pub struct OscHandler {
     command_tx: Sender<EngineCommand>,

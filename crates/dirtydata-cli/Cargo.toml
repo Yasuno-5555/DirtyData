@@ -1,0 +1,25 @@
+[package]
+name = "dirtydata-cli"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+dirtydata-core = { path = "../dirtydata-core" }
+dirtydata-host = { path = "../dirtydata-host" }
+dirtydata-runtime = { path = "../dirtydata-runtime" }
+dirtydata-intent = { path = "../dirtydata-intent" }
+dirty-mutate = { path = "../dirty-mutate" }
+dirty-exporter = { path = "../dirty-exporter" }
+
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+blake3 = "1"
+anyhow = "1"
+tokio = { version = "1", features = ["full"] }
+tracing = "0.1"
+tracing-subscriber = "0.3"
+colored = "2"
+inquire = "0.7"
+indicatif = "0.17"
+hex = "0.4.3"

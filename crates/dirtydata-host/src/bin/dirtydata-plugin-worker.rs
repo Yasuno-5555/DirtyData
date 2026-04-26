@@ -1,13 +1,13 @@
 use std::io::{Read, Write};
 use libloading::{Library, Symbol};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 // VST3 Factory entry point signature
 type GetPluginFactory = unsafe extern "system" fn() -> *mut std::ffi::c_void;
 
 struct Vst3Host {
     _lib: Library,
-    factory: *mut std::ffi::c_void, // Placeholder for IPluginFactory
+    _factory: *mut std::ffi::c_void, // Placeholder for IPluginFactory
 }
 
 impl Vst3Host {
@@ -54,7 +54,7 @@ impl Vst3Host {
 
             Ok(Self {
                 _lib: lib,
-                factory,
+                _factory: factory,
             })
         }
     }

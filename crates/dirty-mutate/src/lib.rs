@@ -19,7 +19,7 @@ impl Mutator {
         pb.set_message("Evolving...");
 
         // Simplified: Just random walk for now
-        let mut current_graph = base_graph.clone();
+        let current_graph = base_graph.clone();
         let mut best_ops = Vec::new();
 
         for _ in 0..epochs {

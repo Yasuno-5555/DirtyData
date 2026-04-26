@@ -1,9 +1,8 @@
 use std::path::Path;
-use std::collections::HashSet;
 use hound::{WavWriter, WavSpec};
 
 use dirtydata_core::ir::{Graph, Node, Edge};
-use dirtydata_core::types::{StableId, ConfigValue, PortDirection, PortRef};
+use dirtydata_core::types::{StableId, ConfigValue, PortRef};
 use dirtydata_core::patch::{Operation, Patch};
 use dirtydata_core::graph_utils;
 use crate::offline::OfflineRenderer;

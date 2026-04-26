@@ -15,7 +15,7 @@ pub enum HostError {
 }
 
 use std::path::{Path, PathBuf};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// §SSS: Workspace — The self-contained session manager.
 /// "設計図、製造履歴、意図。そのすべてを一つの宇宙に閉じ込める。"
@@ -131,7 +131,7 @@ impl Workspace {
         Ok(())
     }
 
-    fn calculate_root_hash(&self) -> Result<dirtydata_core::types::Hash, HostError> {
+    pub fn calculate_root_hash(&self) -> Result<dirtydata_core::types::Hash, HostError> {
         let mut hasher = blake3::Hasher::new();
         hasher.update(serde_json::to_string(&self.graph.topology)?.as_bytes());
         // For Merkle DAG, we hash the head of the lineage
@@ -160,21 +160,12 @@ impl Workspace {
     }
 }
 
-#[derive(Serialize, Deserialize)]
-struct WorkspaceMeta {
-    last_revision: u64,
-    timestamp: i64,
-}
+// #[derive(Serialize, Deserialize)]
+// struct WorkspaceMeta {
+//     last_revision: u64,
+//     timestamp: i64,
+// }
 
-
-#[repr(u8)]
-#[derive(Debug, Clone, Copy)]
-pub enum HostCommand {
-    Process = 0,
-    SetParameter = 1,
-    GetState = 2,
-    SetState = 3,
-}
 
 #[repr(u8)]
 #[derive(Debug, Clone, Copy)]
@@ -235,14 +226,6 @@ impl PluginHost {
         
         // Send size (u32)
         let size = input.len() as u32;
-        stdin.write_all(&size.to_le_bytes())?;
-
-        // Send Command
-        let cmd = HostCommand::Process as u8;
-        stdin.write_all(&[cmd])?;
-
-        // Send size (u32)
-        let size = (input.len() as u32);
         stdin.write_all(&size.to_le_bytes())?;
 
         // Write input buffer as bytes

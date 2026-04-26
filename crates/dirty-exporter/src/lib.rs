@@ -19,7 +19,7 @@ pub struct Transmuter;
 
 impl Transmuter {
     /// Transmute a forensic record into a buildable Rust project.
-    pub fn transmute(graph: &Graph, target: BuildTarget, output_dir: &Path) -> Result<PathBuf> {
+    pub fn transmute(graph: &Graph, _target: BuildTarget, output_dir: &Path) -> Result<PathBuf> {
         let name = "dirty_transmuted_plugin";
         let project_dir = output_dir.join(name);
         std::fs::create_dir_all(&project_dir)?;
@@ -44,7 +44,7 @@ nih_plug = {{ git = "https://github.com/robbert-vdh/nih-plug.git" }}
         std::fs::write(project_dir.join("Cargo.toml"), cargo_toml)?;
 
         // 2. Generate lib.rs (The Bridge)
-        let graph_json = serde_json::to_string(graph)?;
+        let _graph_json = serde_json::to_string(graph)?;
         let lib_rs = format!(r#"
 use nih_plug::prelude::*;
 use dirtydata_core::ir::Graph;

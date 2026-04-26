@@ -10,7 +10,7 @@ impl LorenzNode {
 }
 
 impl DspNode for LorenzNode {
-    fn process(&mut self, inputs: &[f32], outputs: &mut [[f32; 2]], config: &ConfigSnapshot, ctx: &ProcessContext) {
+    fn process(&mut self, _inputs: &[f32], outputs: &mut [[f32; 2]], config: &ConfigSnapshot, ctx: &ProcessContext) {
         let sigma = config.get("sigma").and_then(|v| v.as_float()).unwrap_or(10.0) as f32;
         let rho = config.get("rho").and_then(|v| v.as_float()).unwrap_or(28.0) as f32;
         let beta = config.get("beta").and_then(|v| v.as_float()).unwrap_or(8.0/3.0) as f32;

@@ -1,4 +1,4 @@
-use crate::nodes::base::{DspNode, NodeState, ProcessContext};
+use crate::nodes::base::{DspNode, ProcessContext};
 use dirtydata_core::types::{StableId, ConfigSnapshot};
 use std::collections::HashMap;
 
@@ -270,7 +270,7 @@ impl JitOptimizer {
         let mut constants: HashMap<usize, f32> = HashMap::new();
         let mut i = 0;
         while i < program.ops.len() {
-            let mut removed = false;
+            let removed = false;
             match &program.ops[i] {
                 DspOp::LoadConst { val, out } => {
                     constants.insert(*out, *val);

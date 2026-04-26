@@ -64,7 +64,7 @@ impl CompressorNode {
 }
 
 impl DspNode for CompressorNode {
-    fn process(&mut self, inputs: &[f32], outputs: &mut [[f32; 2]], config: &ConfigSnapshot, ctx: &ProcessContext) {
+    fn process(&mut self, inputs: &[f32], outputs: &mut [[f32; 2]], config: &ConfigSnapshot, _ctx: &ProcessContext) {
         let threshold_db = config.get("threshold_db").and_then(|v| v.as_float()).unwrap_or(-20.0) as f32;
         let ratio = config.get("ratio").and_then(|v| v.as_float()).unwrap_or(4.0) as f32;
         let threshold = 10.0_f32.powf(threshold_db / 20.0);

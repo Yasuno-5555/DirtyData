@@ -90,11 +90,11 @@ impl DspNode for AssetReaderNode {
 }
 
 pub struct MidiInNode {
-    rx: crossbeam_channel::Receiver<crate::nodes::MidiEvent>,
+    _rx: crossbeam_channel::Receiver<crate::nodes::MidiEvent>,
 }
 
 impl MidiInNode {
-    pub fn new(rx: crossbeam_channel::Receiver<crate::nodes::MidiEvent>) -> Self { Self { rx } }
+    pub fn new(rx: crossbeam_channel::Receiver<crate::nodes::MidiEvent>) -> Self { Self { _rx: rx } }
 }
 
 impl DspNode for MidiInNode {

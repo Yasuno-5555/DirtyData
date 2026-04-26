@@ -11,7 +11,6 @@ mod tests {
 use dirtydata_core::ir::{Graph, EdgeKind};
 use dirtydata_core::types::{StableId, NodeKind, PortDirection};
 use dirtydata_core::graph_utils::topological_sort;
-use dirtydata_core::ConfigSnapshot;
 use crate::nodes::*;
 use crate::nodes::legacy::{
     MidiEvent, EnvelopeNode, AutomationNode, SequencerNode, WavefolderNode,
@@ -72,6 +71,19 @@ pub struct SharedState {
     pub node_metrics: Arc<dashmap::DashMap<StableId, SignalMetrics>>,
     pub scope_buffer: Arc<crossbeam_queue::ArrayQueue<f32>>,
     pub probe_buffers: Arc<dashmap::DashMap<StableId, Arc<crossbeam_queue::ArrayQueue<f32>>>>,
+    pub convergence_info: Arc<dashmap::DashMap<StableId, usize>>,
+    pub circuit_instability: Arc<dashmap::DashMap<StableId, f32>>,
+    pub parameter_provenance: Arc<dashmap::DashMap<StableId, HashMap<String, Vec<String>>>>,
+    pub node_diagnostics: Arc<dashmap::DashMap<StableId, DiagnosticRecord>>,
+    pub engine_logs: Arc<crossbeam_queue::ArrayQueue<String>>,
+}
+
+impl SharedState {
+    pub fn new() -> Self {
+        Self {
+            node_metrics: Arc::new(dashmap::DashMap::new()),
+            scope_buffer: Arc::new(crossbeam_queue::ArrayQueue::new(4096)),
+            probe_buffers: Arc::new(dashmap::DashMap::new()),
             convergence_info: Arc::new(dashmap::DashMap::new()),
             circuit_instability: Arc::new(dashmap::DashMap::new()),
             parameter_provenance: Arc::new(dashmap::DashMap::new()),
@@ -85,6 +97,14 @@ pub struct SharedState {
     }
 }
 
+pub struct ModulationMapping {
+    pub source_node_id: StableId,
+    pub source_port_idx: usize,
+    pub target_node_idx: usize,
+    pub target_param: String,
+    pub amount: f32,
+}
+
 pub struct DspRunner {
     nodes: Vec<(StableId, Box<dyn base::DspNode>)>,
     pub node_outputs: HashMap<StableId, Vec<[f32; 2]>>,
@@ -93,6 +113,12 @@ pub struct DspRunner {
     feedback_reads: Vec<Vec<(usize, usize)>>,
     feedback_writes: Vec<Vec<(usize, usize)>>,
     modulation_mappings: Vec<ModulationMapping>,
+    node_saturation: HashMap<StableId, f32>,
+    jit_program: Option<jit::JitProgram>,
+    parameter_provenance: HashMap<StableId, HashMap<String, Vec<String>>>,
+}
+
+impl DspRunner {
     #[tracing::instrument(skip(graph, midi_rx))]
     pub fn new(graph: Graph, midi_rx: Option<Receiver<MidiEvent>>, sample_rate: f32) -> Self {
         tracing::debug!("Creating DspRunner with {} nodes", graph.nodes.len());
@@ -317,14 +343,6 @@ pub struct DspRunner {
         if let Some((_, node)) = self.nodes.iter_mut().find(|(id, _)| *id == node_id) {
             node.update_parameter(param, value);
         }
-    }
-
-    pub fn nodes_mut(&mut self) -> &mut Vec<(StableId, Box<dyn DspNode>)> {
-        &mut self.nodes
-    }
-
-    pub fn get_graph(&self) -> &Graph {
-        &self.graph
     }
 
     pub fn extract_all_states(&self) -> HashMap<StableId, NodeState> {

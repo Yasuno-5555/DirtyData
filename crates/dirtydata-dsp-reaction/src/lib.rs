@@ -15,7 +15,7 @@ pub struct ReactionDiffusion {
 
 impl ReactionDiffusion {
     pub fn new(size: usize) -> Self {
-        let mut a0 = vec![1.0; size];
+        let a0 = vec![1.0; size];
         let mut b0 = vec![0.0; size];
         // Seed
         for i in (size / 2 - 5)..(size / 2 + 5) { b0[i] = 0.5; }

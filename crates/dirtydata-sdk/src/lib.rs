@@ -1,4 +1,3 @@
-use serde::{Deserialize, Serialize};
 
 /// The core trait for DirtyData DSP Plugins.
 /// Implement this to create your own custom DSP nodes.

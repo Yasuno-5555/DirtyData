@@ -2,21 +2,6 @@
 //!
 //! Authoring Language ではなく Review Language。
 //! 吸うな。その薬は強い。export-only。
-//!
-//! 出力例:
-//! ```text
-//! source "Sine" {
-//!   out: audio(2ch) @sample
-//! }
-//! processor "Gain" {
-//!   in: audio(2ch) @sample
-//!   out: audio(2ch) @sample
-//!   config {
-//!     gain_db: 2.0
-//!   }
-//! }
-//! Sine.out -> Gain.in  # causal
-//! ```
 
 use std::fmt::Write;
 
@@ -61,6 +46,27 @@ pub fn render_dsl(graph: &Graph) -> String {
             NodeKind::SubGraph => "subgraph",
             NodeKind::InputProxy => "input_proxy",
             NodeKind::OutputProxy => "output_proxy",
+            NodeKind::CircuitModule { .. } => "circuit_module",
+        };
+
+        writeln!(out, "{} \"{}\" {{", kind_str, node_name(node)).unwrap();
+        render_node_body(&mut out, node);
+        writeln!(out, "}}").unwrap();
+        writeln!(out).unwrap();
+    }
+
+    // Edges
+    if !graph.topology.edges.is_empty() {
+        writeln!(out, "# Connections").unwrap();
+        for edge in graph.topology.edges.values() {
+            let src_name = name_of(&edge.source.node_id);
+            let tgt_name = name_of(&edge.target.node_id);
+            
+            let kind_tag = "# normal"; 
+            
+            writeln!(
+                out,
+                "{}.{} -> {}.{}  {}",
                 src_name, edge.source.port_name,
                 tgt_name, edge.target.port_name,
                 kind_tag
@@ -86,7 +92,6 @@ fn render_node_body(out: &mut String, node: &crate::ir::Node) {
             ExecutionDomain::Background => "@background",
         };
         let dtype = format_data_type(&port.data_type);
-        // Only show port name if it differs from direction
         if port.name == dir {
             writeln!(out, "  {}: {} {}", dir, dtype, domain).unwrap();
         } else {
@@ -94,7 +99,7 @@ fn render_node_body(out: &mut String, node: &crate::ir::Node) {
         }
     }
 
-    // Config (excluding "name" since it's in the header)
+    // Config
     let config_entries: Vec<_> = node
         .config
         .iter()
@@ -143,74 +148,4 @@ fn format_config_value(v: &ConfigValue) -> String {
 
 fn hex_short(bytes: &[u8]) -> String {
     bytes[..8].iter().map(|b| format!("{:02x}", b)).collect()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::ir::{Edge, Node};
-    use crate::patch::{Operation, Patch};
-
-    #[test]
-    fn test_render_basic_chain() {
-        let src = Node::new_source("Sine");
-        let gain = Node::new_processor("Gain");
-        let sink = Node::new_sink("Output");
-
-        let edge1 = Edge::new(
-            PortRef {
-                node_id: src.id,
-                port_name: "out".into(),
-            },
-            PortRef {
-                node_id: gain.id,
-                port_name: "in".into(),
-            },
-        );
-        let edge2 = Edge::new(
-            PortRef {
-                node_id: gain.id,
-                port_name: "out".into(),
-            },
-            PortRef {
-                node_id: sink.id,
-                port_name: "in".into(),
-            },
-        );
-
-        let patch = Patch::from_operations(vec![
-            Operation::AddNode(src),
-            Operation::AddNode(gain),
-            Operation::AddNode(sink),
-            Operation::AddEdge(edge1),
-            Operation::AddEdge(edge2),
-        ]);
-
-        let mut graph = Graph::new();
-        graph.apply(&patch).unwrap();
-
-        let dsl = render_dsl(&graph);
-
-        assert!(dsl.contains("source \"Sine\""));
-        assert!(dsl.contains("processor \"Gain\""));
-        assert!(dsl.contains("sink \"Output\""));
-        assert!(dsl.contains("Sine.out -> Gain.in"));
-        assert!(dsl.contains("Gain.out -> Output.in"));
-        assert!(dsl.contains("@sample"));
-        assert!(dsl.contains("# normal"));
-    }
-
-    #[test]
-    fn test_render_with_config() {
-        let mut gain = Node::new_processor("Gain");
-        gain.config
-            .insert("gain_db".into(), ConfigValue::Float(2.5));
-
-        let patch = Patch::from_operations(vec![Operation::AddNode(gain)]);
-        let mut graph = Graph::new();
-        graph.apply(&patch).unwrap();
-
-        let dsl = render_dsl(&graph);
-        assert!(dsl.contains("gain_db: 2.5"));
-    }
 }

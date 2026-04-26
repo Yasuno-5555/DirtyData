@@ -1,5 +1,4 @@
 use dirtydata_core::types::ConfigSnapshot;
-use std::sync::Arc;
 
 /// A helper for smoothing parameter changes using a One-Pole LPF.
 pub struct SmoothedValue {

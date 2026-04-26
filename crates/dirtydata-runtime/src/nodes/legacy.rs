@@ -1,5 +1,5 @@
 use dirtydata_core::types::ConfigSnapshot;
-use dirtydata_host::{PluginHost, HostError};
+use dirtydata_host::PluginHost;
 use rand::prelude::*;
 use rand_pcg::Pcg32;
 use std::sync::Arc;
@@ -762,11 +762,11 @@ impl DspNode for MidiInNode {
 // ──────────────────────────────────────────────
 
 pub struct WavefolderNode {
-    stages: usize,
+    _stages: usize,
 }
 
 impl WavefolderNode {
-    pub fn new() -> Self { Self { stages: 4 } }
+    pub fn new() -> Self { Self { _stages: 4 } }
 }
 
 impl DspNode for WavefolderNode {
@@ -837,7 +837,7 @@ impl DspNode for LorenzNode {
 
 pub struct MackeyGlassNode {
     history: VecDeque<f32>,
-    tau_samples: usize,
+    _tau_samples: usize,
     beta: f32,
     gamma: f32,
     n: f32,
@@ -849,7 +849,7 @@ impl MackeyGlassNode {
         let tau_samples = (tau_ms * 0.001 * sample_rate) as usize;
         let mut history = VecDeque::with_capacity(tau_samples + 1);
         for _ in 0..=tau_samples { history.push_back(0.5); }
-        Self { history, tau_samples, beta: 2.0, gamma: 1.0, n: 10.0, current_x: 0.5 }
+        Self { history, _tau_samples: tau_samples, beta: 2.0, gamma: 1.0, n: 10.0, current_x: 0.5 }
     }
 }
 
@@ -889,7 +889,7 @@ pub struct GrayScottNode {
 
 impl GrayScottNode {
     pub fn new(size: usize) -> Self {
-        let mut u0 = vec![1.0; size];
+        let u0 = vec![1.0; size];
         let mut v0 = vec![0.0; size];
         for i in (size/2 - 5)..(size/2 + 5) { v0[i] = 0.5; }
         Self {

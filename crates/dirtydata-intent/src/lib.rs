@@ -81,12 +81,15 @@ impl IntentState {
         let id = IntentId::new();
         self.intents.insert(
             id,
-            description,
-            constraints,
-            status: IntentStatus::Proposal,
-            strategy: IntentStrategy::Manual,
-            attached_patches: Vec::new(),
-        });
+            IntentNode {
+                id,
+                description,
+                constraints,
+                status: IntentStatus::Proposal,
+                strategy: IntentStrategy::Manual,
+                attached_patches: Vec::new(),
+            },
+        );
         id
     }
 

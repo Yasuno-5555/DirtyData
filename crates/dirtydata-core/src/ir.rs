@@ -154,6 +154,7 @@ impl Node {
             confidence: ConfidenceScore::Verified,
         }
     }
+}
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum EdgeKind {
     /// Normal feed-forward connection (causal dependency).
@@ -163,13 +164,56 @@ pub enum EdgeKind {
     Feedback,
 }
 
+/// A modulation connection between a port and a parameter.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Modulation {
+    pub id: StableId,
+    pub source: PortRef,
+    pub target_node: StableId,
+    pub target_param: String,
+    pub amount: f32,
+}
+
+impl Modulation {
+    pub fn new(source: PortRef, target_node: StableId, target_param: String, amount: f32) -> Self {
+        Self {
+            id: StableId::new(),
+            source,
+            target_node,
+            target_param,
+            amount,
+        }
+    }
+}
+
 /// An edge connecting two ports in the Canonical IR graph.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Edge {
     pub id: StableId,
     pub source: PortRef,
     pub target: PortRef,
+    pub kind: EdgeKind,
     #[serde(default)]
+    pub modulations: BTreeMap<StableId, Modulation>,
+}
+
+impl Edge {
+    pub fn new(source: PortRef, target: PortRef) -> Self {
+        Self {
+            id: StableId::new(),
+            source,
+            target,
+            kind: EdgeKind::Normal,
+            modulations: BTreeMap::new(),
+        }
+    }
+}
+
+/// Layer 1: Topology (The Current Geometric Truth)
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct Topology {
+    pub nodes: BTreeMap<StableId, Node>,
+    pub edges: BTreeMap<StableId, Edge>,
     pub modulations: BTreeMap<StableId, Modulation>,
 }
 

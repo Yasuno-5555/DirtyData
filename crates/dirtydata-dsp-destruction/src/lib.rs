@@ -10,7 +10,7 @@ impl BitCrush {
     pub fn process(&mut self, input: f32, bits: f32, sr_div: f32) -> f32 {
         // Bit reduction
         let levels = 2.0f32.powf(bits.clamp(1.0, 24.0));
-        let mut out = (input * levels).round() / levels;
+        let out = (input * levels).round() / levels;
         
         // Sample rate reduction
         self.count += 1.0;

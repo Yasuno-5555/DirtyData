@@ -7,7 +7,6 @@ pub struct SpectralGate {
     size: usize,
     fft: Arc<dyn rustfft::Fft<f32>>,
     ifft: Arc<dyn rustfft::Fft<f32>>,
-    buffer: Vec<Complex<f32>>,
 }
 
 impl SpectralGate {
@@ -17,7 +16,6 @@ impl SpectralGate {
             size,
             fft: planner.plan_fft_forward(size),
             ifft: planner.plan_fft_inverse(size),
-            buffer: vec![Complex::default(); size],
         }
     }
 
