@@ -32,7 +32,7 @@ In audio systems, there is no guarantee that values on the GUI match the actual 
 DirtyData **Observes** the external world before attempting to control it.
 It calculates file sizes, extensions, and BLAKE3 hashes to constantly evaluate the discrepancy between the system's internal state (expectation) and the external world (reality).
 
-The match rate (Confidence Score) is explicitly shown on the UI as a `Dirty State`.
+The match rate (Confidence Score) is explicitly shown in the forensic status as a `Dirty State`.
 - `100% Verified`: A state where hashes match perfectly.
 - `Suspicious`: A state where external tampering is detected.
 
@@ -44,7 +44,7 @@ The absolute rule in operating DirtyData:
 
 > **Every node, every plugin, and every routing must be fully Explainable for its existence, or otherwise be in a Disposable state where it can be discarded at any time.**
 
-The `dirtydata doctor` command warns about "nodes with unclear reasons for existence (no linked Intent) and low impact" as Disposable Candidates.
+The `dirty doctor` command warns about "nodes with unclear reasons for existence (no linked Intent) and low impact" as Disposable Candidates.
 
 ## 5. Security Model (Trust Boundaries)
 
@@ -53,7 +53,7 @@ The system **does not trust**:
 
 1. **Plugins (VST/AU, etc.)**
 2. **Observer (The monitoring tool itself)**
-3. **GUI / User**
+3. **External Interface / User**
 
 User-edited DSL, external scripts, third-party extensions, or AI-generated PatchSets all possess a `TrustLevel`.
 If an AI arbitrarily performs destructive acts like "inserting 20 limiters on the master bus" (something humans also tend to do), it is treated as `ReviewRequired` or `Quarantined`, preventing unintentional destruction of the production environment.
@@ -76,10 +76,3 @@ If a plugin outputs denormal numbers (NaN Storm), the system detects it at the b
 
 This is the **true robustness** that DirtyData aims for.
 
-## 8. Visual as Projection (GUI is a "Projection" of the IR)
-
-In DirtyData, the GUI is not the system state itself, but merely a "temporary projection" of the truth (IR) existing in the Core.
-
-- **The Forge UI**: The reason we built our own renderer instead of adopting existing node editor libraries is to allow the UI itself to express "DirtyState (uncertainty)."
-- **Shared Visualization**: Waveforms (Oscilloscope) and volume (Meters) are "peeks into the internal operations" of the system, allowing users to verify the behavior of DSP that often becomes a black box, along with reliable history (Provenance).
-- **Direct Interaction**: Operations on the GUI (dragging, connecting) are immediately translated and compiled into `UserAction`, carved into history as patches. This allows visual intuition and systemic rigor to coexist without contradiction.

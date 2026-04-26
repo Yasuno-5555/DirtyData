@@ -1,9 +1,9 @@
-# DirtyRack Architecture
+# DirtyData Architecture
 
 This is a technical reference regarding the internal structure (Architecture) of DirtyData.
 The system is divided into multiple crates (layers), each with strict roles and boundaries.
 
-## 1. Gehenna Engine: Parallel Deterministic DSP (`dirtyrack-modules`)
+## 1. DirtyData Core Engine
 
 Defined in the `dirtydata-core` crate, this is the system's single Source of Truth.
 
@@ -15,19 +15,18 @@ Defined in the `dirtydata-core` crate, this is the system's single Source of Tru
 
 It is **forbidden** for the GUI or users to directly rewrite the IR. All state changes must be applied through a `Patch`.
 
-The GUI acts as a "Medical Projector" for dissecting the signal chain.
 
 DirtyData features a branch management system inspired by Git.
 
 - Enables ultra-fast "moving between parallel worlds" by simply switching IR pointers (HEAD and refs) without duplicating physical audio or session files.
 - `Storage` manages `.dirtydata/refs/heads/` and `.dirtydata/HEAD`, tracking which `PatchId` ancestry each branch belongs to.
 
-Wraps the DirtyRack core into a DAW-compatible plugin via the `nih-plug` framework.
+Wraps the DirtyData core into a DAW-compatible plugin via the `nih-plug` framework.
 
 The `dirtydata-runtime` crate converts the IR graph into an actual "audible state".
 
 - **`cpal`**: Communicates directly with the OS audio device and starts a real-time callback thread.
-- **`arc-swap`**: Implements lock-free double buffering. When a user adds a new effect via `dirtydata patch apply`, it atomically switches to the new DSP graph pointer safely without ever blocking the audio callback (zero glitches).
+- **`arc-swap`**: Implements lock-free double buffering. When a user adds a new effect via `dirty patch apply`, it atomically switches to the new DSP graph pointer safely without ever blocking the audio callback (zero glitches).
 
 ## 4. Circuit Module & Mutation History
 
