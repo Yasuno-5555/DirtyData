@@ -23,15 +23,20 @@ use crate::types::*;
 ///
 /// `parents` is `Vec<PatchId>`, not `Option<PatchId>`.
 /// Because merge exists. A DAG with single parent is a tree.
-/// That's not what we want.
+///
+/// §SSS+: Merkle DAG
+/// Every patch now carries `parent_hashes` to ensure a cryptographically 
+/// verifiable chain of causality.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Patch {
     pub identity: PatchId,
     pub operations: Vec<Operation>,
     pub intent_ref: Option<IntentId>,
     pub deterministic_hash: Hash,
-    /// DAG parents — supports merges.
+    /// DAG parents — identifiers.
     pub parents: Vec<PatchId>,
+    /// DAG parents — content hashes for Merkle verification.
+    pub parent_hashes: Vec<Hash>,
     pub timestamp: Timestamp,
     pub source: PatchSource,
     pub trust: TrustLevel,
@@ -104,6 +109,7 @@ impl Patch {
             intent_ref: None,
             deterministic_hash: [0u8; 32],
             parents: Vec::new(),
+            parent_hashes: Vec::new(),
             timestamp: Timestamp::now(),
             source: PatchSource::System,
             trust: TrustLevel::Trusted,
@@ -124,6 +130,7 @@ impl Patch {
             intent_ref: None,
             deterministic_hash: [0u8; 32],
             parents: Vec::new(),
+            parent_hashes: Vec::new(),
             timestamp: Timestamp::now(),
             source,
             trust,
@@ -140,9 +147,10 @@ impl Patch {
         self
     }
 
-    /// Set parent patches (for DAG lineage).
-    pub fn with_parents(mut self, parents: Vec<PatchId>) -> Self {
-        self.parents = parents;
+    /// Set parent patches (for Merkle DAG lineage).
+    pub fn with_parents(mut self, parents: Vec<(PatchId, Hash)>) -> Self {
+        self.parents = parents.iter().map(|(id, _)| *id).collect();
+        self.parent_hashes = parents.iter().map(|(_, h)| *h).collect();
         // Rehash — parents change content identity
         self.deterministic_hash = hash::hash_patch(&self);
         self
@@ -161,16 +169,21 @@ impl Patch {
 
 impl Graph {
     /// Apply a single patch to this graph.
+    #[tracing::instrument(skip(self, patch))]
     pub fn apply(&mut self, patch: &Patch) -> Result<(), PatchError> {
+        tracing::debug!("Applying patch {} with {} operations", patch.identity, patch.operations.len());
         for op in &patch.operations {
             self.apply_operation(op)?;
         }
         self.revision = self.revision.next();
-        self.applied_patches.push(patch.identity);
+        self.lineage.applied_patches.push(patch.identity);
+        self.lineage.history.insert(patch.identity, patch.clone());
         Ok(())
     }
 
+    #[tracing::instrument(skip(self, op))]
     fn apply_operation(&mut self, op: &Operation) -> Result<(), PatchError> {
+        tracing::trace!("Applying operation: {:?}", op);
         match op {
             Operation::AddNode(node) => {
                 if self.nodes.contains_key(&node.id) {
@@ -193,7 +206,11 @@ impl Graph {
                     return Err(PatchError::NodeNotFound(node.id));
                 }
                 self.nodes.insert(node.id, node.clone());
+<<<<<<< Updated upstream
                 // Note: We do NOT remove edges. It's up to the user to ensure
+=======
+                // Note: We do NOT remove edges. It's up to the user to ensure 
+>>>>>>> Stashed changes
                 // ports are still compatible, otherwise validation will catch it.
             }
 
@@ -299,15 +316,15 @@ impl Graph {
         let mut operations = Vec::new();
 
         // Nodes removed in `other`
-        for id in self.nodes.keys() {
-            if !other.nodes.contains_key(id) {
+        for id in self.topology.nodes.keys() {
+            if !other.topology.nodes.contains_key(id) {
                 operations.push(Operation::RemoveNode(*id));
             }
         }
 
         // Nodes added or modified in `other`
-        for (id, node) in &other.nodes {
-            match self.nodes.get(id) {
+        for (id, node) in &other.topology.nodes {
+            match self.topology.nodes.get(id) {
                 None => operations.push(Operation::AddNode(node.clone())),
                 Some(old) => {
                     if old.config != node.config {
@@ -324,15 +341,15 @@ impl Graph {
         }
 
         // Edges removed in `other`
-        for id in self.edges.keys() {
-            if !other.edges.contains_key(id) {
+        for id in self.topology.edges.keys() {
+            if !other.topology.edges.contains_key(id) {
                 operations.push(Operation::RemoveEdge(*id));
             }
         }
 
         // Edges added or modified in `other`
-        for (id, edge) in &other.edges {
-            match self.edges.get(id) {
+        for (id, edge) in &other.topology.edges {
+            match self.topology.edges.get(id) {
                 None => operations.push(Operation::AddEdge(edge.clone())),
                 Some(old) => {
                     if old != edge {
@@ -527,10 +544,10 @@ mod tests {
 
         graph.apply(&patch).unwrap();
 
-        assert_eq!(graph.nodes.len(), 1);
-        assert_eq!(graph.nodes.get(&node.id).unwrap().kind, NodeKind::Source);
+        assert_eq!(graph.topology.nodes.len(), 1);
+        assert_eq!(graph.topology.nodes.get(&node.id).unwrap().kind, NodeKind::Source);
         assert_eq!(graph.revision, Revision(1));
-        assert_eq!(graph.applied_patches.len(), 1);
+        assert_eq!(graph.lineage.applied_patches.len(), 1);
     }
 
     #[test]
@@ -545,7 +562,7 @@ mod tests {
         graph.apply(&add).unwrap();
         graph.apply(&remove).unwrap();
 
-        assert!(graph.nodes.is_empty());
+        assert!(graph.topology.nodes.is_empty());
         assert_eq!(graph.revision, Revision(2));
     }
 
@@ -603,8 +620,8 @@ mod tests {
 
         graph.apply(&patch).unwrap();
 
-        assert_eq!(graph.nodes.len(), 2);
-        assert_eq!(graph.edges.len(), 1);
+        assert_eq!(graph.topology.nodes.len(), 2);
+        assert_eq!(graph.topology.edges.len(), 1);
     }
 
     #[test]
@@ -636,8 +653,8 @@ mod tests {
             .apply(&Patch::from_operations(vec![Operation::RemoveNode(src.id)]))
             .unwrap();
 
-        assert_eq!(graph.nodes.len(), 1);
-        assert!(graph.edges.is_empty());
+        assert_eq!(graph.topology.nodes.len(), 1);
+        assert!(graph.topology.edges.is_empty());
     }
 
     #[test]
@@ -680,7 +697,7 @@ mod tests {
         for p in &diff.patches {
             g1_patched.apply(p).unwrap();
         }
-        assert!(g1_patched.nodes.contains_key(&gain.id));
+        assert!(g1_patched.topology.nodes.contains_key(&gain.id));
     }
 
     #[test]

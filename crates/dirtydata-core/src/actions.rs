@@ -14,6 +14,7 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::types::{StableId};
 use crate::ir::{Edge, Graph, Node};
 use crate::patch::Operation;
 use crate::types::*;
@@ -82,6 +83,12 @@ pub enum UserAction {
     /// Freeze a node into an asset.
     FreezeNode { name: String, length_secs: f32 },
 
+    /// Freeze a node into an asset.
+    FreezeNode {
+        name: String,
+        length_secs: f32,
+    },
+
     /// Set a config value on a node.
     SetConfig {
         node: String,
@@ -98,6 +105,7 @@ pub enum UserAction {
         amount: f32,
     },
 
+<<<<<<< Updated upstream
     /// Replace a node with another kind, preserving connections if possible.
     ReplaceNode { name: String, new_kind_name: String },
 
@@ -109,6 +117,48 @@ pub enum UserAction {
 
     /// Duplicate a node (Placeholder for GUI).
     DuplicateNode { node_id: StableId },
+=======
+    // --- §SSS: Engineering & Exploration ---
+    
+    /// Engineering: Run Monte Carlo manufacturing simulation.
+    RunMonteCarlo { node_name: String, count: usize },
+    /// Engineering: Run sensitivity analysis on circuit components.
+    RunSensitivity { node_name: String },
+    /// Engineering: Map the stability region of a parameter.
+    RunStabilityMap { node_name: String, param: String, range_start: f32, range_end: f32 },
+    /// Squash history into a single baseline patch.
+    SquashHistory,
+    /// Create a named snapshot (Safe Haven).
+    CreateSnapshot {
+        name: String,
+    },
+
+    /// Replace a node with another kind, preserving connections if possible.
+    ReplaceNode {
+        name: String,
+        new_kind_name: String,
+    },
+
+    /// Add a container node.
+    AddSubGraph {
+        name: String,
+    },
+
+    /// Remove a modulation assignment.
+    RemoveModulation {
+        id: StableId,
+    },
+
+    /// Duplicate a node (Placeholder for GUI).
+    DuplicateNode {
+        node_id: StableId,
+    },
+
+    /// Checkout a specific revision.
+    CheckoutRevision {
+        revision: crate::types::PatchId,
+    },
+>>>>>>> Stashed changes
 }
 
 fn default_channels() -> u32 {
@@ -333,6 +383,69 @@ pub fn compile_actions(
             UserAction::DuplicateNode { .. } => {
                 // Placeholder
             }
+
+            UserAction::AddModulation { source_node, source_port, target_node, target_param, amount } => {
+                let src_id = resolve_name(source_node, graph, &created)?;
+                let tgt_id = resolve_name(target_node, graph, &created)?;
+                let mod_ir = crate::ir::Modulation::new(
+                    PortRef { node_id: src_id, port_name: source_port.clone() },
+                    tgt_id,
+                    target_param.clone(),
+                    *amount
+                );
+                ops.push(Operation::AddModulation(mod_ir));
+            }
+
+            UserAction::ReplaceNode { name, new_kind_name } => {
+                let id = resolve_name(name, graph, &created)?;
+                let mut delta = std::collections::BTreeMap::new();
+                delta.insert(
+                    "name".to_string(),
+                    ConfigChange {
+                        old: None,
+                        new: Some(ConfigValue::String(new_kind_name.clone())),
+                    },
+                );
+                ops.push(Operation::ModifyConfig {
+                    node_id: id,
+                    delta,
+                });
+            }
+
+            UserAction::AddSubGraph { name } => {
+                let node = crate::ir::Node::new_subgraph(name);
+                created.insert(name.clone(), node.id);
+                ops.push(Operation::AddNode(node));
+            }
+
+            UserAction::RemoveModulation { id } => {
+                ops.push(Operation::RemoveModulation(*id));
+            }
+
+            UserAction::DuplicateNode { .. } => {
+                // Placeholder
+            }
+            UserAction::RunMonteCarlo { node_name, count } => {
+                let id = resolve_name(node_name, graph, &created)?;
+                if let Some(node) = graph.nodes.get(&id) {
+                    for _ in 0..*count {
+                        for (key, value) in &node.config {
+                            if let ConfigValue::Float(f) = value {
+                                // Random nudge +/- 10%
+                                let noise = (rand::random::<f32>() - 0.5) * 0.2;
+                                let new_val = (*f + noise as f64).clamp(0.0, 1.0);
+                                
+                                let mut delta = std::collections::BTreeMap::new();
+                                delta.insert(key.clone(), ConfigChange { old: None, new: Some(ConfigValue::Float(new_val)) });
+                                ops.push(Operation::ModifyConfig { node_id: id, delta });
+                            }
+                        }
+                    }
+                }
+            }
+            UserAction::RunSensitivity { .. } | UserAction::RunStabilityMap { .. } | UserAction::SquashHistory | UserAction::CreateSnapshot { .. } | UserAction::CheckoutRevision { .. } => {
+                // Background or meta-operations handled by higher-level services.
+            }
         }
     }
 
@@ -359,12 +472,16 @@ fn make_node(kind: NodeKind, name: &str, channels: u32) -> Node {
             direction: PortDirection::Output,
             domain: ExecutionDomain::Sample,
             data_type: DataType::Audio { channels },
+            semantic: PortSemantic::Signal,
+            polarity: PortPolarity::Bipolar,
         }],
         NodeKind::Sink => vec![TypedPort {
             name: "in".into(),
             direction: PortDirection::Input,
             domain: ExecutionDomain::Sample,
             data_type: DataType::Audio { channels },
+            semantic: PortSemantic::Signal,
+            polarity: PortPolarity::Bipolar,
         }],
         _ => vec![
             TypedPort {
@@ -372,12 +489,16 @@ fn make_node(kind: NodeKind, name: &str, channels: u32) -> Node {
                 direction: PortDirection::Input,
                 domain: ExecutionDomain::Sample,
                 data_type: DataType::Audio { channels },
+                semantic: PortSemantic::Signal,
+                polarity: PortPolarity::Bipolar,
             },
             TypedPort {
                 name: "out".into(),
                 direction: PortDirection::Output,
                 domain: ExecutionDomain::Sample,
                 data_type: DataType::Audio { channels },
+                semantic: PortSemantic::Signal,
+                polarity: PortPolarity::Bipolar,
             },
         ],
     };
@@ -397,17 +518,24 @@ fn make_node(kind: NodeKind, name: &str, channels: u32) -> Node {
 
 /// Resolve a human-readable name to a StableId.
 /// Checks newly created nodes first, then existing graph.
-fn resolve_name(
+pub fn resolve_name(
     name: &str,
     graph: &Graph,
     created: &std::collections::HashMap<String, StableId>,
 ) -> Result<StableId, ActionError> {
-    // Check batch-created nodes first
+    // 1. Check batch-created nodes first
     if let Some(&id) = created.get(name) {
         return Ok(id);
     }
 
-    // Search existing graph by config "name" field
+    // 2. Check if it's a direct StableId (highest priority to avoid ambiguity)
+    if let Ok(id) = name.parse::<StableId>() {
+        if graph.nodes.contains_key(&id) {
+            return Ok(id);
+        }
+    }
+
+    // 3. Search existing graph by config "name" field
     let matches: Vec<StableId> = graph
         .nodes
         .iter()
@@ -416,15 +544,7 @@ fn resolve_name(
         .collect();
 
     match matches.len() {
-        0 => {
-            // Fallback: Check if the "name" is actually a StableId string
-            if let Ok(id) = name.parse::<StableId>() {
-                if graph.nodes.contains_key(&id) {
-                    return Ok(id);
-                }
-            }
-            Err(ActionError::NodeNotFound(name.into()))
-        }
+        0 => Err(ActionError::NodeNotFound(name.into())),
         1 => Ok(matches[0]),
         _ => Err(ActionError::AmbiguousName(name.into())),
     }

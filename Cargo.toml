@@ -5,12 +5,20 @@ members = [
     "crates/dirtydata-observer",
     "crates/dirtydata-host",
     "crates/dirtydata-intent",
+<<<<<<< Updated upstream
     "crates/dirtyrack-modules",
     "crates/dirtyrack-gui",
     "crates/dirtyrack-sdk",
     "crates/example-thirdparty-module",
     "crates/dirtyrack-cli",
     "crates/dirtyrack-plugin",
+=======
+    "crates/dirtydata-cli",
+    "crates/dirty-exporter",
+    "crates/dirty-mutate",
+    "crates/dirtydata-sdk",
+    "crates/tutorial-bitcrush",
+>>>>>>> Stashed changes
 ]
 resolver = "2"
 
@@ -25,3 +33,5 @@ serde_json = "1"
 ulid = { version = "1", features = ["serde"] }
 blake3 = "1"
 thiserror = "2"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }

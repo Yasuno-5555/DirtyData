@@ -38,12 +38,16 @@ mod tests {
                     direction: PortDirection::Output,
                     domain: ExecutionDomain::Sample,
                     data_type: DataType::Audio { channels: 2 },
+                    semantic: PortSemantic::Signal,
+                    polarity: PortPolarity::Bipolar,
                 }],
                 NodeKind::Sink => vec![TypedPort {
                     name: "in".into(),
                     direction: PortDirection::Input,
                     domain: ExecutionDomain::Sample,
                     data_type: DataType::Audio { channels: 2 },
+                    semantic: PortSemantic::Signal,
+                    polarity: PortPolarity::Bipolar,
                 }],
                 _ => vec![
                     TypedPort {
@@ -51,12 +55,16 @@ mod tests {
                         direction: PortDirection::Input,
                         domain: ExecutionDomain::Sample,
                         data_type: DataType::Audio { channels: 2 },
+                        semantic: PortSemantic::Signal,
+                        polarity: PortPolarity::Bipolar,
                     },
                     TypedPort {
                         name: "out".into(),
                         direction: PortDirection::Output,
                         domain: ExecutionDomain::Sample,
                         data_type: DataType::Audio { channels: 2 },
+                        semantic: PortSemantic::Signal,
+                        polarity: PortPolarity::Bipolar,
                     },
                 ],
             };

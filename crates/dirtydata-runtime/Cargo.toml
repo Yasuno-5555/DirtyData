@@ -18,9 +18,37 @@ crossbeam-queue = "0.3.12"
 dashmap = "5.5.3"
 midir = "0.11.0"
 serde_json.workspace = true
+<<<<<<< Updated upstream
+=======
+serde = { workspace = true, features = ["derive"] }
+>>>>>>> Stashed changes
 rustfft = "6.4.1"
 num-complex = "0.4.6"
 wasmtime = "44.0.0"
 rosc = "0.11.4"
 anyhow = "1.0.102"
+<<<<<<< Updated upstream
 blake3 = "1"
+=======
+thiserror = { workspace = true }
+blake3 = "1"
+dirtydata-dsp-zdf = { path = "../dirtydata-dsp-zdf" }
+dirtydata-dsp-svf = { path = "../dirtydata-dsp-svf" }
+dirtydata-dsp-clipper = { path = "../dirtydata-dsp-clipper" }
+dirtydata-dsp-bbd = { path = "../dirtydata-dsp-bbd" }
+dirtydata-dsp-wdf = { path = "../dirtydata-dsp-wdf" }
+dirtydata-dsp-ks = { path = "../dirtydata-dsp-ks" }
+dirtydata-dsp-modal = { path = "../dirtydata-dsp-modal" }
+dirtydata-dsp-spring = { path = "../dirtydata-dsp-spring" }
+dirtydata-dsp-chaos = { path = "../dirtydata-dsp-chaos" }
+dirtydata-dsp-reaction = { path = "../dirtydata-dsp-reaction" }
+dirtydata-dsp-tape = { path = "../dirtydata-dsp-tape" }
+dirtydata-dsp-matrix = { path = "../dirtydata-dsp-matrix" }
+dirtydata-dsp-cv = { path = "../dirtydata-dsp-cv" }
+dirtydata-dsp-spectral = { path = "../dirtydata-dsp-spectral" }
+dirtydata-dsp-destruction = { path = "../dirtydata-dsp-destruction" }
+dirtydata-dsp-control = { path = "../dirtydata-dsp-control" }
+dirtydata-dsp-circuit = { path = "../dirtydata-dsp-circuit" }
+dirtydata-dsp-vocal = { path = "../dirtydata-dsp-vocal" }
+tracing = { workspace = true }
+>>>>>>> Stashed changes

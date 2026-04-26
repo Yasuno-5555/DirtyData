@@ -1,0 +1,16 @@
+[package]
+name = "dirty-exporter"
+version = "0.1.0"
+edition = "2021"
+description = "Compiler for .dirtydata projects — Transmuting IR into standalone binaries."
+
+[dependencies]
+dirtydata-core = { path = "../dirtydata-core" }
+dirtydata-runtime = { path = "../dirtydata-runtime" }
+anyhow = "1.0"
+serde_json = "1.0"
+quote = "1.0"
+proc-macro2 = "1.0"
+syn = "2.0"
+tempfile = "3.8"
+zip = "0.6"

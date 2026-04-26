@@ -1,4 +1,6 @@
-//! Intent Engine — 意味の構造化
+//! Intent Engine — Structured Meaning & Constraints
+//!
+//! "音楽は最適化問題じゃない。制約付き妥協問題です。"
 //!
 //! DirtyData において、パッチは単なる状態変更の羅列ではない。
 //! Intent（意図）という上位概念があり、パッチは「それを実現するための Strategy の結果」である。
@@ -19,6 +21,7 @@ pub enum IntentStrategy {
     /// 手動。ユーザーがパッチを適用して紐付ける。
     Manual,
     /// 自動。特定のノードを挿入する。
+<<<<<<< Updated upstream
     InsertNode {
         kind: NodeKind,
         name: String,
@@ -28,6 +31,22 @@ pub enum IntentStrategy {
     Bridge { from_node: String, to_node: String },
     /// 自動。安全な Frozen Asset に置換する。
     Freeze { target_node: String },
+=======
+    InsertNode { 
+        kind: NodeKind, 
+        name: String,
+        config: ConfigSnapshot 
+    },
+    /// 自動。既存のノードを接続する。
+    Bridge { 
+        from_node: String, 
+        to_node: String 
+    },
+    /// 自動。安全な Frozen Asset に置換する。
+    Freeze { 
+        target_node: String 
+    },
+>>>>>>> Stashed changes
 }
 
 impl Default for IntentStrategy {
@@ -74,6 +93,7 @@ impl IntentState {
         let id = IntentId::new();
         self.intents.insert(
             id,
+<<<<<<< Updated upstream
             IntentNode {
                 id,
                 description,
@@ -83,6 +103,14 @@ impl IntentState {
                 attached_patches: Vec::new(),
             },
         );
+=======
+            description,
+            constraints,
+            status: IntentStatus::Proposal,
+            strategy: IntentStrategy::Manual,
+            attached_patches: Vec::new(),
+        });
+>>>>>>> Stashed changes
         id
     }
 
@@ -100,17 +128,24 @@ impl IntentState {
         Ok(())
     }
 
+<<<<<<< Updated upstream
     /// 制約を評価し、充足状況を返す
     pub fn evaluate_constraints(
         &self,
         id: IntentId,
         graph: &dirtydata_core::ir::Graph,
     ) -> Vec<String> {
+=======
+    /// 制約を評価し、違反内容を返す。
+    /// これが Semantic Timeline で「なぜ壊れたか」を表示する基盤となる。
+    pub fn evaluate_constraints(&self, id: IntentId, graph: &dirtydata_core::ir::Graph) -> Vec<String> {
+>>>>>>> Stashed changes
         let intent = match self.intents.get(&id) {
             Some(i) => i,
             None => return vec![format!("Intent {} not found", id)],
         };
         let mut violations = Vec::new();
+<<<<<<< Updated upstream
 
         for constraint in &intent.constraints {
             match constraint {
@@ -137,8 +172,48 @@ impl IntentState {
                     }
                 }
                 _ => {}
+=======
+        
+        for constraint in &intent.constraints {
+            match constraint {
+                IntentConstraint::Must(bound) => {
+                    if let Some(val) = self.get_param_value(graph, &bound.target) {
+                        if val < bound.range_start || val > bound.range_end {
+                            violations.push(format!("Constraint Violation [Must]: {} is {}, but must be in range {}..={}", bound.target, val, bound.range_start, bound.range_end));
+                        }
+                    }
+                }
+                IntentConstraint::Never(bound) => {
+                    if let Some(val) = self.get_param_value(graph, &bound.target) {
+                        if val >= bound.range_start && val <= bound.range_end {
+                            violations.push(format!("Constraint Violation [Never]: {} is {}, which is forbidden in range {}..={}", bound.target, val, bound.range_start, bound.range_end));
+                        }
+                    }
+                }
+                _ => {} // Prefer/Avoid are soft
+>>>>>>> Stashed changes
             }
         }
         violations
     }
+<<<<<<< Updated upstream
+=======
+
+    fn get_param_value(&self, graph: &dirtydata_core::ir::Graph, path: &str) -> Option<f32> {
+        let parts: Vec<&str> = path.split('.').collect();
+        if parts.len() != 2 { return None; }
+        
+        let node_name = parts[0];
+        let param_key = parts[1];
+
+        for node in graph.nodes.values() {
+            if dirtydata_core::actions::node_name(node) == node_name {
+                if let Some(ConfigValue::Float(f)) = node.config.get(param_key) {
+                    return Some(*f as f32);
+                }
+            }
+        }
+        None
+    }
+>>>>>>> Stashed changes
 }

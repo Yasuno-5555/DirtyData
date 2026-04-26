@@ -7,9 +7,12 @@ edition.workspace = true
 [dependencies]
 serde = { workspace = true }
 serde_json = { workspace = true }
+tracing = { workspace = true }
 ulid = { workspace = true }
-blake3 = { workspace = true }
+blake3.workspace = true
 thiserror = { workspace = true }
+rand = { version = "0.8", features = ["std_rng"] }
+dirtydata-dsp-circuit = { version = "0.1.0", path = "../dirtydata-dsp-circuit" }
 
 [dev-dependencies]
 proptest = "1"

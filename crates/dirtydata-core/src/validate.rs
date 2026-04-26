@@ -443,6 +443,8 @@ mod tests {
                 direction: PortDirection::Output,
                 domain: ExecutionDomain::Sample,
                 data_type: DataType::Audio { channels: 2 },
+                semantic: PortSemantic::Signal,
+                polarity: PortPolarity::Bipolar,
             }],
             config: Default::default(),
             metadata: MetadataRef(None),
@@ -457,6 +459,8 @@ mod tests {
                 direction: PortDirection::Input,
                 domain: ExecutionDomain::Block, // Different domain!
                 data_type: DataType::Audio { channels: 2 },
+                semantic: PortSemantic::Signal,
+                polarity: PortPolarity::Bipolar,
             }],
             config: Default::default(),
             metadata: MetadataRef(None),

@@ -20,7 +20,7 @@ pub fn hash_bytes(bytes: &[u8]) -> [u8; 32] {
 /// This means the same logical change always produces the same hash.
 pub fn hash_patch(patch: &Patch) -> [u8; 32] {
     let mut hasher = Hasher::new();
-    hasher.update(b"dirtydata:patch:v1:");
+    hasher.update(b"dirtydata:patch:v2:");
 
     // Hash operations in order
     for op in &patch.operations {
@@ -33,10 +33,12 @@ pub fn hash_patch(patch: &Patch) -> [u8; 32] {
         hasher.update(intent_id.0.to_string().as_bytes());
     }
 
-    // Hash parents (order matters — DAG lineage)
-    for parent in &patch.parents {
+    // Hash parents (Merkle DAG lineage)
+    for (id, hash) in patch.parents.iter().zip(patch.parent_hashes.iter()) {
         hasher.update(b"parent:");
-        hasher.update(parent.0.to_string().as_bytes());
+        hasher.update(id.0.to_string().as_bytes());
+        hasher.update(b":hash:");
+        hasher.update(hash);
     }
 
     *hasher.finalize().as_bytes()
@@ -155,7 +157,11 @@ pub fn hash_graph(graph: &Graph) -> [u8; 32] {
     for edge in graph.edges.values() {
         hash_edge(&mut hasher, edge);
     }
+<<<<<<< Updated upstream
     for m in graph.modulations.values() {
+=======
+    for (_, m) in &graph.modulations {
+>>>>>>> Stashed changes
         hash_modulation(&mut hasher, m);
     }
 

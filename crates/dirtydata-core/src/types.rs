@@ -3,8 +3,8 @@
 //! Every struct here is a word in the DirtyData vocabulary.
 //! If it's not defined here, it doesn't exist.
 
-use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
+use serde::{Deserialize, Serialize};
 use std::fmt;
 
 // ──────────────────────────────────────────────
@@ -15,6 +15,25 @@ use std::fmt;
 /// Stable identifier for entities (Nodes, Edges).
 /// Uses ULID: sortable, human-readable, text-friendly.
 /// Content identity is handled separately by BLAKE3 hashes.
+/// Layer 5: Verification & Trust
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct Verification {
+    pub null_test: bool,
+    pub hash: String,
+    pub trust_state: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Manifest {
+    pub spec_version: String,
+    pub last_revision: u64,
+    pub timestamp: i64,
+    pub verification: Verification,
+    pub author_id: String,
+    pub public_key: String,
+    pub signature: String,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct StableId(pub ulid::Ulid);
 
@@ -191,6 +210,77 @@ pub enum NodeKind {
     Metadata,
     /// Trust boundary marker — §8/§13.
     Boundary,
+    /// Modularized MNA circuit node.
+    CircuitModule {
+        definition_id: StableId,
+    },
+}
+
+/// §SSS: Circuit Definition for modularization.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CircuitDefinition {
+    pub id: StableId,
+    pub name: String,
+    pub archetype: Option<CircuitArchetype>,
+    /// The serialized elements of the circuit.
+    pub elements_json: String, 
+    pub input_mappings: BTreeMap<String, usize>,
+    pub output_mappings: BTreeMap<String, usize>,
+    /// The "DNA" — changes that led to this specific instance.
+    pub mutation_history: Vec<MutationRecord>,
+}
+
+impl CircuitDefinition {
+    pub fn hash(&self) -> crate::types::Hash {
+        let json = serde_json::to_string(self).unwrap();
+        *blake3::hash(json.as_bytes()).as_bytes()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CircuitArchetype {
+    Tb303Ladder,
+    MinimoogFilter,
+    JunoChorus,
+    La2aCompressor,
+    TapeEchoHead,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub enum MutationIntensity {
+    Safe,        // Param Drift only
+    Wild,        // Component Swaps
+    Radioactive, // Topology Changes
+    Forbidden,   // Stability Boundary Violations
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct MutationReport {
+    pub instability_score: f32, // 0..1 (1 is self-oscillation/chaos)
+    pub novelty_score: f32,     // How much it deviates from "Legend"
+    pub risk_level: f32,        // Chance of total failure
+    pub warmth_delta: f32,
+    pub dna_string: String,     // Human readable "系譜"
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum MutationType {
+    /// Tier 1: Drift & Tolerance
+    ParamDrift { index: usize, key: String, amount: f32 },
+    /// Tier 2: Component Surgery
+    ComponentSwap { index: usize, old_type: String, new_type: String },
+    /// Tier 3: Topology Mutation
+    TopologyChange { description: String, added_nodes: Vec<usize>, removed_nodes: Vec<usize> },
+    /// Tier 4: Evolution (Goal oriented)
+    Evolution { goal: String, generations: usize },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct MutationRecord {
+    pub timestamp: Timestamp,
+    pub intensity: MutationIntensity,
+    pub changes: Vec<MutationType>,
+    pub report: MutationReport,
 }
 
 // ──────────────────────────────────────────────
@@ -201,6 +291,54 @@ pub enum NodeKind {
 pub enum PortDirection {
     Input,
     Output,
+}
+
+/// §SSS: Port Semantics — Human-readable roles for terminals.
+/// "人類が読むためにある。input1 は罪。"
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
+pub enum PortSemantic {
+    // Basic
+    #[default]
+    None,
+    Signal,
+    Control,
+    Gate,
+    Trigger,
+    Clock,
+    Reset,
+    
+    // Circuit (MNA)
+    VoltageIn,
+    VoltageOut,
+    CurrentIn,
+    CurrentOut,
+    Ground,
+    
+    // Electronic Components
+    Anode,
+    Cathode,
+    Emitter,
+    Base,
+    Collector,
+    GateTerminal, // Renamed to avoid collision
+    Drain,
+    Source,
+    InPositive,
+    InNegative,
+    Feedback,
+    
+    // Musical
+    Pitch,
+    Velo,
+    Modulation,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
+pub enum PortPolarity {
+    Unipolar,   // 0.0 to 1.0
+    Bipolar,    // -1.0 to 1.0
+    #[default]
+    Unknown,
 }
 
 /// Data type flowing through ports.
@@ -227,6 +365,10 @@ pub struct TypedPort {
     pub direction: PortDirection,
     pub domain: ExecutionDomain,
     pub data_type: DataType,
+    #[serde(default)]
+    pub semantic: PortSemantic,
+    #[serde(default)]
+    pub polarity: PortPolarity,
 }
 
 /// Reference to a specific port on a specific node.
@@ -299,6 +441,12 @@ pub struct ConfigChange {
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct MetadataRef(pub Option<StableId>);
 
+impl Default for MetadataRef {
+    fn default() -> Self {
+        Self(None)
+    }
+}
+
 /// Edge delta for ModifyEdge operations.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct EdgeDelta {
@@ -347,18 +495,25 @@ pub enum PatchSource {
 // "音楽は最適化問題じゃない。制約付き妥協問題です。"
 // ──────────────────────────────────────────────
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ParameterBound {
+    pub target: String,
+    pub range_start: f32,
+    pub range_end: f32,
+}
+
 /// Constraint-based intent expression.
 /// Must / Prefer / Avoid / Never — not weighted floats.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum IntentConstraint {
     /// Non-negotiable requirement.
-    Must(String),
+    Must(ParameterBound),
     /// Desirable if achievable.
-    Prefer(String),
+    Prefer(ParameterBound),
     /// Should be minimized.
-    Avoid(String),
+    Avoid(ParameterBound),
     /// Absolute prohibition.
-    Never(String),
+    Never(ParameterBound),
 }
 
 /// Intent lifecycle status — §3.4.
