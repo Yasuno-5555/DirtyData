@@ -1,0 +1,20 @@
+[package]
+name = "dirtydata"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "dirtydata"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.22", features = ["extension-module"] }
+numpy = "0.22"
+dirtydata-dsp-chaos = { path = "../dirtydata-dsp-chaos" }
+dirtydata-dsp-reaction = { path = "../dirtydata-dsp-reaction" }
+dirtydata-dsp-spectral = { path = "../dirtydata-dsp-spectral" }
+dirtydata-dsp-svf = { path = "../dirtydata-dsp-svf" }
+anyhow = "1.0"
+
+[build-dependencies]
+pyo3-build-config = "0.22"

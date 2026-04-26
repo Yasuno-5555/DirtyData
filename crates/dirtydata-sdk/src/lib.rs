@@ -7,6 +7,7 @@ pub use dirtydata_core::types::*;
 pub use dirtydata_host::{Workspace, AuditReport};
 pub use dirtydata_runtime::AudioEngine;
 pub use dirtydata_intent::{IntentNode, IntentState, IntentStrategy};
+pub use dirtydata_runtime::nodes as builtin;
 
 // DSP re-exports
 pub use dirtydata_dsp_spectral as spectral;

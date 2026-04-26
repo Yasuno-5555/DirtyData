@@ -126,3 +126,37 @@ impl ChuaCircuit {
         dc_out
     }
 }
+
+pub struct Lorenz {
+    state: [f32; 3],
+}
+
+impl Lorenz {
+    pub fn new() -> Self { Self { state: [0.1, 0.0, 0.0] } }
+    pub fn process(&mut self, sigma: f32, rho: f32, beta: f32, dt: f32) -> [f32; 3] {
+        let dx = sigma * (self.state[1] - self.state[0]);
+        let dy = self.state[0] * (rho - self.state[2]) - self.state[1];
+        let dz = self.state[0] * self.state[1] - beta * self.state[2];
+        self.state[0] += dx * dt;
+        self.state[1] += dy * dt;
+        self.state[2] += dz * dt;
+        self.state
+    }
+}
+
+pub struct MackeyGlass {
+    history: std::collections::VecDeque<f32>,
+    current_x: f32,
+}
+
+impl MackeyGlass {
+    pub fn new() -> Self { Self { history: std::collections::VecDeque::from(vec![0.5; 1000]), current_x: 0.5 } }
+    pub fn process(&mut self, a: f32, b: f32, tau: usize, dt: f32) -> f32 {
+        let x_tau = *self.history.get(self.history.len().saturating_sub(tau)).unwrap_or(&0.5);
+        let dx = (a * x_tau) / (1.0 + x_tau.powi(10)) - b * self.current_x;
+        self.current_x += dx * dt;
+        self.history.push_back(self.current_x);
+        if self.history.len() > 2000 { self.history.pop_front(); }
+        self.current_x
+    }
+}

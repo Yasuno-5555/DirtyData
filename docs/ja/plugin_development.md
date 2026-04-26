@@ -18,7 +18,8 @@ cargo new my-awesome-dsp --lib
 cd my-awesome-dsp
 ```
 
-`Cargo.toml` に `dirtydata-sdk` を追加します：
+`Cargo.toml` に `dirtydata-sdk` を追加します。SDKは、カスタムプラグイン開発だけでなく、既存の高度なDSPコンポーネント（カオス系、回路シミュレーション等）へのアクセスも提供します。
+
 ```toml
 [lib]
 crate-type = ["cdylib"]
@@ -27,7 +28,37 @@ crate-type = ["cdylib"]
 dirtydata-sdk = { git = "https://github.com/Yasuno-5555/DirtyData" }
 ```
 
-## 3. DSPの実装
+## 3. SDKの活用：ビルトインDSPの利用
+DirtyData SDKは、コアシステムが提供する18種類以上のDSPクレートを再エクスポートしています。これらを組み合わせて、より複雑なプラグインを迅速に構築できます。
+
+```rust
+use dirtydata_sdk::{DspPlugin, declare_plugin, chaos, zdf};
+
+#[derive(Default)]
+pub struct ChaoticFilter {
+    chua: chaos::ChuaCircuit,
+    filter: zdf::LadderFilter,
+}
+
+impl DspPlugin for ChaoticFilter {
+    fn init(&mut self, sample_rate: f32) {
+        self.chua = chaos::ChuaCircuit::new(sample_rate);
+        self.filter = zdf::LadderFilter::new(sample_rate);
+    }
+
+    fn process(&mut self, in_l: f32, in_r: f32) -> [f32; 2] {
+        // カオス発振器でカットオフを変調
+        let mod_val = self.chua.process(15.6, 28.0, 1.0);
+        let cutoff = 1000.0 + mod_val * 500.0;
+        
+        let out_l = self.filter.process(in_l, cutoff, 0.707);
+        let out_r = self.filter.process(in_r, cutoff, 0.707);
+        [out_l, out_r]
+    }
+}
+```
+
+## 4. カスタムDSPの実装
 
 `src/lib.rs` に記述します：
 

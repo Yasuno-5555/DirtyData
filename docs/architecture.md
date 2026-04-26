@@ -76,6 +76,26 @@ Prevents oscillator phases or envelope states from resetting during graph hot-sw
 - **`extract_state()` / `inject_state()`**: For nodes with matching `StableId` between old and new graphs, internal dynamic states are extracted and injected into the new instance. This maintains audio continuity (Zero-Glitch) while rewriting node configurations during performance.
 
 
+## 11. Domain Isolation (Reality vs. Observation)
+
+To maintain forensic determinism, DirtyData strictly separates the system into two domains: "Reality" and "Observation."
+
+- **🟥 Rust: Layer of Reality (Execution Layer)**
+    - Role: Controls all "Sound Generation" and "Fact Recording."
+    - Components: DSP Graph, JIT, Merkle DAG, MNA Solver, CAS (Content Addressable Storage).
+    - Responsibility: Ensuring 100% reproducibility and deterministic integrity.
+- **🟦 Python: Layer of Observation (Analysis Layer)**
+    - Role: Used to "Understand" and "Learn" from the data obtained from reality.
+    - Components: Data Fetching (NumPy), ML Integration (PyTorch/TF), Waveform Analysis, Plotting.
+    - Responsibility: Exploratory audio research and ML model training.
+
+### 🟨 The Forbidden Region
+To prevent forensic decay, the following operations are **strictly forbidden** from the Python domain:
+1.  **Direct Graph Mutation**: Any change must be issued as a Patch via the Rust SDK to maintain lineage integrity.
+2.  **Real-time DSP Execution**: Audio output must always occur in the Rust domain to avoid determinism failure due to GIL or timing jitter.
+3.  **Core Solver Re-implementation**: MNA or other logic must not be independently implemented in Python; the Rust core must be called to prevent mathematical divergence.
+
+
 ## Crate Dependencies
 
 ```mermaid

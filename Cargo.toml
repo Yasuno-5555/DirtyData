@@ -10,6 +10,8 @@ members = [
     "crates/dirty-mutate",
     "crates/dirtydata-sdk",
     "crates/tutorial-bitcrush",
+    "crates/dirtydata-python",
+    "crates/dirtydata-dsp-*",
 ]
 resolver = "2"
 
