@@ -3,5 +3,9 @@ name = "dirtydata-dsp-zdf"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+description = "Zero Delay Feedback (ZDF) filter library with analog-modeled topologies"
+repository.workspace = true
+keywords.workspace = true
 
 [dependencies]
+serde.workspace = true

@@ -1,35 +1,61 @@
 [package]
 name = "dirtydata-sdk"
-version = "0.1.0"
-edition = "2021"
+version.workspace = true
+edition.workspace = true
 description = "SDK for building third-party DSP nodes for DirtyData"
 
 [dependencies]
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
+serde.workspace = true
+serde_json.workspace = true
 bytemuck = "1.13"
-dirtydata-core = { path = "../dirtydata-core" }
-dirtydata-host = { path = "../dirtydata-host" }
-dirtydata-runtime = { path = "../dirtydata-runtime" }
-dirtydata-intent = { path = "../dirtydata-intent" }
+dirtydata-core = { path = "../dirtydata-core" , version = "0.1.0" }
+dirtydata-host = { path = "../dirtydata-host" , version = "0.1.0" }
+dirtydata-runtime = { path = "../dirtydata-runtime" , version = "0.1.0" }
+dirtydata-intent = { path = "../dirtydata-intent" , version = "0.1.0" }
 anyhow = "1.0"
 
-# DSP Crates
-dirtydata-dsp-spectral = { path = "../dirtydata-dsp-spectral" }
-dirtydata-dsp-reaction = { path = "../dirtydata-dsp-reaction" }
-dirtydata-dsp-destruction = { path = "../dirtydata-dsp-destruction" }
-dirtydata-dsp-control = { path = "../dirtydata-dsp-control" }
-dirtydata-dsp-matrix = { path = "../dirtydata-dsp-matrix" }
-dirtydata-dsp-cv = { path = "../dirtydata-dsp-cv" }
-dirtydata-dsp-zdf = { path = "../dirtydata-dsp-zdf" }
-dirtydata-dsp-svf = { path = "../dirtydata-dsp-svf" }
-dirtydata-dsp-ks = { path = "../dirtydata-dsp-ks" }
-dirtydata-dsp-tape = { path = "../dirtydata-dsp-tape" }
-dirtydata-dsp-bbd = { path = "../dirtydata-dsp-bbd" }
-dirtydata-dsp-chaos = { path = "../dirtydata-dsp-chaos" }
-dirtydata-dsp-circuit = { path = "../dirtydata-dsp-circuit" }
-dirtydata-dsp-clipper = { path = "../dirtydata-dsp-clipper" }
-dirtydata-dsp-modal = { path = "../dirtydata-dsp-modal" }
-dirtydata-dsp-spring = { path = "../dirtydata-dsp-spring" }
-dirtydata-dsp-vocal = { path = "../dirtydata-dsp-vocal" }
-dirtydata-dsp-wdf = { path = "../dirtydata-dsp-wdf" }
+# DSP Crates (Optional)
+dirtydata-dsp-spectral = { path = "../dirtydata-dsp-spectral", optional = true , version = "0.1.0" }
+dirtydata-dsp-reaction = { path = "../dirtydata-dsp-reaction", optional = true , version = "0.1.0" }
+dirtydata-dsp-destruction = { path = "../dirtydata-dsp-destruction", optional = true , version = "0.1.0" }
+dirtydata-dsp-control = { path = "../dirtydata-dsp-control", optional = true , version = "0.1.0" }
+dirtydata-dsp-matrix = { path = "../dirtydata-dsp-matrix", optional = true , version = "0.1.0" }
+dirtydata-dsp-cv = { path = "../dirtydata-dsp-cv", optional = true , version = "0.1.0" }
+dirtydata-dsp-zdf = { path = "../dirtydata-dsp-zdf", optional = true , version = "0.1.0" }
+dirtydata-dsp-svf = { path = "../dirtydata-dsp-svf", optional = true , version = "0.1.0" }
+dirtydata-dsp-ks = { path = "../dirtydata-dsp-ks", optional = true , version = "0.1.0" }
+dirtydata-dsp-tape = { path = "../dirtydata-dsp-tape", optional = true , version = "0.1.0" }
+dirtydata-dsp-bbd = { path = "../dirtydata-dsp-bbd", optional = true , version = "0.1.0" }
+dirtydata-dsp-chaos = { path = "../dirtydata-dsp-chaos", optional = true , version = "0.1.0" }
+dirtydata-dsp-circuit = { path = "../dirtydata-dsp-circuit", optional = true , version = "0.1.0" }
+dirtydata-dsp-clipper = { path = "../dirtydata-dsp-clipper", optional = true , version = "0.1.0" }
+dirtydata-dsp-modal = { path = "../dirtydata-dsp-modal", optional = true , version = "0.1.0" }
+dirtydata-dsp-spring = { path = "../dirtydata-dsp-spring", optional = true , version = "0.1.0" }
+dirtydata-dsp-vocal = { path = "../dirtydata-dsp-vocal", optional = true , version = "0.1.0" }
+dirtydata-dsp-wdf = { path = "../dirtydata-dsp-wdf", optional = true , version = "0.1.0" }
+
+[features]
+default = ["full"]
+full = [
+    "spectral", "reaction", "destruction", "control", "matrix", "cv",
+    "zdf", "svf", "ks", "tape", "bbd", "chaos", "circuit", "clipper",
+    "modal", "spring", "vocal", "wdf"
+]
+spectral = ["dep:dirtydata-dsp-spectral"]
+reaction = ["dep:dirtydata-dsp-reaction"]
+destruction = ["dep:dirtydata-dsp-destruction"]
+control = ["dep:dirtydata-dsp-control"]
+matrix = ["dep:dirtydata-dsp-matrix"]
+cv = ["dep:dirtydata-dsp-cv"]
+zdf = ["dep:dirtydata-dsp-zdf"]
+svf = ["dep:dirtydata-dsp-svf"]
+ks = ["dep:dirtydata-dsp-ks"]
+tape = ["dep:dirtydata-dsp-tape"]
+bbd = ["dep:dirtydata-dsp-bbd"]
+chaos = ["dep:dirtydata-dsp-chaos"]
+circuit = ["dep:dirtydata-dsp-circuit"]
+clipper = ["dep:dirtydata-dsp-clipper"]
+modal = ["dep:dirtydata-dsp-modal"]
+spring = ["dep:dirtydata-dsp-spring"]
+vocal = ["dep:dirtydata-dsp-vocal"]
+wdf = ["dep:dirtydata-dsp-wdf"]

@@ -3,5 +3,9 @@ name = "dirtydata-dsp-modal"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+description = "Modal synthesis engine for resonant body simulation"
+repository.workspace = true
+keywords.workspace = true
 
 [dependencies]
+serde.workspace = true

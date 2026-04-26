@@ -101,7 +101,7 @@ impl SharedState {
     }
 
     pub fn get_diagnostic(&self, node_id: &StableId) -> Option<DiagnosticRecord> {
-        self.node_diagnostics.get(node_id).map(|d| d.clone())
+        self.node_diagnostics.get(node_id).map(|d: dashmap::mapref::one::Ref<'_, StableId, DiagnosticRecord>| d.clone())
     }
 
     pub fn scope_buffer(&self) -> Arc<crossbeam_queue::ArrayQueue<f32>> {
@@ -165,7 +165,7 @@ impl DspRunner {
                                 let data = if let Some(path) = path_val {
                                     match hound::WavReader::open(path) {
                                         Ok(mut reader) => {
-                                            let samples: Vec<f32> = reader.samples::<f32>().map(|s| s.unwrap_or(0.0)).collect();
+                                            let samples: Vec<f32> = reader.samples::<f32>().map(|s: Result<f32, hound::Error>| s.unwrap_or(0.0)).collect::<Vec<f32>>();
                                             Arc::new(samples)
                                         }
                                         Err(e) => {

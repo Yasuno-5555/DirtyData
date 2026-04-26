@@ -9,24 +9,42 @@ pub use dirtydata_runtime::AudioEngine;
 pub use dirtydata_intent::{IntentNode, IntentState, IntentStrategy};
 pub use dirtydata_runtime::nodes as builtin;
 
-// DSP re-exports
+// DSP re-exports (Feature-gated)
+#[cfg(feature = "spectral")]
 pub use dirtydata_dsp_spectral as spectral;
+#[cfg(feature = "reaction")]
 pub use dirtydata_dsp_reaction as reaction;
+#[cfg(feature = "destruction")]
 pub use dirtydata_dsp_destruction as destruction;
+#[cfg(feature = "control")]
 pub use dirtydata_dsp_control as control;
+#[cfg(feature = "matrix")]
 pub use dirtydata_dsp_matrix as matrix;
+#[cfg(feature = "cv")]
 pub use dirtydata_dsp_cv as cv;
+#[cfg(feature = "zdf")]
 pub use dirtydata_dsp_zdf as zdf;
+#[cfg(feature = "svf")]
 pub use dirtydata_dsp_svf as svf;
+#[cfg(feature = "ks")]
 pub use dirtydata_dsp_ks as ks;
+#[cfg(feature = "tape")]
 pub use dirtydata_dsp_tape as tape;
+#[cfg(feature = "bbd")]
 pub use dirtydata_dsp_bbd as bbd;
+#[cfg(feature = "chaos")]
 pub use dirtydata_dsp_chaos as chaos;
+#[cfg(feature = "circuit")]
 pub use dirtydata_dsp_circuit as circuit;
+#[cfg(feature = "clipper")]
 pub use dirtydata_dsp_clipper as clipper;
+#[cfg(feature = "modal")]
 pub use dirtydata_dsp_modal as modal;
+#[cfg(feature = "spring")]
 pub use dirtydata_dsp_spring as spring;
+#[cfg(feature = "vocal")]
 pub use dirtydata_dsp_vocal as vocal;
+#[cfg(feature = "wdf")]
 pub use dirtydata_dsp_wdf as wdf;
 
 pub mod merge {

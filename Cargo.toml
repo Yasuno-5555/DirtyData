@@ -19,6 +19,11 @@ resolver = "2"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
+description = "Research-grade forensic audio & circuit simulation framework"
+repository = "https://github.com/Yasuno-5555/DirtyData"
+homepage = "https://github.com/Yasuno-5555/DirtyData"
+keywords = ["audio", "dsp", "forensic", "mna", "determinism"]
+categories = ["multimedia::audio", "science"]
 
 [workspace.dependencies]
 serde = { version = "1", features = ["derive"] }

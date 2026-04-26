@@ -83,7 +83,7 @@ impl NoiseNode {
 
 impl DspNode for NoiseNode {
     fn process(&mut self, _inputs: &[f32], outputs: &mut [[f32; 2]], _config: &ConfigSnapshot, _ctx: &ProcessContext) {
-        let val: f32 = self.rng.random_range(-1.0..1.0);
+        let val: f32 = self.rng.gen_range(-1.0..1.0);
         outputs[0][0] = val;
         outputs[0][1] = val;
     }
@@ -357,7 +357,7 @@ impl DspNode for ForeignNode {
         if self.buffer_idx >= self.buffer_size {
             self.buffer_idx = 0;
             // Process the block
-            if let Some(host) = &mut self.host {
+            if let Some(host) = self.host.as_mut() {
                 if host.process(&self.in_buffer, &mut self.out_buffer).is_err() {
                     self.has_crashed = true;
                     self.host = None;
@@ -370,8 +370,7 @@ impl DspNode for ForeignNode {
     }
 
     fn update_parameter(&mut self, param: &str, value: f32) {
-        if let Some(host) = &mut self.host {
-            // Dummy: try to parse param as u32 id
+        if let Some(host) = self.host.as_mut() {
             if let Ok(id) = param.parse::<u32>() {
                 let _ = host.set_parameter(id, value);
             }
@@ -1016,7 +1015,7 @@ impl DspNode for ProbabilityGateNode {
             let trig = inputs.get(i * 2).cloned().unwrap_or(0.0);
             let mut out = 0.0;
             if trig > 0.5 {
-                if self.rng.random::<f32>() < prob {
+                if self.rng.gen::<f32>() < prob {
                     out = 1.0;
                 }
             }
@@ -2099,13 +2098,11 @@ impl DspNode for CircuitModuleNode {
 
         if !state.converged {
             if let (Some(diag), Some(id)) = (ctx.node_diagnostics.as_ref(), ctx.node_id) {
-                if let Some(culprit) = state.failure_culprit {
-                    diag.insert(id, crate::DiagnosticRecord {
-                        message: culprit,
-                        severity: crate::DiagnosticSeverity::Error,
-                        timestamp: ctx.global_sample_index,
-                    });
-                }
+                diag.insert(id, crate::DiagnosticRecord {
+                    message: state.failure_culprit.clone().unwrap_or_default(),
+                    severity: crate::DiagnosticSeverity::Error,
+                    timestamp: ctx.global_sample_index,
+                });
             }
         }
 

@@ -3,5 +3,11 @@ name = "dirtydata-dsp-chaos"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+description = "Chaotic circuit models (Chua, Lorenz, Mackey-Glass) for research-grade synthesis"
+repository.workspace = true
+keywords.workspace = true
 
 [dependencies]
+rand = "0.8"
+rand_pcg = "0.3"
+serde.workspace = true

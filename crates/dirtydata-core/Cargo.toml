@@ -1,18 +1,19 @@
 [package]
 name = "dirtydata-core"
-description = "Canonical IR / Patch Engine — the heart of DirtyData"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
+description = "Core forensic audio IR and Merkle DAG graph implementation"
+repository.workspace = true
+keywords.workspace = true
 
 [dependencies]
-serde = { workspace = true }
-serde_json = { workspace = true }
-tracing = { workspace = true }
-ulid = { workspace = true }
+serde.workspace = true
+serde_json.workspace = true
+ulid.workspace = true
 blake3.workspace = true
-thiserror = { workspace = true }
-rand = { version = "0.8", features = ["std_rng"] }
-dirtydata-dsp-circuit = { version = "0.1.0", path = "../dirtydata-dsp-circuit" }
-
-[dev-dependencies]
-proptest = "1"
+thiserror.workspace = true
+tracing.workspace = true
+petgraph = "0.7"
+rand = { version = "0.8", features = ["small_rng"] }
+dirtydata-dsp-circuit = { path = "../dirtydata-dsp-circuit" , version = "0.1.0" }

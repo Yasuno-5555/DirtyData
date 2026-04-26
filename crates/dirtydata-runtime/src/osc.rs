@@ -44,7 +44,7 @@ impl OscHandler {
     }
 
     fn handle_message(command_tx: &Sender<EngineCommand>, msg: RoscMessage) {
-        let parts: Vec<&str> = msg.addr.split('/').filter(|s| !s.is_empty()).collect();
+        let parts: Vec<&str> = msg.addr.split('/').filter(|s: &&str| !s.is_empty()).collect();
         if parts.len() == 3 && parts[0] == "node" {
             if let (Ok(node_id), Some(val)) = (parts[1].parse::<StableId>(), msg.args.first()) {
                 let float_val = match val {
@@ -75,7 +75,8 @@ impl OscHandler {
             while let Ok(msg) = rx.recv() {
                 let packet = OscPacket::Message(RoscMessage { addr: msg.addr, args: msg.args });
                 if let Ok(bytes) = rosc::encoder::encode(&packet) {
-                    let _ = socket.send_to(&bytes, &target_addr);
+                    let b: Vec<u8> = bytes;
+                    let _ = socket.send_to(&b, &target_addr);
                 }
             }
         });

@@ -13,7 +13,8 @@ impl crate::mutation::MutationEngine {
         
         let mut max_node = 0;
         for el in &elements {
-            solver.add_element(el.clone());
+            let el_val: CircuitElement = el.clone();
+            solver.add_element(el_val);
             match el {
                 CircuitElement::Resistor { a, b, .. } => { max_node = max_node.max(a.0).max(b.0); }
                 CircuitElement::Capacitor { a, b, .. } => { max_node = max_node.max(a.0).max(b.0); }

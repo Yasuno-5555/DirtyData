@@ -3,5 +3,10 @@ name = "dirtydata-dsp-ks"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+description = "Karplus-Strong plucked string synthesis and physical modeling"
+repository.workspace = true
+keywords.workspace = true
 
 [dependencies]
+rand = "0.8"
+serde.workspace = true

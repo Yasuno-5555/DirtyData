@@ -2,7 +2,8 @@
 //! "退屈は罪。変異は進化。"
 
 use rand::prelude::*;
-use rand::Rng;
+use rand::rngs::StdRng;
+use rand::SeedableRng;
 use crate::types::*;
 
 /// The Mutation Engine.

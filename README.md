@@ -1,12 +1,21 @@
-# DirtyData: Headless Forensic Audio Workbench
+# DirtyData: Research-Grade Forensic Audio & Circuit Simulation Framework
 
-> "GUI is for tourists. CLI is for the Judiciary."
+> "GUI is for tourists. CLI is for the Judiciary (Engineers)."
 
-DirtyData is a headless forensic audio engine designed for deterministic sound reconstruction, semantic versioning, and evolutionary patching. It treats sound as a verifiable lineage of intent rather than a transient buffer.
+DirtyData is a high-fidelity, headless audio engine built for **deterministic sound reconstruction**, **cryptographic causality**, and **ML-driven exploration**. 
+
+Unlike traditional DAWs or DSP environments that treat sound as a transient stream, DirtyData treats every sample as a **verifiable lineage of intent** tracked via a Merkle DAG. It is the "Git of Sound," designed for researchers who demand absolute reproducibility and forensic integrity.
 
 [日本語版はこちら (Japanese version)](README.ja.md)
 
 ---
+
+## 🔬 Why DirtyData?
+
+- **Deterministic Reality**: Same Patch + Same Seed = Identical Bit-stream. Always.
+- **Forensic Lineage**: Every change is a node in a Merkle DAG. Audit your sound's history with `dirty doctor`.
+- **The Reality/Observation Boundary**: Core DSP is locked in a high-performance Rust "Reality" layer, while research and ML happen in a flexible Python "Observation" layer.
+- **Circuit Evolution**: Don't just tweak parameters; mutate the topology using evolutionary algorithms.
 
 ## 🏛 The Architecture
 

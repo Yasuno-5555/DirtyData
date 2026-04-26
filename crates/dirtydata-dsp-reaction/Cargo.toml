@@ -3,5 +3,10 @@ name = "dirtydata-dsp-reaction"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+description = "Reaction-Diffusion (Gray-Scott) based pattern synthesis"
+repository.workspace = true
+keywords.workspace = true
 
 [dependencies]
+rand = "0.8"
+serde.workspace = true

@@ -3,5 +3,9 @@ name = "dirtydata-dsp-matrix"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+description = "Dynamic signal matrix mixing and routing primitives"
+repository.workspace = true
+keywords.workspace = true
 
 [dependencies]
+serde.workspace = true

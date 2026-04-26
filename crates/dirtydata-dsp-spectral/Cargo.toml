@@ -3,7 +3,10 @@ name = "dirtydata-dsp-spectral"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+description = "High-performance FFT-based spectral transformation and freezing"
+repository.workspace = true
+keywords.workspace = true
 
 [dependencies]
-num-complex = "0.4.6"
-rustfft = "6.4.1"
+rustfft = "6.1"
+serde.workspace = true

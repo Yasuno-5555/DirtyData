@@ -3,5 +3,9 @@ name = "dirtydata-dsp-destruction"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+description = "Creative signal destruction: bit-crushing, wave-shaping, and PLL"
+repository.workspace = true
+keywords.workspace = true
 
 [dependencies]
+serde.workspace = true

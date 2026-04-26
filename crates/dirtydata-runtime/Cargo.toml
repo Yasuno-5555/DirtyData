@@ -1,46 +1,55 @@
 [package]
 name = "dirtydata-runtime"
-description = "Execution Scheduler / Domain Isolation — stub"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
+description = "High-performance JIT-enabled audio engine for DirtyData forensic graphs"
+repository.workspace = true
+keywords.workspace = true
 
 [dependencies]
-dirtydata-core = { path = "../dirtydata-core" }
-cpal = "0.15.2"
-arc-swap = "1.6.0"
-dirtydata-host = { path = "../dirtydata-host" }
-dirtydata-observer = { path = "../dirtydata-observer" }
-rand = "0.10.1"
-rand_pcg = "0.10.2"
-hound = "3.5.1"
-crossbeam-channel = "0.5.15"
-crossbeam-queue = "0.3.12"
-dashmap = "5.5.3"
-midir = "0.11.0"
-serde = { workspace = true, features = ["derive"] }
+dirtydata-core = { path = "../dirtydata-core" , version = "0.1.0" }
+dirtydata-host = { path = "../dirtydata-host" , version = "0.1.0" }
+dirtydata-observer = { path = "../dirtydata-observer" , version = "0.1.0" }
+
+# DSP Specialized Crates
+dirtydata-dsp-spectral = { path = "../dirtydata-dsp-spectral" , version = "0.1.0" }
+dirtydata-dsp-reaction = { path = "../dirtydata-dsp-reaction" , version = "0.1.0" }
+dirtydata-dsp-destruction = { path = "../dirtydata-dsp-destruction" , version = "0.1.0" }
+dirtydata-dsp-control = { path = "../dirtydata-dsp-control" , version = "0.1.0" }
+dirtydata-dsp-matrix = { path = "../dirtydata-dsp-matrix" , version = "0.1.0" }
+dirtydata-dsp-cv = { path = "../dirtydata-dsp-cv" , version = "0.1.0" }
+dirtydata-dsp-zdf = { path = "../dirtydata-dsp-zdf" , version = "0.1.0" }
+dirtydata-dsp-svf = { path = "../dirtydata-dsp-svf" , version = "0.1.0" }
+dirtydata-dsp-ks = { path = "../dirtydata-dsp-ks" , version = "0.1.0" }
+dirtydata-dsp-tape = { path = "../dirtydata-dsp-tape" , version = "0.1.0" }
+dirtydata-dsp-bbd = { path = "../dirtydata-dsp-bbd" , version = "0.1.0" }
+dirtydata-dsp-chaos = { path = "../dirtydata-dsp-chaos" , version = "0.1.0" }
+dirtydata-dsp-circuit = { path = "../dirtydata-dsp-circuit" , version = "0.1.0" }
+dirtydata-dsp-clipper = { path = "../dirtydata-dsp-clipper" , version = "0.1.0" }
+dirtydata-dsp-modal = { path = "../dirtydata-dsp-modal" , version = "0.1.0" }
+dirtydata-dsp-spring = { path = "../dirtydata-dsp-spring" , version = "0.1.0" }
+dirtydata-dsp-vocal = { path = "../dirtydata-dsp-vocal" , version = "0.1.0" }
+dirtydata-dsp-wdf = { path = "../dirtydata-dsp-wdf" , version = "0.1.0" }
+
+cpal = "0.15"
+arc-swap = "1.7"
+wasmtime = "29.0"
+crossbeam-channel = "0.5"
+crossbeam-queue = "0.3"
+dashmap = "5.5"
+rand = "0.8"
+rand_pcg = "0.3"
+serde.workspace = true
 serde_json.workspace = true
-thiserror = { workspace = true }
-blake3 = "1"
-rosc = "0.10.1"
-anyhow = "1"
-wasmtime = "29.0.0"
-rustfft = "6.2.0"
-dirtydata-dsp-zdf = { path = "../dirtydata-dsp-zdf" }
-dirtydata-dsp-svf = { path = "../dirtydata-dsp-svf" }
-dirtydata-dsp-clipper = { path = "../dirtydata-dsp-clipper" }
-dirtydata-dsp-bbd = { path = "../dirtydata-dsp-bbd" }
-dirtydata-dsp-wdf = { path = "../dirtydata-dsp-wdf" }
-dirtydata-dsp-ks = { path = "../dirtydata-dsp-ks" }
-dirtydata-dsp-modal = { path = "../dirtydata-dsp-modal" }
-dirtydata-dsp-spring = { path = "../dirtydata-dsp-spring" }
-dirtydata-dsp-chaos = { path = "../dirtydata-dsp-chaos" }
-dirtydata-dsp-reaction = { path = "../dirtydata-dsp-reaction" }
-dirtydata-dsp-tape = { path = "../dirtydata-dsp-tape" }
-dirtydata-dsp-matrix = { path = "../dirtydata-dsp-matrix" }
-dirtydata-dsp-cv = { path = "../dirtydata-dsp-cv" }
-dirtydata-dsp-spectral = { path = "../dirtydata-dsp-spectral" }
-dirtydata-dsp-destruction = { path = "../dirtydata-dsp-destruction" }
-dirtydata-dsp-control = { path = "../dirtydata-dsp-control" }
-dirtydata-dsp-circuit = { path = "../dirtydata-dsp-circuit" }
-dirtydata-dsp-vocal = { path = "../dirtydata-dsp-vocal" }
-tracing = { workspace = true }
+tracing.workspace = true
+anyhow = "1.0"
+thiserror.workspace = true
+hound = "3.5"
+rosc = "0.10"
+rustfft = "6.1"
+bytemuck = "1.13"
+tempfile = "3.8"
+walkdir = "2.4"
+hex = "0.4"
+blake3.workspace = true

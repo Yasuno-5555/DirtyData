@@ -3,5 +3,9 @@ name = "dirtydata-dsp-tape"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+description = "High-fidelity analog tape saturation and wow/flutter simulation"
+repository.workspace = true
+keywords.workspace = true
 
 [dependencies]
+serde.workspace = true

@@ -3,6 +3,10 @@ name = "dirtydata-dsp-control"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+description = "Forensic parameter control and smoothed automation primitives"
+repository.workspace = true
+keywords.workspace = true
 
 [dependencies]
-rand = "0.10.1"
+rand = "0.8"
+serde.workspace = true

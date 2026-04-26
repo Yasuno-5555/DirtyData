@@ -3,5 +3,9 @@ name = "dirtydata-dsp-clipper"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+description = "Oversampled diode clipping and soft-knee saturation"
+repository.workspace = true
+keywords.workspace = true
 
 [dependencies]
+serde.workspace = true

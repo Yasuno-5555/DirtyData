@@ -6,3 +6,5 @@
 *.log
 /build/
 /dist/
+publish.sh
+/scratch/

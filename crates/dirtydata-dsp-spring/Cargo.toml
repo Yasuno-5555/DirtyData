@@ -3,5 +3,9 @@ name = "dirtydata-dsp-spring"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+description = "Algorithmic spring reverb modeling with dispersive wave propagation"
+repository.workspace = true
+keywords.workspace = true
 
 [dependencies]
+serde.workspace = true

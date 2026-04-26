@@ -3,5 +3,9 @@ name = "dirtydata-dsp-wdf"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+description = "Wave Digital Filter (WDF) framework for physical modeling of analog components"
+repository.workspace = true
+keywords.workspace = true
 
 [dependencies]
+serde.workspace = true

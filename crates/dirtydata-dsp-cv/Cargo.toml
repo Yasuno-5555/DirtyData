@@ -3,5 +3,9 @@ name = "dirtydata-dsp-cv"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+description = "Control Voltage (CV) utilities and forensic command protocols"
+repository.workspace = true
+keywords.workspace = true
 
 [dependencies]
+serde.workspace = true

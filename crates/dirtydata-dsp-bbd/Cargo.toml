@@ -3,5 +3,9 @@ name = "dirtydata-dsp-bbd"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+description = "Bucket Brigade Device (BBD) analog delay modeling with clock jitter"
+repository.workspace = true
+keywords.workspace = true
 
 [dependencies]
+serde.workspace = true

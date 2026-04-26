@@ -54,7 +54,7 @@ impl NoiseNode {
 
 impl DspNode for NoiseNode {
     fn process(&mut self, _inputs: &[f32], outputs: &mut [[f32; 2]], _config: &ConfigSnapshot, _ctx: &ProcessContext) {
-        let val: f32 = self.rng.random_range(-1.0..1.0);
+        let val: f32 = self.rng.gen_range(-1.0..1.0);
         outputs[0] = [val, val];
     }
     fn extract_state(&self) -> NodeState { NodeState::Empty }
