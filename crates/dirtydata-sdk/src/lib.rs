@@ -19,6 +19,14 @@ pub use dirtydata_dsp_zdf as zdf;
 pub use dirtydata_dsp_svf as svf;
 pub use dirtydata_dsp_ks as ks;
 pub use dirtydata_dsp_tape as tape;
+pub use dirtydata_dsp_bbd as bbd;
+pub use dirtydata_dsp_chaos as chaos;
+pub use dirtydata_dsp_circuit as circuit;
+pub use dirtydata_dsp_clipper as clipper;
+pub use dirtydata_dsp_modal as modal;
+pub use dirtydata_dsp_spring as spring;
+pub use dirtydata_dsp_vocal as vocal;
+pub use dirtydata_dsp_wdf as wdf;
 
 pub mod merge {
     use super::*;
@@ -96,6 +104,14 @@ impl NodeFactory {
     
     pub fn tape_machine() -> Node {
         Node::new_processor("TapeMachine")
+    }
+
+    pub fn chua_circuit() -> Node {
+        Node::new_processor("Chua")
+    }
+
+    pub fn diode_clipper() -> Node {
+        Node::new_processor("DiodeClipper")
     }
 }
 

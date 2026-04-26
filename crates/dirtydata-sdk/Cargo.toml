@@ -25,3 +25,11 @@ dirtydata-dsp-zdf = { path = "../dirtydata-dsp-zdf" }
 dirtydata-dsp-svf = { path = "../dirtydata-dsp-svf" }
 dirtydata-dsp-ks = { path = "../dirtydata-dsp-ks" }
 dirtydata-dsp-tape = { path = "../dirtydata-dsp-tape" }
+dirtydata-dsp-bbd = { path = "../dirtydata-dsp-bbd" }
+dirtydata-dsp-chaos = { path = "../dirtydata-dsp-chaos" }
+dirtydata-dsp-circuit = { path = "../dirtydata-dsp-circuit" }
+dirtydata-dsp-clipper = { path = "../dirtydata-dsp-clipper" }
+dirtydata-dsp-modal = { path = "../dirtydata-dsp-modal" }
+dirtydata-dsp-spring = { path = "../dirtydata-dsp-spring" }
+dirtydata-dsp-vocal = { path = "../dirtydata-dsp-vocal" }
+dirtydata-dsp-wdf = { path = "../dirtydata-dsp-wdf" }
