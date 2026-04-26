@@ -105,19 +105,6 @@ pub enum UserAction {
         amount: f32,
     },
 
-<<<<<<< Updated upstream
-    /// Replace a node with another kind, preserving connections if possible.
-    ReplaceNode { name: String, new_kind_name: String },
-
-    /// Add a container node.
-    AddSubGraph { name: String },
-
-    /// Remove a modulation assignment.
-    RemoveModulation { id: StableId },
-
-    /// Duplicate a node (Placeholder for GUI).
-    DuplicateNode { node_id: StableId },
-=======
     // --- §SSS: Engineering & Exploration ---
     
     /// Engineering: Run Monte Carlo manufacturing simulation.
@@ -158,7 +145,6 @@ pub enum UserAction {
     CheckoutRevision {
         revision: crate::types::PatchId,
     },
->>>>>>> Stashed changes
 }
 
 fn default_channels() -> u32 {

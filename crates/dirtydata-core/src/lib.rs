@@ -6,12 +6,8 @@ pub mod exploration;
 pub mod graph_utils;
 pub mod hash;
 pub mod ir;
-<<<<<<< Updated upstream
-pub mod merge;
-=======
 pub mod mutation;
 pub mod mutation_eval;
->>>>>>> Stashed changes
 pub mod patch;
 pub mod merge;
 pub mod storage;

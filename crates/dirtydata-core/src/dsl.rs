@@ -30,38 +30,14 @@ pub fn render_dsl(graph: &Graph) -> String {
     let mut out = String::new();
 
     // Header
-<<<<<<< Updated upstream
-    writeln!(
-        out,
-        "# DirtyData Surface DSL — revision {}",
-        graph.revision.0
-    )
-    .unwrap();
-    writeln!(
-        out,
-        "# Hash: blake3:{}",
-        hex_short(&hash::hash_graph(graph))
-    )
-    .unwrap();
-    writeln!(out, "# Patches: {}", graph.applied_patches.len()).unwrap();
-=======
     writeln!(out, "# DirtyData Surface DSL — revision {}", graph.revision.0).unwrap();
     writeln!(out, "# Hash: blake3:{}", hex_short(&hash::hash_graph(graph))).unwrap();
     writeln!(out, "# Patches: {}", graph.lineage.applied_patches.len()).unwrap();
->>>>>>> Stashed changes
     writeln!(out).unwrap();
 
     // Build name lookup for connections
     let name_of = |id: &StableId| -> String {
-<<<<<<< Updated upstream
-        graph
-            .nodes
-            .get(id)
-            .map(node_name)
-            .unwrap_or_else(|| id.to_string())
-=======
         graph.topology.nodes.get(id).map(node_name).unwrap_or_else(|| id.to_string())
->>>>>>> Stashed changes
     };
 
     // Nodes
@@ -85,38 +61,9 @@ pub fn render_dsl(graph: &Graph) -> String {
             NodeKind::SubGraph => "subgraph",
             NodeKind::InputProxy => "input_proxy",
             NodeKind::OutputProxy => "output_proxy",
-<<<<<<< Updated upstream
-=======
-            NodeKind::CircuitModule { .. } => "circuit_module",
->>>>>>> Stashed changes
-        };
-
-        writeln!(out, "{} \"{}\" {{", kind_str, node_name(node)).unwrap();
-        render_node_body(&mut out, node);
-        writeln!(out, "}}").unwrap();
-        writeln!(out).unwrap();
-    }
-
-    // Connections
-    if !graph.topology.edges.is_empty() {
-        writeln!(out, "# Connections").unwrap();
-        for edge in graph.topology.edges.values() {
-            let src_name = name_of(&edge.source.node_id);
-            let tgt_name = name_of(&edge.target.node_id);
-            let kind_tag = match edge.kind {
-                crate::ir::EdgeKind::Normal => "normal",
-                crate::ir::EdgeKind::Feedback => "feedback",
-            };
-            writeln!(
-                out,
-                "{}.{} -> {}.{}  # {}",
-<<<<<<< Updated upstream
-                src_name, edge.source.port_name, tgt_name, edge.target.port_name, kind_tag
-=======
                 src_name, edge.source.port_name,
                 tgt_name, edge.target.port_name,
                 kind_tag
->>>>>>> Stashed changes
             )
             .unwrap();
         }

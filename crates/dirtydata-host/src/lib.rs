@@ -215,21 +215,13 @@ impl PluginHost {
 
     pub fn set_parameter(&mut self, param_id: u32, value: f32) -> Result<(), HostError> {
         let mut stdin = self.child.stdin.as_ref().ok_or(HostError::Crashed)?;
-<<<<<<< Updated upstream
-
-=======
         
->>>>>>> Stashed changes
         let cmd = HostCommand::SetParameter as u8;
         stdin.write_all(&[cmd])?;
         stdin.write_all(&param_id.to_le_bytes())?;
         stdin.write_all(&value.to_le_bytes())?;
         stdin.flush()?;
-<<<<<<< Updated upstream
-
-=======
         
->>>>>>> Stashed changes
         Ok(())
     }
 

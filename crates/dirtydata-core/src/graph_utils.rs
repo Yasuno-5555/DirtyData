@@ -1,8 +1,4 @@
-<<<<<<< Updated upstream
-use crate::ir::{EdgeKind, Graph};
-=======
 use crate::ir::{Graph, EdgeKind};
->>>>>>> Stashed changes
 use crate::types::StableId;
 use std::collections::{HashMap, HashSet, VecDeque};
 
@@ -21,13 +17,7 @@ pub fn topological_sort(graph: &Graph) -> (Vec<StableId>, Vec<Vec<StableId>>) {
 
     for edge in graph.edges.values() {
         if edge.kind == EdgeKind::Normal {
-<<<<<<< Updated upstream
-            adj.get_mut(&edge.source.node_id)
-                .unwrap()
-                .push(edge.target.node_id);
-=======
             adj.get_mut(&edge.source.node_id).unwrap().push(edge.target.node_id);
->>>>>>> Stashed changes
             *in_degree.get_mut(&edge.target.node_id).unwrap() += 1;
         }
     }

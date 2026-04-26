@@ -21,17 +21,6 @@ pub enum IntentStrategy {
     /// 手動。ユーザーがパッチを適用して紐付ける。
     Manual,
     /// 自動。特定のノードを挿入する。
-<<<<<<< Updated upstream
-    InsertNode {
-        kind: NodeKind,
-        name: String,
-        config: ConfigSnapshot,
-    },
-    /// 自動。既存のノードを接続する。
-    Bridge { from_node: String, to_node: String },
-    /// 自動。安全な Frozen Asset に置換する。
-    Freeze { target_node: String },
-=======
     InsertNode { 
         kind: NodeKind, 
         name: String,
@@ -46,7 +35,6 @@ pub enum IntentStrategy {
     Freeze { 
         target_node: String 
     },
->>>>>>> Stashed changes
 }
 
 impl Default for IntentStrategy {
@@ -93,24 +81,12 @@ impl IntentState {
         let id = IntentId::new();
         self.intents.insert(
             id,
-<<<<<<< Updated upstream
-            IntentNode {
-                id,
-                description,
-                constraints,
-                status: IntentStatus::Proposal,
-                strategy: IntentStrategy::Manual,
-                attached_patches: Vec::new(),
-            },
-        );
-=======
             description,
             constraints,
             status: IntentStatus::Proposal,
             strategy: IntentStrategy::Manual,
             attached_patches: Vec::new(),
         });
->>>>>>> Stashed changes
         id
     }
 
@@ -128,51 +104,14 @@ impl IntentState {
         Ok(())
     }
 
-<<<<<<< Updated upstream
-    /// 制約を評価し、充足状況を返す
-    pub fn evaluate_constraints(
-        &self,
-        id: IntentId,
-        graph: &dirtydata_core::ir::Graph,
-    ) -> Vec<String> {
-=======
     /// 制約を評価し、違反内容を返す。
     /// これが Semantic Timeline で「なぜ壊れたか」を表示する基盤となる。
     pub fn evaluate_constraints(&self, id: IntentId, graph: &dirtydata_core::ir::Graph) -> Vec<String> {
->>>>>>> Stashed changes
         let intent = match self.intents.get(&id) {
             Some(i) => i,
             None => return vec![format!("Intent {} not found", id)],
         };
         let mut violations = Vec::new();
-<<<<<<< Updated upstream
-
-        for constraint in &intent.constraints {
-            match constraint {
-                IntentConstraint::Must(desc) if desc.to_lowercase().contains("clip") => {
-                    // Check if all sinks have a ClipNode as input
-                    for node in graph.nodes.values() {
-                        if node.kind == NodeKind::Sink {
-                            let mut has_clip = false;
-                            for edge in graph.edges.values() {
-                                if edge.target.node_id == node.id {
-                                    if let Some(src_node) = graph.nodes.get(&edge.source.node_id) {
-                                        let name = dirtydata_core::actions::node_name(src_node);
-                                        if name.to_lowercase().contains("clip") {
-                                            has_clip = true;
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                            if !has_clip {
-                                violations.push(format!("Constraint Violation [Must: {}]: Output '{}' must be protected by a Clip node.", desc, dirtydata_core::actions::node_name(node)));
-                            }
-                        }
-                    }
-                }
-                _ => {}
-=======
         
         for constraint in &intent.constraints {
             match constraint {
@@ -191,13 +130,10 @@ impl IntentState {
                     }
                 }
                 _ => {} // Prefer/Avoid are soft
->>>>>>> Stashed changes
             }
         }
         violations
     }
-<<<<<<< Updated upstream
-=======
 
     fn get_param_value(&self, graph: &dirtydata_core::ir::Graph, path: &str) -> Option<f32> {
         let parts: Vec<&str> = path.split('.').collect();
@@ -215,5 +151,4 @@ impl IntentState {
         }
         None
     }
->>>>>>> Stashed changes
 }

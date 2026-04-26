@@ -10,8 +10,6 @@ thiserror = "1.0"
 dirtydata-core = { path = "../dirtydata-core" }
 libloading = "0.9.0"
 vst3 = "0.3.0"
-<<<<<<< Updated upstream
-=======
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 tracing = { workspace = true }
@@ -22,4 +20,3 @@ dirtydata-intent = { version = "0.1.0", path = "../dirtydata-intent" }
 blake3.workspace = true
 hex = "0.4.3"
 walkdir = "2.5.0"
->>>>>>> Stashed changes

@@ -206,11 +206,7 @@ impl Graph {
                     return Err(PatchError::NodeNotFound(node.id));
                 }
                 self.nodes.insert(node.id, node.clone());
-<<<<<<< Updated upstream
-                // Note: We do NOT remove edges. It's up to the user to ensure
-=======
                 // Note: We do NOT remove edges. It's up to the user to ensure 
->>>>>>> Stashed changes
                 // ports are still compatible, otherwise validation will catch it.
             }
 

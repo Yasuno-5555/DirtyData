@@ -5,20 +5,11 @@ members = [
     "crates/dirtydata-observer",
     "crates/dirtydata-host",
     "crates/dirtydata-intent",
-<<<<<<< Updated upstream
-    "crates/dirtyrack-modules",
-    "crates/dirtyrack-gui",
-    "crates/dirtyrack-sdk",
-    "crates/example-thirdparty-module",
-    "crates/dirtyrack-cli",
-    "crates/dirtyrack-plugin",
-=======
     "crates/dirtydata-cli",
     "crates/dirty-exporter",
     "crates/dirty-mutate",
     "crates/dirtydata-sdk",
     "crates/tutorial-bitcrush",
->>>>>>> Stashed changes
 ]
 resolver = "2"
 

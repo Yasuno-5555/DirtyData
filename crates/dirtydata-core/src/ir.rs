@@ -111,23 +111,8 @@ impl Node {
             id: StableId::new(),
             kind: NodeKind::SubGraph,
             ports: vec![
-<<<<<<< Updated upstream
-                TypedPort {
-                    name: "in".into(),
-                    direction: PortDirection::Input,
-                    domain: ExecutionDomain::Sample,
-                    data_type: DataType::Audio { channels: 2 },
-                },
-                TypedPort {
-                    name: "out".into(),
-                    direction: PortDirection::Output,
-                    domain: ExecutionDomain::Sample,
-                    data_type: DataType::Audio { channels: 2 },
-                },
-=======
                 TypedPort { name: "in".into(), direction: PortDirection::Input, domain: ExecutionDomain::Sample, data_type: DataType::Audio { channels: 2 }, semantic: PortSemantic::Signal, polarity: PortPolarity::Bipolar },
                 TypedPort { name: "out".into(), direction: PortDirection::Output, domain: ExecutionDomain::Sample, data_type: DataType::Audio { channels: 2 }, semantic: PortSemantic::Signal, polarity: PortPolarity::Bipolar },
->>>>>>> Stashed changes
             ],
             config: {
                 let mut c = BTreeMap::new();
@@ -144,16 +129,7 @@ impl Node {
         Self {
             id: StableId::new(),
             kind: NodeKind::InputProxy,
-<<<<<<< Updated upstream
-            ports: vec![TypedPort {
-                name: "out".into(),
-                direction: PortDirection::Output,
-                domain: ExecutionDomain::Sample,
-                data_type: DataType::Audio { channels: 2 },
-            }],
-=======
             ports: vec![TypedPort { name: "out".into(), direction: PortDirection::Output, domain: ExecutionDomain::Sample, data_type: DataType::Audio { channels: 2 }, semantic: PortSemantic::Signal, polarity: PortPolarity::Bipolar }],
->>>>>>> Stashed changes
             config: {
                 let mut c = BTreeMap::new();
                 c.insert("name".into(), ConfigValue::String(name.into()));
@@ -168,16 +144,7 @@ impl Node {
         Self {
             id: StableId::new(),
             kind: NodeKind::OutputProxy,
-<<<<<<< Updated upstream
-            ports: vec![TypedPort {
-                name: "in".into(),
-                direction: PortDirection::Input,
-                domain: ExecutionDomain::Sample,
-                data_type: DataType::Audio { channels: 2 },
-            }],
-=======
             ports: vec![TypedPort { name: "in".into(), direction: PortDirection::Input, domain: ExecutionDomain::Sample, data_type: DataType::Audio { channels: 2 }, semantic: PortSemantic::Signal, polarity: PortPolarity::Bipolar }],
->>>>>>> Stashed changes
             config: {
                 let mut c = BTreeMap::new();
                 c.insert("name".into(), ConfigValue::String(name.into()));
@@ -187,33 +154,10 @@ impl Node {
             confidence: ConfidenceScore::Verified,
         }
     }
-<<<<<<< Updated upstream
-=======
-}
-
-impl std::fmt::Display for Node {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let name = self.config.get("name").and_then(|v| v.as_string()).map(|s| s.as_str()).unwrap_or("Unknown");
-        write!(f, "Node({}: {:?}, id={})", name, self.kind, self.id)
-    }
->>>>>>> Stashed changes
-}
-
-// ──────────────────────────────────────────────
-// §5.2 — Edge
-// ──────────────────────────────────────────────
-
-/// The type of connection between ports.
-<<<<<<< Updated upstream
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum EdgeKind {
-    /// Normal feed-forward connection (causal dependency).
-=======
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum EdgeKind {
     /// Normal feed-forward connection (causal dependency).
     #[default]
->>>>>>> Stashed changes
     Normal,
     /// Feedback connection (1-sample delay, breaks DAG constraint).
     Feedback,
@@ -225,77 +169,6 @@ pub struct Edge {
     pub id: StableId,
     pub source: PortRef,
     pub target: PortRef,
-<<<<<<< Updated upstream
-=======
-    #[serde(default)]
->>>>>>> Stashed changes
-    pub kind: EdgeKind,
-}
-
-impl Edge {
-    /// Create a causal edge between two ports.
-    pub fn new(source: PortRef, target: PortRef) -> Self {
-        Self {
-            id: StableId::new(),
-            source,
-            target,
-            kind: EdgeKind::Normal,
-        }
-    }
-
-    /// Create a feedback edge (1-sample delay).
-    pub fn new_feedback(source: PortRef, target: PortRef) -> Self {
-        Self {
-            id: StableId::new(),
-            source,
-            target,
-            kind: EdgeKind::Feedback,
-        }
-    }
-}
-
-// ──────────────────────────────────────────────
-// §5.3 — Modulation
-// ──────────────────────────────────────────────
-
-/// A modulation assignment between a source and a parameter.
-/// This is "cable-less" modulation — Bitwig style.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct Modulation {
-    pub id: StableId,
-    pub source: PortRef,
-    pub target_node: StableId,
-    pub target_param: String,
-    pub amount: f32,
-}
-
-impl Modulation {
-    pub fn new(source: PortRef, target_node: StableId, target_param: String, amount: f32) -> Self {
-        Self {
-            id: StableId::new(),
-            source,
-            target_node,
-            target_param,
-            amount,
-        }
-    }
-}
-
-// ──────────────────────────────────────────────
-// Canonical IR Graph
-// ──────────────────────────────────────────────
-
-/// Layer 1: Topology (Machine Truth - Current Space)
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct Topology {
-    pub nodes: BTreeMap<StableId, Node>,
-    pub edges: BTreeMap<StableId, Edge>,
-<<<<<<< Updated upstream
-    pub modulations: BTreeMap<StableId, Modulation>,
-    pub revision: Revision,
-    /// Ordered history of applied patches — explainability.
-    /// "今この状態は何からできたか" が常に答えられること。
-=======
     #[serde(default)]
     pub modulations: BTreeMap<StableId, Modulation>,
 }
@@ -303,7 +176,6 @@ pub struct Topology {
 /// Layer 3: Lineage (Time's Genealogy - History DAG)
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct Lineage {
->>>>>>> Stashed changes
     pub applied_patches: Vec<PatchId>,
     pub history: BTreeMap<PatchId, crate::patch::Patch>,
     pub snapshots: BTreeMap<String, PatchId>,
@@ -352,10 +224,6 @@ impl Graph {
             nodes: BTreeMap::new(),
             edges: BTreeMap::new(),
             modulations: BTreeMap::new(),
-<<<<<<< Updated upstream
-            revision: Revision::zero(),
-            applied_patches: Vec::new(),
-=======
         }
     }
 
@@ -381,7 +249,6 @@ impl Graph {
     pub fn create_snapshot(&mut self, name: &str) {
         if let Some(&last_patch_id) = self.lineage.applied_patches.last() {
             self.lineage.snapshots.insert(name.to_string(), last_patch_id);
->>>>>>> Stashed changes
         }
     }
 
