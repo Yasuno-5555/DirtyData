@@ -12,6 +12,11 @@ members = [
     "crates/tutorial-bitcrush",
     "crates/dirtydata-python",
     "crates/dirtydata-dsp-*",
+    "crates/dirtyrack-modules",
+    "crates/dirtyrack-gui",
+    "crates/dirtyrack-sdk",
+    "crates/example-thirdparty-module",
+    "crates/dirtyrack-cli",
 ]
 resolver = "2"
 
