@@ -4,7 +4,7 @@
 //! ボイスごとの不完全さ（ドリフト等）による挙動の差異を視覚化する。
 
 use crate::signal::{
-    ForensicData, ParamDescriptor, ParamKind, ParamResponse, PortDescriptor, PortDirection,
+    ForensicData, PortDescriptor, PortDirection,
     RackDspNode, RackProcessContext, SignalType,
 };
 use std::collections::VecDeque;
@@ -16,7 +16,7 @@ pub struct ScopeModule {
 
 impl ScopeModule {
     pub fn new() -> Self {
-        let mut history: [VecDeque<f32>; 16] = std::array::from_fn(|_| VecDeque::with_capacity(512));
+        let history: [VecDeque<f32>; 16] = std::array::from_fn(|_| VecDeque::with_capacity(512));
         Self {
             history,
             max_len: 512,

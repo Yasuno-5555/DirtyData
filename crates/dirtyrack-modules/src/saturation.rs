@@ -17,6 +17,7 @@ pub enum SatMode {
 }
 
 pub struct SaturationModule {
+    #[allow(dead_code)]
     mode: SatMode,
 }
 

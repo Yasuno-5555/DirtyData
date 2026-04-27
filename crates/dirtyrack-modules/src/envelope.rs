@@ -12,7 +12,7 @@
 
 use crate::signal::{
     GateTracker, ParamDescriptor, ParamKind, ParamResponse, PortDescriptor, PortDirection,
-    RackDspNode, RackProcessContext, SeedScope, SignalType, TriggerDetector,
+    RackDspNode, RackProcessContext, SignalType, TriggerDetector,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

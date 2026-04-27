@@ -7,7 +7,7 @@
 
 use crate::signal::{
     ParamDescriptor, ParamKind, ParamResponse, PortDescriptor, PortDirection, RackDspNode,
-    RackProcessContext, SeedScope, SignalType, SmoothedParam,
+    RackProcessContext, SignalType,
 };
 
 pub struct LfoModule {

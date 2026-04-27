@@ -65,7 +65,7 @@ impl RackDspNode for ZdfLadderModule {
         // Simplified Linear ZDF Solver for 4-pole Ladder
         // y = (G^4*x + G^3*s1 + G^2*s2 + G*s3 + s4) / (1 + k*G^4)
         let g_prime = g / (1.0 + g);
-        let gamma = g_prime * g_prime * g_prime * g_prime;
+        let _gamma = g_prime * g_prime * g_prime * g_prime;
 
         for v in 0..16 {
             let input = inputs[v];

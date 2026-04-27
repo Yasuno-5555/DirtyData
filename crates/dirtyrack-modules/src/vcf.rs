@@ -5,8 +5,8 @@
 //! - パッド近似を用いた高速・決定論的 tanh。
 
 use crate::signal::{
-    f32x4, simd_tanh_x4, ParamDescriptor, ParamKind, ParamResponse, PortDescriptor, PortDirection,
-    RackDspNode, RackProcessContext, SeedScope, SignalType, SmoothedParam, VcfMode,
+    ParamDescriptor, ParamKind, ParamResponse, PortDescriptor, PortDirection,
+    RackDspNode, RackProcessContext, SignalType, SmoothedParam, VcfMode,
 };
 use serde::{Deserialize, Serialize};
 
@@ -17,6 +17,7 @@ struct VcfStateData {
 }
 
 pub struct VcfModule {
+    #[allow(dead_code)]
     sample_rate: f32,
     stages_poly: [[f32; 4]; 16], // 16 voices, 4 stages each
     mode: VcfMode,

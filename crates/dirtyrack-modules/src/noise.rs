@@ -5,7 +5,7 @@
 //! - PINK: ピンクノイズ (予定)
 
 use crate::signal::{
-    ParamDescriptor, PortDescriptor, PortDirection, RackDspNode, RackProcessContext, SeedScope,
+    PortDescriptor, PortDirection, RackDspNode, RackProcessContext,
     SignalType,
 };
 

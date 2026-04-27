@@ -11,7 +11,7 @@
 
 use crate::signal::{
     ParamDescriptor, ParamKind, ParamResponse, PortDescriptor, PortDirection, RackDspNode,
-    RackProcessContext, SeedScope, SignalType,
+    RackProcessContext, SignalType,
 };
 
 pub struct QuantizerModule {}

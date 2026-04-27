@@ -15,6 +15,7 @@ pub struct WdfFilterModule {
     sample_rate: f32,
     // We need 16 voices of circuit state
     // For simplicity, let's implement a fixed RLC topology
+    #[allow(dead_code)]
     r: [f32; 16],
     c_s: [f32; 16], // Capacitor state
     l_s: [f32; 16], // Inductor state
@@ -54,7 +55,7 @@ impl RackDspNode for WdfFilterModule {
             // Circuit: V_in -> R -> (L || C) -> GND
             // Output is voltage across (L || C)
             
-            let mut res = WdfResistor::new(r_val);
+            let res = WdfResistor::new(r_val);
             let mut cap = WdfCapacitor::new(c_val, self.sample_rate);
             let mut ind = WdfInductor::new(l_val, self.sample_rate);
             
@@ -63,11 +64,11 @@ impl RackDspNode for WdfFilterModule {
             ind.set_incident_wave(self.l_s[v]);
             
             // Build tree
-            let mut lc_par = WdfParallel::new(cap, ind);
+            let lc_par = WdfParallel::new(cap, ind);
             let mut circuit = WdfSeries::new(res, lc_par);
             
             // Process
-            let b_root = circuit.get_reflected_wave();
+            let _b_root = circuit.get_reflected_wave();
             let a_root = v_in; // Voltage input
             circuit.set_incident_wave(a_root);
             

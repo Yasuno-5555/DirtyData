@@ -1,7 +1,7 @@
 //! Module Registry — Built-in & Third-party Module Catalog
 
 use crate::signal::{
-    BuiltinModuleDescriptor, ParamDescriptor, PortDescriptor, ProvenanceZone, RackDspNode,
+    ParamDescriptor, PortDescriptor, ProvenanceZone, RackDspNode,
 };
 use std::sync::Arc;
 

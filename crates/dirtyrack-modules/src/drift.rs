@@ -7,7 +7,7 @@
 
 use crate::signal::{
     BuiltinModuleDescriptor, ParamDescriptor, ParamKind, ParamResponse, PortDescriptor,
-    PortDirection, RackDspNode, RackProcessContext, SeedScope, SignalType,
+    PortDirection, RackDspNode, RackProcessContext, SignalType,
 };
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;

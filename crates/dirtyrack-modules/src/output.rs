@@ -3,7 +3,7 @@
 
 use crate::signal::{
     ParamDescriptor, ParamKind, ParamResponse, PortDescriptor, PortDirection, RackDspNode,
-    RackProcessContext, SeedScope, SignalType,
+    RackProcessContext, SignalType,
 };
 
 pub struct OutputModule {}
@@ -29,9 +29,10 @@ impl RackDspNode for OutputModule {
             let r = inputs[16 + i] * master;
 
             // Soft-clipping limiter (tanh) to prevent digital harshness
-            // We scale by 0.2 to give some headroom before saturation kicks in
-            outputs[i] = libm::tanhf(l * 0.2) * 5.0;
-            outputs[16 + i] = libm::tanhf(r * 0.2) * 5.0;
+            // Port 2 (OUT_L) is the first output port (index 0..16)
+            outputs[0 * 16 + i] = libm::tanhf(l * 0.2) * 5.0;
+            // Port 3 (OUT_R) is the second output port (index 16..32)
+            outputs[1 * 16 + i] = libm::tanhf(r * 0.2) * 5.0;
         }
     }
     fn as_any_mut(&mut self) -> &mut dyn std::any::Any {

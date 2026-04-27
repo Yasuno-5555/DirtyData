@@ -1,6 +1,7 @@
 use dirtyrack_sdk::*;
 
 pub struct SimpleGain {
+    #[allow(dead_code)]
     sample_rate: f32,
 }
 

@@ -5,8 +5,8 @@
 //! - パッチの展開（Aメロ→Bメロ）を決定論的に自動化。
 
 use crate::signal::{
-    BuiltinModuleDescriptor, ParamDescriptor, PortDescriptor, PortDirection, RackDspNode,
-    RackProcessContext, SeedScope, SignalType, TriggerDetector,
+    BuiltinModuleDescriptor, PortDescriptor, PortDirection, RackDspNode,
+    RackProcessContext, SignalType, TriggerDetector,
 };
 
 pub struct SeqSwitchModule {

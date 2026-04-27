@@ -11,11 +11,10 @@ pub mod faceplate;
 pub mod rack;
 pub mod visual_data;
 
-use crate::rack::{CableAction, RackState};
+use crate::rack::{CableAction, RackState, IntentBoundary, IntentClass};
 use dirtyrack_modules::registry::ModuleRegistry;
 use engine::RackAudioEngine;
-use egui::{Color32, Pos2, Rect, Stroke, Vec2};
-use std::collections::VecDeque;
+use egui::{Color32, Rect, Stroke};
 
 pub fn run() -> eframe::Result<()> {
     let native_options = eframe::NativeOptions {
@@ -50,12 +49,15 @@ pub struct DirtyRackApp {
     zoom: f32,
     show_provenance_timeline: bool,
     mri_mode: bool,
+    #[allow(dead_code)]
     explain_result: Option<String>,
     selected_module_forensic: Option<u64>, // StableId of module being inspected
     status_msg: Option<(String, bool)>, // (message, is_error)
     show_diff_audit: bool,
     diagnosis_report: Option<String>,
+    #[allow(dead_code)]
     parallel_mode: bool,
+    inspector_open: bool,
 }
 
 impl DirtyRackApp {
@@ -86,6 +88,7 @@ impl DirtyRackApp {
             explain_result: None,
             diagnosis_report: None,
             parallel_mode: false,
+            inspector_open: false,
         }
     }
 
@@ -106,12 +109,13 @@ impl DirtyRackApp {
                         let sample_count = audit_data["sample_count"].as_u64().unwrap_or(44100) as usize;
 
                         // Rebuild for verification
-                        let (snapshot, nodes) = self.rack.build_snapshot();
+                        let (snapshot, nodes, params) = self.rack.build_snapshot();
                         let mut renderer = OfflineRenderer::new(
                             self.rack.sample_rate,
                             SeedScope::Global(self.rack.project_seed),
                             snapshot.clone(),
                             nodes,
+                            params,
                         );
 
                         // Render and Hash
@@ -119,20 +123,21 @@ impl DirtyRackApp {
                         let out_idx = self.rack.modules.iter().position(|m| m.descriptor.id == "dirty_output").unwrap_or(0);
                         let (_, actual_hash) = renderer.render_block(sample_count, out_idx);
 
-                        if actual_hash == expected_hash {
-                            self.status_msg = Some(("✅ Verification Passed: Bit-Perfect Reproducibility Confirmed.".to_string(), false));
-                        } else {
-                            // Run Deep Audit to find WHERE it diverged
-                            use dirtyrack_modules::renderer::DeepAuditor;
-                            let (_, nodes_a) = self.rack.build_snapshot();
-                            let (_, nodes_b) = self.rack.build_snapshot();
-                            let mut auditor = DeepAuditor::new(
-                                self.rack.sample_rate,
-                                self.rack.project_seed,
-                                snapshot.clone(),
-                                nodes_a,
-                                nodes_b
-                            );
+                            if actual_hash == expected_hash {
+                                self.status_msg = Some(("✅ Verification Passed: Bit-Perfect Reproducibility Confirmed.".to_string(), false));
+                            } else {
+                                // Run Deep Audit to find WHERE it diverged
+                                use dirtyrack_modules::renderer::DeepAuditor;
+                                let (_, nodes_a, params_a) = self.rack.build_snapshot();
+                                let (_, nodes_b, _params_b) = self.rack.build_snapshot();
+                                let mut auditor = DeepAuditor::new(
+                                    self.rack.sample_rate,
+                                    self.rack.project_seed,
+                                    snapshot.clone(),
+                                    nodes_a,
+                                    nodes_b,
+                                    params_a
+                                );
                             
                             if let Some((sample, mod_idx, val_a, val_b)) = auditor.find_divergence(sample_count) {
                                 let mod_name = &self.rack.modules[mod_idx].descriptor.name;
@@ -153,9 +158,9 @@ impl DirtyRackApp {
     }
 
     fn rebuild_engine(&mut self) {
-        let (snapshot, nodes) = self.rack.build_snapshot();
+        let (snapshot, nodes, params) = self.rack.build_snapshot();
         if let Some(engine) = &self.engine {
-            engine.update_topology(snapshot, nodes);
+            engine.update_topology(snapshot, nodes, params);
         }
     }
     fn show_provenance_timeline(&mut self, ctx: &egui::Context) {
@@ -269,48 +274,21 @@ impl eframe::App for DirtyRackApp {
 
         // --- Top Toolbar ---
         egui::TopBottomPanel::top("toolbar").show(ctx, |ui| {
-            ui.horizontal(|ui| {
+            ui.spacing_mut().item_spacing = egui::vec2(6.0, 4.0);
+            ui.horizontal_wrapped(|ui| {
+                ui.visuals_mut().button_frame = true;
+
                 ui.heading(
                     egui::RichText::new("⚡ DirtyRack")
                         .color(egui::Color32::from_rgb(255, 100, 50)),
                 );
+                
+                ui.add_space(4.0);
                 ui.separator();
+                ui.add_space(4.0);
 
-                if ui.button("➕ Add Module").clicked() {
-                    self.browser_open = !self.browser_open;
-                }
-
-                ui.separator();
-                ui.label(format!("Modules: {}", self.rack.modules.len()));
-                ui.label(format!("Cables: {}", self.rack.cables.len()));
-
-                ui.separator();
-                let mri_btn = egui::RichText::new("🩺 MRI").color(if self.mri_mode { Color32::LIGHT_GREEN } else { Color32::GRAY });
-                if ui.button(mri_btn).clicked() {
-                    self.mri_mode = !self.mri_mode;
-                }
-
-                if ui.button("📜 Timeline").clicked() {
-                    self.show_provenance_timeline = !self.show_provenance_timeline;
-                }
-
-                ui.separator();
-                ui.label("🕰 Aging:");
-                if ui
-                    .add(egui::Slider::new(&mut self.rack.aging, 0.0..=1.0).text(""))
-                    .changed()
-                {
-                    if let Some(engine) = &self.engine {
-                        let _ = engine.sync_aging(self.rack.aging);
-                    }
-                }
-
-                ui.separator();
-                ui.label("🧶 Cables:");
-                ui.add(egui::Slider::new(&mut self.rack.cable_opacity, 0.1..=1.0).text("Op"));
-                ui.add(egui::Slider::new(&mut self.rack.cable_tension, 0.0..=0.5).text("Sag"));
-
-                ui.separator();
+                // --- Project Actions ---
+                ui.label("📁 Project:");
                 if ui.button("💾 Save").clicked() {
                     let serial = self.rack.to_serializable();
                     if let Ok(json) = serde_json::to_string_pretty(&serial) {
@@ -325,50 +303,97 @@ impl eframe::App for DirtyRackApp {
                                 &self.registry,
                                 self.rack.sample_rate
                             );
-                            // Trigger engine update
                             self.rebuild_engine();
                         }
                     }
                 }
 
+                ui.add_space(4.0);
                 ui.separator();
-                ui.label("📸 Audit:");
-                if ui.button("Take Snap").clicked() {
-                    let name = format!("Snap {}", self.rack.snapshots.len());
-                    self.rack.take_snapshot(&name);
+                ui.add_space(4.0);
+
+                // --- Edit Actions ---
+                ui.label("🔧 Edit:");
+                if ui.button("➕ Add Module").clicked() {
+                    self.browser_open = !self.browser_open;
                 }
-                if ui.button("Clear").clicked() {
-                    self.rack.snapshots.clear();
+                if ui.button("🧺 Clear").clicked() {
+                    self.rack.modules.clear();
+                    self.rack.cables.clear();
+                    self.rebuild_engine();
                 }
+                if ui.selectable_label(self.inspector_open, "🔍 Inspector").clicked() {
+                    self.inspector_open = !self.inspector_open;
+                }
+
+                ui.add_space(4.0);
+                ui.separator();
+                ui.add_space(4.0);
+
+                // --- Rack Parameters ---
+                ui.label("🧶 Cables:");
+                ui.add(egui::Slider::new(&mut self.rack.cable_opacity, 0.1..=1.0).text("Op"));
+                ui.add(egui::Slider::new(&mut self.rack.cable_tension, 0.0..=0.5).text("Sag"));
                 
-                ui.separator();
-                if !self.rack.snapshots.is_empty() {
-                    egui::ComboBox::from_id_salt("snap_a")
-                        .selected_text(format!("A: {}", self.rack.blend_targets.0))
-                        .show_ui(ui, |ui| {
-                            for name in self.rack.snapshots.keys() {
-                                ui.selectable_value(&mut self.rack.blend_targets.0, name.clone(), name);
-                            }
-                        });
-                    egui::ComboBox::from_id_salt("snap_b")
-                        .selected_text(format!("B: {}", self.rack.blend_targets.1))
-                        .show_ui(ui, |ui| {
-                            for name in self.rack.snapshots.keys() {
-                                ui.selectable_value(&mut self.rack.blend_targets.1, name.clone(), name);
-                            }
-                        });
-                    
-                    if ui.add(egui::Slider::new(&mut self.rack.snapshot_blend, 0.0..=1.0).text("Interpolate")).changed() {
-                        self.rack.apply_blend();
-                    }
-
-                    if ui.button("📊 Diff Audit").clicked() {
-                        self.show_diff_audit = true;
+                ui.add_space(8.0);
+                ui.label("🕰 Aging:");
+                if ui.add(egui::Slider::new(&mut self.rack.aging, 0.0..=1.0).text("")).changed() {
+                    if let Some(engine) = &self.engine {
+                        let _ = engine.sync_aging(self.rack.aging);
                     }
                 }
 
-                if ui.button("✅ Verify").clicked() {
-                    self.run_verification();
+                ui.add_space(4.0);
+                ui.separator();
+                ui.add_space(4.0);
+
+                // --- Diagnostics & Analysis ---
+                ui.group(|ui| {
+                    ui.label("📸 Audit:");
+                    if ui.button("Take Snap").clicked() {
+                        let name = format!("Snap {}", self.rack.snapshots.len());
+                        self.rack.take_snapshot(&name);
+                    }
+                    if ui.button("Clear").clicked() {
+                        self.rack.snapshots.clear();
+                    }
+                    
+                    if !self.rack.snapshots.is_empty() {
+                        ui.separator();
+                        egui::ComboBox::from_id_salt("snap_a")
+                            .selected_text(format!("A: {}", self.rack.blend_targets.0))
+                            .show_ui(ui, |ui| {
+                                for name in self.rack.snapshots.keys() {
+                                    ui.selectable_value(&mut self.rack.blend_targets.0, name.clone(), name);
+                                }
+                            });
+                        egui::ComboBox::from_id_salt("snap_b")
+                            .selected_text(format!("B: {}", self.rack.blend_targets.1))
+                            .show_ui(ui, |ui| {
+                                for name in self.rack.snapshots.keys() {
+                                    ui.selectable_value(&mut self.rack.blend_targets.1, name.clone(), name);
+                                }
+                            });
+                        
+                        ui.add(egui::Slider::new(&mut self.rack.snapshot_blend, 0.0..=1.0).text("Blend"));
+                        if ui.button("⚡ Apply").clicked() {
+                            self.rack.apply_blend();
+                        }
+                        if ui.button("📊 Diff").clicked() {
+                            self.show_diff_audit = true;
+                        }
+                    }
+                });
+
+                // --- Stats ---
+                ui.separator();
+                ui.label(format!("Modules: {}", self.rack.modules.len()));
+                ui.label(format!("Cables: {}", self.rack.cables.len()));
+                
+                if let Some(engine) = &self.engine {
+                    ui.label(egui::RichText::new("🟢 Active").color(Color32::LIGHT_GREEN));
+                } else {
+                    ui.label(egui::RichText::new("🔴 Error").color(Color32::RED));
                 }
             });
         });
@@ -425,142 +450,12 @@ impl eframe::App for DirtyRackApp {
             });
         }
 
-        // --- Forensic Inspector Windows ---
-        if let Some(stable_id) = self.selected_module_forensic {
-            let mut open = true;
-            if let Some(v_state) = visual_snapshot.modules.get(&stable_id) {
-                egui::Window::new(format!("Forensic: {}", stable_id))
-                    .open(&mut open)
-                    .show(ctx, |ui| {
-                        if let Some(forensic) = &v_state.forensic {
-                            ui.label(egui::RichText::new("Drift Inspector").strong());
-                            ui.label(&forensic.internal_state_summary);
+        // Forensic Inspector Window was removed and integrated into SidePanel.
 
-                            // Visualize Drift per Voice
-                            egui_plot::Plot::new("drift_plot")
-                                .height(100.0)
-                                .show(ui, |plot_ui| {
-                                    let mut points = Vec::new();
-                                    for v in 0..16 {
-                                        points.push(egui_plot::PlotPoint::new(
-                                            v as f64,
-                                            forensic.current_drift[v] as f64,
-                                        ));
-                                    }
-                                    plot_ui.bar_chart(
-                                        egui_plot::BarChart::new(
-                                            points
-                                                .into_iter()
-                                                .map(|p| egui_plot::Bar::new(p.x, p.y))
-                                                .collect(),
-                                        )
-                                        .name("Current Drift"),
-                                    );
-                                });
-
-                            ui.separator();
-                            ui.label(egui::RichText::new("Post-Modulation Params").strong());
-                            // Get the latest modulated params from the engine snapshot
-                            if let Some(_modulated) = &v_state.modulated_params {
-                                for (name, val) in &v_state.params {
-                                    ui.horizontal(|ui| {
-                                        ui.label(format!("{}:", name));
-                                        ui.label(egui::RichText::new(format!("{:.3}", val)).weak());
-                                    });
-                                }
-                                ui.label("Modulated values are active and being audited.");
-                            }
-
-                            // Visualize Trace if available
-                            if let Some(trace) = &forensic.signal_trace {
-                                ui.separator();
-                                ui.label(egui::RichText::new("Polyphonic Trace Audit").strong());
-                                egui_plot::Plot::new("trace_plot")
-                                    .height(200.0)
-                                    .legend(egui_plot::Legend::default())
-                                    .show(ui, |plot_ui| {
-                                        for v in 0..16 {
-                                            let points: Vec<[f64; 2]> = trace.iter().enumerate().map(|(i, s): (usize, &[f32; 16])| {
-                                                [i as f64, s[v] as f64]
-                                            }).collect();
-                                            plot_ui.line(egui_plot::Line::new(points).name(format!("V{}", v)));
-                                        }
-                                    });
-                            }
-
-                            ui.separator();
-                            ui.label(egui::RichText::new("Engine Health Audit").strong());
-                            let peak_db = if forensic.stats.peak_db > 0.0 {
-                                20.0 * forensic.stats.peak_db.log10()
-                            } else {
-                                -120.0
-                            };
-                            ui.label(format!("Peak: {:.1} dB", peak_db));
-                            
-                            let clip_color = if forensic.stats.clipping_count > 0 {
-                                Color32::RED
-                            } else {
-                                Color32::GREEN
-                            };
-                            ui.label(egui::RichText::new(format!("Clipping Events: {}", forensic.stats.clipping_count)).color(clip_color));
-
-                            ui.separator();
-                            ui.label(egui::RichText::new("Pathological Diagnosis").strong());
-                            
-                            let mut healthy = true;
-                            if forensic.stats.clipping_count > 1000 {
-                                ui.label(egui::RichText::new("⚠ SYMPTOM: Extreme Clipping").color(Color32::RED));
-                                ui.label(egui::RichText::new("Likely Cause: Input gain too high or feedback runaway.").small());
-                                healthy = false;
-                            }
-                            if forensic.stats.denormal_count > 1000 {
-                                ui.label(egui::RichText::new("⚠ SYMPTOM: Denormal Storm").color(Color32::ORANGE));
-                                ui.label(egui::RichText::new("Likely Cause: Filter coefficients or feedback decaying too slow.").small());
-                                healthy = false;
-                            }
-                            if forensic.stats.dc_offset.abs() > 0.5 {
-                                ui.label(egui::RichText::new("⚠ SYMPTOM: DC Drift").color(Color32::KHAKI));
-                                ui.label(egui::RichText::new("Likely Cause: Asymmetrical non-linear processing.").small());
-                                healthy = false;
-                            }
-                            if forensic.stats.energy_delta > 10.0 {
-                                ui.label(egui::RichText::new("⚠ SYMPTOM: High Energy Density").color(Color32::GOLD));
-                                healthy = false;
-                            }
-
-                            if healthy {
-                                ui.label(egui::RichText::new("✔ Signal Health: STABLE").color(Color32::GREEN));
-                            }
-
-                            if ui.button("🔬 Explain Why").clicked() {
-                                self.diagnosis_report = Some(self.generate_diagnosis(forensic));
-                            }
-
-                            ui.separator();
-                            ui.label(egui::RichText::new("Personality Offsets").strong());
-                            for v in (0..16).step_by(4) {
-                                ui.horizontal(|ui| {
-                                    for i in 0..4 {
-                                        ui.label(format!(
-                                            "V{}: {:.3}",
-                                            v + i,
-                                            forensic.personality_offsets[v + i]
-                                        ));
-                                    }
-                                });
-                            }
-                        } else {
-                            ui.label("No forensic data available for this node.");
-                        }
-                    });
-            }
-            if !open {
-                self.selected_module_forensic = None;
-            }
-        }
 
         // --- Module Browser Panel ---
         if self.browser_open {
+            let prev_count = self.rack.modules.len();
             browser::draw_browser(
                 ctx,
                 &self.registry,
@@ -568,15 +463,132 @@ impl eframe::App for DirtyRackApp {
                 &mut self.browser_open,
                 &mut self.browser_search,
             );
-            self.rebuild_engine();
+            if self.rack.modules.len() != prev_count {
+                self.rebuild_engine();
+            }
         }
 
         // --- Main Rack Area ---
+        // --- Side Panel (Inspector) ---
+        if self.inspector_open {
+            egui::SidePanel::right("inspector_panel")
+                .resizable(true)
+                .default_width(300.0)
+                .show(ctx, |ui| {
+                    ui.heading("🔍 Module Inspector");
+                    ui.separator();
+
+                    if let Some(stable_id) = self.selected_module_forensic {
+                        if let Some(m_idx) = self.rack.modules.iter().position(|m| m.stable_id == stable_id) {
+                            let (m_id, m_name, m_stable_id) = {
+                                let m = &self.rack.modules[m_idx];
+                                (m.descriptor.id.to_string(), m.descriptor.name.to_string(), m.stable_id)
+                            };
+                            ui.horizontal(|ui| {
+                                ui.label(egui::RichText::new(format!("{} [{}]", m_name, m_id)).strong());
+                                if ui.button("❌").on_hover_text("Deselect").clicked() {
+                                    self.selected_module_forensic = None;
+                                }
+                            });
+                            ui.label(format!("Stable ID: {}", m_stable_id));
+                            ui.separator();
+
+                            egui::ScrollArea::vertical().show(ui, |ui| {
+                                ui.label(egui::RichText::new("🎚 Parameters").strong());
+                                // Copy descriptor params to avoid borrow conflict with self.rack
+                                let params_list = self.rack.modules[m_idx].descriptor.params.to_vec();
+                                for p_desc in params_list {
+                                    let mut val = *self.rack.modules[m_idx].params.get(p_desc.name).unwrap_or(&p_desc.default);
+                                    if ui.add(egui::Slider::new(&mut val, p_desc.min..=p_desc.max).text(p_desc.name)).changed() {
+                                        let action = CableAction::ParamUpdate {
+                                            module_idx: m_idx,
+                                            name: p_desc.name.to_string(),
+                                            value: val,
+                                            intent: IntentBoundary::Commit(IntentClass::Performance, None),
+                                        };
+                                        self.rack.handle_action(action, &self.registry, self.zoom, self.pan);
+                                        if let Some(engine) = &self.engine {
+                                            if let Some(updated_m) = self.rack.modules.get(m_idx) {
+                                                let params: Vec<f32> = updated_m.descriptor.params
+                                                    .iter()
+                                                    .map(|p| *updated_m.params.get(p.name).unwrap_or(&p.default))
+                                                    .collect();
+                                                engine.update_module_parameters(updated_m.stable_id, params);
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                ui.separator();
+                                ui.label(egui::RichText::new("🔬 Forensics").strong());
+                                if let Some(v_state) = visual_snapshot.modules.get(&m_stable_id) {
+                                    if let Some(forensic) = &v_state.forensic {
+                                        ui.label(&forensic.internal_state_summary);
+
+                                        // Visualize Drift per Voice
+                                        ui.label("Voice Drift:");
+                                        egui_plot::Plot::new("drift_plot")
+                                            .height(80.0)
+                                            .allow_drag(false)
+                                            .show(ui, |plot_ui| {
+                                                let points: Vec<egui_plot::Bar> = (0..16).map(|v| {
+                                                    egui_plot::Bar::new(v as f64, forensic.current_drift[v] as f64)
+                                                }).collect();
+                                                plot_ui.bar_chart(egui_plot::BarChart::new(points).name("Current Drift").color(Color32::from_rgb(100, 150, 255)));
+                                            });
+
+                                        ui.separator();
+                                        ui.label("Engine Health:");
+                                        let peak_db = if forensic.stats.peak_db > 0.0 {
+                                            20.0 * forensic.stats.peak_db.log10()
+                                        } else {
+                                            -120.0
+                                        };
+                                        ui.label(format!("Peak: {:.1} dB", peak_db));
+                                        
+                                        let clip_color = if forensic.stats.clipping_count > 0 { Color32::RED } else { Color32::GREEN };
+                                        ui.label(egui::RichText::new(format!("Clipping Events: {}", forensic.stats.clipping_count)).color(clip_color));
+
+                                        if ui.button("🔬 Diagnosis Report").clicked() {
+                                            self.diagnosis_report = Some(self.generate_diagnosis(forensic));
+                                        }
+
+                                        // Signal Trace
+                                        if let Some(trace) = &forensic.signal_trace {
+                                            ui.separator();
+                                            ui.label("Polyphonic Trace Audit:");
+                                            egui_plot::Plot::new("trace_plot")
+                                                .height(150.0)
+                                                .legend(egui_plot::Legend::default())
+                                                .show(ui, |plot_ui| {
+                                                    for v in 0..16 {
+                                                        let points: Vec<[f64; 2]> = trace.iter().enumerate().map(|(i, s): (usize, &[f32; 16])| {
+                                                            [i as f64, s[v] as f64]
+                                                        }).collect();
+                                                        plot_ui.line(egui_plot::Line::new(points).name(format!("V{}", v)));
+                                                    }
+                                                });
+                                        }
+                                    } else {
+                                        ui.label("No forensic data available for this node.");
+                                    }
+                                }
+                            });
+                        }
+                    } else {
+                        ui.vertical_centered(|ui| {
+                            ui.label("No module selected.\nClick a module to inspect its parameters and forensics.");
+                        });
+                    }
+                });
+        }
+
         egui::CentralPanel::default().show(ctx, |ui| {
             let viewport = ui.max_rect();
             let painter = ui.painter().clone();
 
             // --- Background Interaction (Pan & Zoom & Menu) ---
+            // Move this BACK to the beginning (Bottom Layer)
             let bg_id = ui.make_persistent_id("rack_bg");
             let bg_resp = ui.interact(viewport, bg_id, egui::Sense::click_and_drag());
 
@@ -625,13 +637,13 @@ impl eframe::App for DirtyRackApp {
                 }
             }
 
-            if (bg_resp.dragged_by(egui::PointerButton::Primary) && !is_dragging_ui && self.rack.box_select_start.is_none())
+            if (bg_resp.dragged_by(egui::PointerButton::Primary) && !is_dragging_ui && self.rack.box_select_start.is_none() && !ui.ctx().is_using_pointer())
                 || bg_resp.dragged_by(egui::PointerButton::Middle)
             {
                 self.pan += bg_resp.drag_delta();
             }
 
-            if bg_resp.clicked_by(egui::PointerButton::Primary) && !is_dragging_ui {
+            if bg_resp.clicked_by(egui::PointerButton::Primary) && !is_dragging_ui && !ui.ctx().is_using_pointer() {
                 self.rack.selection.clear();
             }
 
@@ -650,11 +662,13 @@ impl eframe::App for DirtyRackApp {
                 }
             });
 
-            // Background + Rails (immutable paint pass)
+            // --- Background & Rails (Passive Paint Pass) ---
             {
                 painter.rect_filled(viewport, 0.0, egui::Color32::from_rgb(25, 22, 20));
                 rack::draw_rack_rails(&painter, viewport, self.zoom, self.pan);
             }
+
+
 
             // Draw modules (mutable interaction pass)
             let mut cable_action = None;
@@ -669,6 +683,7 @@ impl eframe::App for DirtyRackApp {
                     self.mri_mode,
                     &visual_snapshot,
                 );
+                
                 if let Some(a) = action {
                     cable_action = Some(a);
                 }
@@ -679,12 +694,44 @@ impl eframe::App for DirtyRackApp {
                 match action {
                     CableAction::InspectForensics { stable_id } => {
                         self.selected_module_forensic = Some(stable_id);
+                        if !self.rack.selection.contains(&stable_id) {
+                            self.rack.selection.clear();
+                            self.rack.selection.push(stable_id);
+                        }
+                        self.inspector_open = true;
                     }
-                    CableAction::ParamUpdate { .. } => {
+                    CableAction::SelectModule { stable_id, .. } => {
+                        self.rack.handle_action(action, &self.registry, self.zoom, self.pan);
+                        self.selected_module_forensic = Some(stable_id);
+                    }
+                    CableAction::StartModuleDrag { module_idx, .. } => {
+                        let stable_id = self.rack.modules[module_idx].stable_id;
+                        if !self.rack.selection.contains(&stable_id) {
+                            self.rack.selection.clear();
+                            self.rack.selection.push(stable_id);
+                            self.selected_module_forensic = Some(stable_id);
+                        }
                         self.rack.handle_action(action, &self.registry, self.zoom, self.pan);
                     }
-                    CableAction::MoveModule { .. } | CableAction::StartModuleDrag { .. } | CableAction::CancelDrag => {
+                    CableAction::ParamUpdate { module_idx, .. } => {
+                        self.rack.handle_action(action.clone(), &self.registry, self.zoom, self.pan);
+                        if let Some(engine) = &self.engine {
+                            let m = &self.rack.modules[module_idx];
+                            let params: Vec<f32> = m.descriptor.params
+                                .iter()
+                                .map(|p| *m.params.get(p.name).unwrap_or(&p.default))
+                                .collect();
+                            engine.update_module_parameters(m.stable_id, params);
+                        }
+                    }
+                    CableAction::MoveModule { .. } => {
                         self.rack.handle_action(action, &self.registry, self.zoom, self.pan);
+                        // Do NOT rebuild engine here to avoid audio resets during drag
+                    }
+                    CableAction::CancelDrag => {
+                        self.rack.handle_action(action, &self.registry, self.zoom, self.pan);
+                        // Rebuild once when drag ends
+                        self.rebuild_engine();
                     }
                     _ => {
                         self.rack.handle_action(action, &self.registry, self.zoom, self.pan);

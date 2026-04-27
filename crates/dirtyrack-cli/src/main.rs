@@ -162,7 +162,7 @@ fn main() -> anyhow::Result<()> {
 
             // Simple topological sort / order (actual GUI logic is more complex)
             let order: Vec<usize> = (0..nodes.len()).collect(); 
-            let snapshot = dirtyrack_modules::runner::GraphSnapshot {
+            let mut snapshot = dirtyrack_modules::runner::GraphSnapshot {
                 order,
                 connections,
                 node_type_ids,
@@ -173,7 +173,7 @@ fn main() -> anyhow::Result<()> {
                 back_edges: vec![],
             };
 
-            runner.apply_snapshot(snapshot.clone(), nodes);
+            runner.apply_snapshot(&mut snapshot, nodes);
 
             let spec = hound::WavSpec {
                 channels: 2,
@@ -196,7 +196,7 @@ fn main() -> anyhow::Result<()> {
                 if !runner.output_buffers.is_empty() {
                     let last_idx = runner.output_buffers.len() - 1;
                     left = runner.output_buffers[last_idx][0];
-                    right = runner.output_buffers[last_idx][1];
+                    right = runner.output_buffers[last_idx][16];
                 }
                 
                 writer.write_sample(left)?;
@@ -275,7 +275,7 @@ fn main() -> anyhow::Result<()> {
         Commands::Bench { patch: _, samples } => {
             println!("{} Starting Performance Benchmark...", "⚡".yellow().bold());
             let mut runner = dirtyrack_modules::runner::RackRunner::new(44100.0, dirtyrack_modules::signal::SeedScope::Global(0));
-            let snapshot = dirtyrack_modules::runner::GraphSnapshot {
+            let mut snapshot = dirtyrack_modules::runner::GraphSnapshot {
                 order: vec![],
                 connections: vec![],
                 port_counts: vec![],
@@ -286,9 +286,12 @@ fn main() -> anyhow::Result<()> {
                 modulations: vec![],
             }; 
             
+            runner.apply_snapshot(&mut snapshot, vec![]);
+            let initial_params = vec![];
+
             let start = std::time::Instant::now();
             for _ in 0..samples {
-                runner.process_sample(&snapshot, &vec![]);
+                runner.process_sample(&snapshot, &initial_params);
             }
             let duration = start.elapsed();
             let micro_per_sample = duration.as_micros() as f64 / samples as f64;

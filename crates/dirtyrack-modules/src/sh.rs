@@ -5,8 +5,8 @@
 //! - 決定論的リプレイにおいて、同一のタイミングで同一の値を保持することを保証。
 
 use crate::signal::{
-    BuiltinModuleDescriptor, ParamDescriptor, PortDescriptor, PortDirection, RackDspNode,
-    RackProcessContext, SeedScope, SignalType, TriggerDetector,
+    BuiltinModuleDescriptor, PortDescriptor, PortDirection, RackDspNode,
+    RackProcessContext, SignalType, TriggerDetector,
 };
 
 pub struct SampleHoldModule {

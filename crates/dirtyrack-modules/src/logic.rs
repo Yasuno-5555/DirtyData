@@ -5,8 +5,8 @@
 //! - AND, OR, XOR, NOT の各論理演算を提供。
 
 use crate::signal::{
-    BuiltinModuleDescriptor, ParamDescriptor, ParamKind, ParamResponse, PortDescriptor,
-    PortDirection, RackDspNode, RackProcessContext, SeedScope, SignalType,
+    BuiltinModuleDescriptor, PortDescriptor,
+    PortDirection, RackDspNode, RackProcessContext, SignalType,
 };
 
 pub struct LogicModule {}

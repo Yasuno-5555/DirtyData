@@ -6,11 +6,12 @@
 
 use crate::signal::{
     BuiltinModuleDescriptor, ParamDescriptor, ParamKind, ParamResponse, PortDescriptor,
-    PortDirection, RackDspNode, RackProcessContext, SeedScope, SignalType,
+    PortDirection, RackDspNode, RackProcessContext, SignalType,
 };
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
+#[allow(dead_code)]
 struct DelayStateData {
     buffer: Vec<f32>,
     write_pos: usize,
@@ -19,6 +20,7 @@ struct DelayStateData {
 pub struct DelayModule {
     buffer: Vec<f32>,
     write_pos: usize,
+    #[allow(dead_code)]
     sample_rate: f32,
 }
 

@@ -11,6 +11,7 @@ use crate::signal::{
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
+#[allow(dead_code)]
 struct VcoVoiceState {
     phase: f32,
 }

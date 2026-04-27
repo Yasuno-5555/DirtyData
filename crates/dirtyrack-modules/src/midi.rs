@@ -5,7 +5,7 @@
 //! - 16チャンネル（1V/Oct, Gate, Vel, Trig）を1本のケーブルに多重化して出力。
 
 use crate::signal::{
-    BuiltinModuleDescriptor, PortDescriptor, PortDirection, RackDspNode, RackProcessContext,
+    PortDescriptor, PortDirection, RackDspNode, RackProcessContext,
     SignalType,
 };
 
