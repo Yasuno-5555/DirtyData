@@ -1,5 +1,6 @@
 //! Matrix Mixing and Routing
 
+#[derive(Clone)]
 pub struct MatrixMixer {
     num_in: usize,
     num_out: usize,
@@ -32,6 +33,7 @@ impl MatrixMixer {
     }
 }
 
+#[derive(Clone)]
 pub struct MorphMixer {
     pub x: f32,
     pub y: f32,

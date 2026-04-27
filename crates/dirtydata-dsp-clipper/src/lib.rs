@@ -6,6 +6,7 @@
 //! - Proper asymmetric diode model with Shockley equation approximation
 //! - Output level compensation
 
+#[derive(Clone)]
 pub struct DiodeClipper {
     // DC blocker state
     dc_prev_in: f32,

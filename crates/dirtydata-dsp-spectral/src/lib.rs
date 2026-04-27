@@ -3,6 +3,7 @@
 use rustfft::{FftPlanner, num_complex::Complex};
 use std::sync::Arc;
 
+#[derive(Clone)]
 pub struct SpectralGate {
     size: usize,
     fft: Arc<dyn rustfft::Fft<f32>>,

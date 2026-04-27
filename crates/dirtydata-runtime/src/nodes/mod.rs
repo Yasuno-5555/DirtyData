@@ -13,14 +13,30 @@ pub use nonlinear::*;
 pub mod destruction;
 pub use destruction::*;
 
-pub mod legacy;
-pub use legacy::MidiEvent;
-// pub use legacy::*; // Avoid glob export to prevent name collisions with base
+pub mod spatial;
+pub use spatial::*;
+
+pub mod spectral;
+pub use spectral::*;
+
+pub mod physical;
+pub use physical::*;
+
+pub mod utilities;
+pub use utilities::*;
+
+pub mod circuit;
+pub use circuit::*;
+
+pub mod subgraph;
+pub use subgraph::*;
+
+pub use sources::MidiEvent;
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use legacy::EnvelopeNode;
+    use sources::EnvelopeNode;
     use dirtydata_core::types::ConfigSnapshot;
     use std::collections::BTreeMap;
 

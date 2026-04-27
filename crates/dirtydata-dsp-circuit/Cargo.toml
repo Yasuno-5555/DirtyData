@@ -10,4 +10,6 @@ keywords.workspace = true
 [dependencies]
 serde.workspace = true
 nalgebra = "0.34"
+faer = { version = "0.19", features = ["std"] }
+faer-ext = "0.2"
 rand = "0.8"

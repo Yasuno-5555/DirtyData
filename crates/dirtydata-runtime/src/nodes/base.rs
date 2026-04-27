@@ -1,6 +1,7 @@
 use dirtydata_core::types::ConfigSnapshot;
 
 /// A helper for smoothing parameter changes using a One-Pole LPF.
+#[derive(Clone)]
 pub struct SmoothedValue {
     current: f32,
     target: f32,
@@ -91,9 +92,12 @@ impl NodeState {
     }
 }
 
-pub trait DspNode: Send + Sync {
+pub trait DspNode: Send + Sync + dyn_clone::DynClone {
     fn process(&mut self, inputs: &[f32], outputs: &mut [[f32; 2]], config: &ConfigSnapshot, ctx: &ProcessContext);
     fn update_parameter(&mut self, _param: &str, _value: f32) {}
     fn extract_state(&self) -> NodeState { NodeState::Empty }
     fn inject_state(&mut self, _state: &NodeState) {}
+    fn as_mna_solver_mut(&mut self) -> Option<&mut dirtydata_dsp_circuit::MnaSolver> { None }
 }
+
+dyn_clone::clone_trait_object!(DspNode);

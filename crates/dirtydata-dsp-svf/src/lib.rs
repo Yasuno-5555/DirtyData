@@ -6,12 +6,14 @@
 //! - All-pass output added
 //! - Peak/Bell filter mode
 
+#[derive(Clone)]
 pub struct Svf {
     ic1eq: f32,
     ic2eq: f32,
     sample_rate: f32,
 }
 
+#[derive(Clone)]
 pub struct SvfOutput {
     pub lp: f32,
     pub hp: f32,

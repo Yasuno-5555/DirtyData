@@ -6,6 +6,7 @@
 //! - Proper Chua diode piecewise-linear function
 //! - Output scaling with DC blocking
 
+#[derive(Clone)]
 pub struct ChuaCircuit {
     x: f32,
     y: f32,
@@ -127,6 +128,7 @@ impl ChuaCircuit {
     }
 }
 
+#[derive(Clone)]
 pub struct Lorenz {
     state: [f32; 3],
 }
@@ -144,6 +146,7 @@ impl Lorenz {
     }
 }
 
+#[derive(Clone)]
 pub struct MackeyGlass {
     history: std::collections::VecDeque<f32>,
     current_x: f32,

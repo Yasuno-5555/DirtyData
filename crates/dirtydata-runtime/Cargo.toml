@@ -53,3 +53,6 @@ tempfile = "3.8"
 walkdir = "2.4"
 hex = "0.4"
 blake3.workspace = true
+wasm-encoder = "0.221"
+wat = "1.221"
+dyn-clone = "1.0.20"

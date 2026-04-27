@@ -177,7 +177,7 @@ mod tests {
         let mut g = Graph::new();
         let node = Node::new_source("Sine");
         let patch = Patch::from_operations(vec![Operation::AddNode(node)]);
-        g.apply(&patch).unwrap();
+        g.apply_patch(&patch).unwrap();
 
         let h1 = hash_graph(&g);
         let h2 = hash_graph(&g);
@@ -187,13 +187,13 @@ mod tests {
     #[test]
     fn test_different_graphs_different_hashes() {
         let mut g1 = Graph::new();
-        g1.apply(&Patch::from_operations(vec![Operation::AddNode(
+        g1.apply_patch(&Patch::from_operations(vec![Operation::AddNode(
             Node::new_source("Sine"),
         )]))
         .unwrap();
 
         let mut g2 = Graph::new();
-        g2.apply(&Patch::from_operations(vec![Operation::AddNode(
+        g2.apply_patch(&Patch::from_operations(vec![Operation::AddNode(
             Node::new_source("Noise"),
         )]))
         .unwrap();

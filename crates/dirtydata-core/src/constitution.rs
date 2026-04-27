@@ -101,7 +101,7 @@ mod tests {
             node_count in 1usize..8,
         ) {
             // ランダムにノードを生成してパッチを作成
-            let rt = proptest::test_runner::TestRunner::new(Default::default());
+            let _rt = proptest::test_runner::TestRunner::new(Default::default());
             let mut nodes = Vec::new();
             for _ in 0..node_count {
                 // Use fixed nodes for determinism within proptest
@@ -114,7 +114,7 @@ mod tests {
 
             // Apply
             let mut graph = Graph::new();
-            graph.apply(&patch).unwrap();
+            graph.apply_patch(&patch).unwrap();
 
             // Replay
             let replayed = Graph::replay(&[patch]).unwrap();
@@ -168,18 +168,18 @@ mod tests {
             for i in 0..patch_count {
                 let node = Node::new_processor(&format!("node_{}", i));
                 let patch = Patch::from_operations(vec![Operation::AddNode(node)]);
-                graph.apply(&patch).unwrap();
+                graph.apply_patch(&patch).unwrap();
                 all_patches.push(patch);
             }
 
             // 憲法: applied_patches は全パッチの ID と一致
             prop_assert_eq!(
-                graph.applied_patches.len(),
+                graph.lineage.applied_patches.len(),
                 all_patches.len(),
                 "Explainability violation: patch count mismatch"
             );
 
-            for (applied_id, patch) in graph.applied_patches.iter().zip(all_patches.iter()) {
+            for (applied_id, patch) in graph.lineage.applied_patches.iter().zip(all_patches.iter()) {
                 prop_assert_eq!(
                     applied_id, &patch.identity,
                     "Explainability violation: patch ID mismatch"
@@ -220,8 +220,8 @@ mod tests {
 
         // Apply sequentially
         let mut graph = Graph::new();
-        graph.apply(&p1).unwrap();
-        graph.apply(&p2).unwrap();
+        graph.apply_patch(&p1).unwrap();
+        graph.apply_patch(&p2).unwrap();
 
         // Replay
         let replayed = Graph::replay(&[p1, p2]).unwrap();
@@ -270,8 +270,8 @@ mod tests {
         let p2 = Patch::from_operations(vec![Operation::AddEdge(edge1), Operation::AddEdge(edge2)]);
 
         let mut graph = Graph::new();
-        graph.apply(&p1).unwrap();
-        graph.apply(&p2).unwrap();
+        graph.apply_patch(&p1).unwrap();
+        graph.apply_patch(&p2).unwrap();
 
         let replayed = Graph::replay(&[p1, p2]).unwrap();
 

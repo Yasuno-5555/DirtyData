@@ -12,15 +12,6 @@ use dirtydata_core::ir::{Graph, EdgeKind};
 use dirtydata_core::types::{StableId, NodeKind, PortDirection};
 use dirtydata_core::graph_utils::topological_sort;
 use crate::nodes::*;
-use crate::nodes::legacy::{
-    MidiEvent, EnvelopeNode, AutomationNode, SequencerNode, WavefolderNode,
-    AddNode, MultiplyNode, ClipNode, TriggerNode, DelayNode,
-    LorenzNode, MackeyGlassNode, GrayScottNode, SlewLimiterNode, SampleHoldNode,
-    ClockNode, ProbabilityGateNode, ReverbNode, SpringReverbNode, GranularNode,
-    LogicNode, SpectralFreezeNode, FFTConvolveNode, ZdfLadderNode, SvfNode,
-    DiodeClipperNode, BbdDelayNode, KarplusStrongNode, ModalResonatorNode,
-    ChuaCircuitNode, TapeMachineNode, MatrixMixerNode, EuclideanSequencerNode,
-};
 use crate::osc::OscHandler;
 
 use std::collections::HashMap;
@@ -113,6 +104,7 @@ impl SharedState {
     }
 }
 
+#[derive(Clone)]
 pub struct ModulationMapping {
     pub source_node_id: StableId,
     pub source_port_idx: usize,
@@ -122,7 +114,7 @@ pub struct ModulationMapping {
 }
 
 pub struct DspRunner {
-    nodes: Vec<(StableId, Box<dyn base::DspNode>)>,
+    pub nodes: Vec<(StableId, Box<dyn base::DspNode>)>,
     node_outputs: HashMap<StableId, Vec<[f32; 2]>>,
     graph: Graph,
     feedback_latches: Vec<[f32; 2]>,
@@ -132,6 +124,23 @@ pub struct DspRunner {
     node_saturation: HashMap<StableId, f32>,
     jit_program: Option<jit::JitProgram>,
     parameter_provenance: HashMap<StableId, HashMap<String, Vec<String>>>,
+}
+
+impl Clone for DspRunner {
+    fn clone(&self) -> Self {
+        Self {
+            nodes: self.nodes.clone(),
+            node_outputs: self.node_outputs.clone(),
+            graph: self.graph.clone(),
+            feedback_latches: self.feedback_latches.clone(),
+            feedback_reads: self.feedback_reads.clone(),
+            feedback_writes: self.feedback_writes.clone(),
+            modulation_mappings: self.modulation_mappings.clone(),
+            node_saturation: self.node_saturation.clone(),
+            jit_program: None,
+            parameter_provenance: self.parameter_provenance.clone(),
+        }
+    }
 }
 
 impl DspRunner {
@@ -146,7 +155,16 @@ impl DspRunner {
             if let Some(node) = graph.nodes.get(&id) {
                 let dsp_node: Box<dyn base::DspNode> = match &node.kind {
                     NodeKind::Foreign(plugin_name) => {
-                        Box::new(legacy::ForeignNode::new(plugin_name.clone(), 256))
+                        Box::new(ForeignNode::new(plugin_name.clone(), 256))
+                    }
+                    NodeKind::SubGraph => {
+                        Box::new(SubGraphNode::new())
+                    }
+                    NodeKind::InputProxy => {
+                        Box::new(InputProxyNode::new())
+                    }
+                    NodeKind::OutputProxy => {
+                        Box::new(OutputProxyNode::new())
                     }
                     _ => {
                         let name = node.config.get("name").and_then(|v| v.as_string());
@@ -220,6 +238,7 @@ impl DspRunner {
                             "TapeMachine" | "Tape" => Box::new(TapeMachineNode::new(sample_rate)),
                             "MatrixMixer" => Box::new(MatrixMixerNode::new(8, 8)),
                             "Euclidean" | "EuclideanSequencer" => Box::new(EuclideanSequencerNode::new()),
+                            "Wasm" => Box::new(WasmNode::new()),
                             _ => Box::new(GainNode::new()),
                         }
                     }

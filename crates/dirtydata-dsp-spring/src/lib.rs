@@ -7,6 +7,7 @@
 //! - High-frequency damping in feedback path
 //! - Drip/crash transient modeling
 
+#[derive(Clone)]
 struct Allpass {
     buffer: Vec<f32>,
     write_idx: usize,
@@ -37,6 +38,7 @@ impl Allpass {
 }
 
 /// One-pole lowpass for damping
+#[derive(Clone)]
 struct OnePole {
     state: f32,
     alpha: f32,
@@ -60,6 +62,7 @@ impl OnePole {
     }
 }
 
+#[derive(Clone)]
 pub struct SpringReverb {
     // 6 dispersive allpass sections (prime-length)
     ap: [Allpass; 6],

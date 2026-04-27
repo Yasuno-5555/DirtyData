@@ -15,12 +15,27 @@ impl crate::mutation::MutationEngine {
         for el in &elements {
             let el_val: CircuitElement = el.clone();
             solver.add_element(el_val);
-            match el {
-                CircuitElement::Resistor { a, b, .. } => { max_node = max_node.max(a.0).max(b.0); }
-                CircuitElement::Capacitor { a, b, .. } => { max_node = max_node.max(a.0).max(b.0); }
-                CircuitElement::Diode { a, k, .. } => { max_node = max_node.max(a.0).max(k.0); }
-                CircuitElement::VoltageSource { pos, neg, .. } => { max_node = max_node.max(pos.0).max(neg.0); }
-            }
+            let nodes = match el {
+                CircuitElement::Resistor { a, b, .. } |
+                CircuitElement::Capacitor { a, b, .. } |
+                CircuitElement::Inductor { a, b, .. } |
+                CircuitElement::Diode { a, k: b, .. } |
+                CircuitElement::Zener { a, k: b, .. } |
+                CircuitElement::Switch { a, b, .. } |
+                CircuitElement::VoltageSource { pos: a, neg: b, .. } |
+                CircuitElement::CurrentSource { pos: a, neg: b, .. } => vec![*a, *b],
+                CircuitElement::Triode { g, k, p, .. } => vec![*g, *k, *p],
+                CircuitElement::Bjt { b, c, e, .. } => vec![*b, *c, *e],
+                CircuitElement::Jfet { g, d, s, .. } => vec![*g, *d, *s],
+                CircuitElement::Transformer { a1, b1, a2, b2, .. } => vec![*a1, *b1, *a2, *b2],
+                CircuitElement::OpAmp { pos, neg, out, .. } => vec![*pos, *neg, *out],
+                CircuitElement::Potentiometer { a, wiper, b, .. } => vec![*a, *wiper, *b],
+                CircuitElement::ControlledSource { target_a, target_b, control_a, control_b, .. } => vec![*target_a, *target_b, *control_a, *control_b],
+                CircuitElement::TransmissionLine { a1, b1, a2, b2, .. } => vec![*a1, *b1, *a2, *b2],
+                CircuitElement::Memristor { a, b, .. } => vec![*a, *b],
+                CircuitElement::ThermalCoupler { a, b, .. } => vec![*a, *b],
+            };
+            for n in nodes { max_node = max_node.max(n.0); }
         }
         solver.set_num_nodes(max_node + 1);
 

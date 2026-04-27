@@ -106,7 +106,8 @@ impl Storage {
     pub fn load_graph(&self) -> Result<Graph, StorageError> {
         let path = self.root.join("ir").join("current.json");
         let data = fs::read_to_string(&path)?;
-        let graph = serde_json::from_str(&data)?;
+        let mut graph: Graph = serde_json::from_str(&data)?;
+        graph.sync();
         Ok(graph)
     }
 
@@ -337,7 +338,7 @@ mod tests {
         let mut graph = storage.load_graph().unwrap();
         let node = Node::new_processor("Gain");
         let patch = Patch::from_operations(vec![Operation::AddNode(node.clone())]);
-        graph.apply(&patch).unwrap();
+        graph.apply_patch(&patch).unwrap();
 
         // Save everything
         storage.save_graph(&graph).unwrap();

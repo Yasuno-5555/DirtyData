@@ -7,6 +7,7 @@
 //! - Anti-aliasing filter on input
 //! - Allpass interpolation for sub-sample delay precision
 
+#[derive(Clone)]
 pub struct BbdDelay {
     buffer: Vec<f32>,
     write_idx: usize,

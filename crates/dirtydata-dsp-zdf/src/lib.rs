@@ -6,11 +6,13 @@
 //! - Thermal saturation per-stage (not just input)
 //! - Multi-output (1/2/3/4 pole taps)
 
+#[derive(Clone)]
 pub struct ZdfLadder {
     s: [f32; 4],
     sample_rate: f32,
 }
 
+#[derive(Clone)]
 pub struct LadderOutput {
     pub lp6: f32,   // 1-pole (6 dB/oct)
     pub lp12: f32,  // 2-pole (12 dB/oct)

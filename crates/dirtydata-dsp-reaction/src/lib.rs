@@ -5,6 +5,7 @@
 //! - Configurable simulation speed (sub-stepping)
 //! - Stereo output from two spatial taps
 
+#[derive(Clone)]
 pub struct ReactionDiffusion {
     a: [Vec<f32>; 2],  // Double buffer
     b: [Vec<f32>; 2],

@@ -17,3 +17,7 @@ tracing.workspace = true
 petgraph = "0.7"
 rand = { version = "0.8", features = ["small_rng"] }
 dirtydata-dsp-circuit = { path = "../dirtydata-dsp-circuit" , version = "0.1.0" }
+
+[dev-dependencies]
+proptest = "1.6"
+

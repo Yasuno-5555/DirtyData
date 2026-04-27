@@ -1,5 +1,6 @@
 //! Control and Modulation Civilization
 
+#[derive(Clone)]
 pub struct FunctionGenerator {
     pub state: f32,
     pub stage: u8, // 0: idle, 1: rise, 2: fall
@@ -39,6 +40,7 @@ impl FunctionGenerator {
     }
 }
 
+#[derive(Clone)]
 pub struct RandomSource {
     prev_clock: f32,
     val: f32,

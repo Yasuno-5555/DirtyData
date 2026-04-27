@@ -14,6 +14,7 @@ pub trait WdfNode {
 }
 
 /// WDF Capacitor
+#[derive(Clone)]
 pub struct Capacitor {
     rp: f32,
     state: f32,
@@ -30,6 +31,7 @@ impl WdfNode for Capacitor {
 }
 
 /// WDF Resistor
+#[derive(Clone)]
 pub struct Resistor { rp: f32 }
 impl Resistor { pub fn new(r: f32) -> Self { Self { rp: r.max(1e-6) } } }
 impl WdfNode for Resistor {
@@ -39,6 +41,7 @@ impl WdfNode for Resistor {
 }
 
 /// WDF Inductor
+#[derive(Clone)]
 pub struct Inductor {
     rp: f32,
     state: f32,
@@ -55,6 +58,7 @@ impl WdfNode for Inductor {
 }
 
 /// Simple RC circuit topology
+#[derive(Clone)]
 pub struct WdfSimpleRc {
     capacitor: Capacitor,
     _resistor: Resistor,
@@ -84,6 +88,7 @@ impl WdfSimpleRc {
 // ──────────────────────────────────────────────
 
 /// WDF 3-Port Series Adaptor
+#[derive(Clone)]
 pub struct SeriesAdaptor { r1: f32, r2: f32, r3: f32 }
 impl SeriesAdaptor {
     pub fn new(r1: f32, r2: f32) -> Self { Self { r1, r2, r3: r1 + r2 } }
@@ -101,6 +106,7 @@ impl SeriesAdaptor {
 }
 
 /// WDF 3-Port Parallel Adaptor
+#[derive(Clone)]
 pub struct ParallelAdaptor { g1: f32, g2: f32, g3: f32 }
 impl ParallelAdaptor {
     pub fn new(r1: f32, r2: f32) -> Self {
@@ -125,6 +131,7 @@ impl ParallelAdaptor {
 ///
 /// Uses the Shockley diode equation: I = Is * (exp(V/Vt) - 1)
 /// For antiparallel pair, the implicit equation is solved iteratively.
+#[derive(Clone)]
 pub struct WdfDiodePair {
     rp: f32,
     is: f32,       // Reverse saturation current
@@ -187,6 +194,7 @@ impl WdfDiodePair {
 }
 
 /// WDF Diode Clipper Circuit (with proper NR solver)
+#[derive(Clone)]
 pub struct WdfDiodeClipper {
     resistor: Resistor,
     capacitor: Capacitor,

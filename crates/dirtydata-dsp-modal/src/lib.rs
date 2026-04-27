@@ -6,6 +6,7 @@
 //! - Exponential decay model per mode
 //! - Attack transient shaping
 
+#[derive(Clone)]
 struct Mode {
     freq: f32,
     decay_rate: f32,  // Exponential decay per sample
@@ -61,6 +62,7 @@ impl Mode {
     }
 }
 
+#[derive(Clone)]
 pub struct ModalResonatorBank {
     modes: Vec<Mode>,
     sample_rate: f32,

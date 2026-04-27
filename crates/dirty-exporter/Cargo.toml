@@ -2,6 +2,9 @@
 name = "dirty-exporter"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
 description = "Compiler for .dirtydata projects — Transmuting IR into standalone binaries."
 
 [dependencies]

@@ -57,3 +57,4 @@ dirty build --target vst3
 - **RFC 001**: [The Forensic Standard](docs/RFC_001_DIRTYDATA_SPEC.md)
 - **Architecture**: [Core Design](docs/architecture.md)
 - **Plugin Development**: [SDK Guide](docs/plugin_development.md)
+- **API Usage**: [Usage Guide](docs/API%20Usage.md)

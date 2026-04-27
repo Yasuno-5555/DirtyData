@@ -6,6 +6,7 @@
 //! - Cubic Hermite interpolation for delay line readback
 //! - Proper head bump EQ with configurable frequency and resonance
 
+#[derive(Clone)]
 pub struct TapeMachine {
     buffer: Vec<f32>,
     write_idx: usize,

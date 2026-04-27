@@ -21,6 +21,7 @@
 //! This bidirectional propagation creates standing waves → formants.
 
 /// Rosenberg glottal pulse model (improved over simple LF)
+#[derive(Clone)]
 pub struct GlottalSource {
     phase: f32,
     freq: f32,
@@ -92,6 +93,7 @@ impl WaveguideSection {
 
 /// Full vocal tract model with bidirectional Kelly-Lochbaum scattering,
 /// glottal reflection, lip radiation, and nasal coupling.
+#[derive(Clone)]
 pub struct VocalTract {
     /// Oral tract sections (pharynx → mouth)
     pub sections: Vec<WaveguideSection>,

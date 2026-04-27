@@ -388,7 +388,7 @@ mod tests {
         ]);
 
         let mut graph = Graph::new();
-        graph.apply(&patch).unwrap();
+        graph.apply_patch(&patch).unwrap();
 
         let report = validate_commit(&graph, &[patch]);
         assert!(report.is_committable(), "errors: {:?}", report.errors);
@@ -405,7 +405,7 @@ mod tests {
             Patch::from_operations(vec![Operation::AddNode(src), Operation::AddNode(orphan)]);
 
         let mut graph = Graph::new();
-        graph.apply(&patch).unwrap();
+        graph.apply_patch(&patch).unwrap();
 
         let report = validate_commit(&graph, &[patch]);
         assert!(report.is_committable()); // warnings don't block
@@ -426,7 +426,7 @@ mod tests {
 
         let patch = Patch::from_operations(vec![Operation::AddNode(foreign)]);
         let mut graph = Graph::new();
-        graph.apply(&patch).unwrap();
+        graph.apply_patch(&patch).unwrap();
 
         let report = validate_commit(&graph, &[patch]);
         assert!(!report.confidence_debt.is_empty());
@@ -485,7 +485,7 @@ mod tests {
         ]);
 
         let mut graph = Graph::new();
-        graph.apply(&patch).unwrap();
+        graph.apply_patch(&patch).unwrap();
 
         let report = validate_commit(&graph, &[patch]);
         assert!(!report.is_committable());

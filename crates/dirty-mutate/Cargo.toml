@@ -2,6 +2,9 @@
 name = "dirty-mutate"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
 description = "Headless evolutionary engine for .dirtydata patches."
 
 [dependencies]

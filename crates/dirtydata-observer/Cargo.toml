@@ -3,6 +3,9 @@ name = "dirtydata-observer"
 description = "Provenance Engine — stub"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
 
 [dependencies]
 dirtydata-core = { path = "../dirtydata-core" , version = "0.1.0" }

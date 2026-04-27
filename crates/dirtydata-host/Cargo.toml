@@ -3,6 +3,9 @@ name = "dirtydata-host"
 description = "Plugin Sandbox / Foreign Boundary — stub"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
 
 [dependencies]
 bytemuck = "1.14"

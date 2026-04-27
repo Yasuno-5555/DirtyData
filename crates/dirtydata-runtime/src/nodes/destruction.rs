@@ -2,6 +2,7 @@ use super::base::*;
 use dirtydata_core::types::ConfigSnapshot;
 use dirtydata_dsp_destruction::*;
 
+#[derive(Clone)]
 pub struct BitCrushNode {
     inner: BitCrush,
 }
@@ -23,6 +24,7 @@ impl DspNode for BitCrushNode {
     }
 }
 
+#[derive(Clone)]
 pub struct WaveShaperNode {
     inner: WaveShaper,
 }
@@ -43,6 +45,7 @@ impl DspNode for WaveShaperNode {
     }
 }
 
+#[derive(Clone)]
 pub struct PllNode {
     inner: Pll,
 }

@@ -1,5 +1,6 @@
 //! Destruction and Distortion Civilization
 
+#[derive(Clone)]
 pub struct BitCrush {
     acc: f32,
     count: f32,
@@ -22,6 +23,7 @@ impl BitCrush {
     }
 }
 
+#[derive(Clone)]
 pub struct WaveShaper {}
 
 impl WaveShaper {
@@ -31,6 +33,7 @@ impl WaveShaper {
     }
 }
 
+#[derive(Clone)]
 pub struct Pll {
     phase: f32,
     vco_freq: f32,

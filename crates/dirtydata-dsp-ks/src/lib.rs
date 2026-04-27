@@ -6,6 +6,7 @@
 //! - Stiffness allpass cascade (inharmonicity)
 //! - Frequency-dependent damping with DC blocker
 
+#[derive(Clone)]
 pub struct KarplusStrong {
     delay_line: Vec<f32>,
     write_idx: usize,

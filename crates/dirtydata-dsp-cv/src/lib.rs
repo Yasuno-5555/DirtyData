@@ -1,5 +1,6 @@
 //! CV and Logic Civilization
 
+#[derive(Clone)]
 pub struct Slew {
     state: f32,
 }
@@ -20,6 +21,7 @@ impl Slew {
     }
 }
 
+#[derive(Clone)]
 pub struct Comparator {
     state: bool,
 }
@@ -36,6 +38,7 @@ impl Comparator {
     }
 }
 
+#[derive(Clone)]
 pub struct ClockDivider {
     count: u32,
     prev_clock: f32,
@@ -52,6 +55,7 @@ impl ClockDivider {
     }
 }
 
+#[derive(Clone)]
 pub struct EuclideanSequencer {
     pub steps: u32,
     pub hits: u32,

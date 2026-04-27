@@ -62,3 +62,4 @@ dirty build --target vst3
 - **Architecture**: [コア設計](docs/ja/architecture.md)
 - **API Reference**: [SDKリファレンス](docs/ja/api_reference.md)
 - **Plugin Development**: [SDKガイド](docs/ja/plugin_development.md)
+- **API Usage**: [使用ガイド](docs/ja/API%20Usage.md)
