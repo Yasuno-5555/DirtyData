@@ -1,0 +1,11 @@
+[package]
+name = "dirtydata-dsp-wavelet"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Discrete Wavelet Transform and multi-resolution analysis"
+repository.workspace = true
+keywords.workspace = true
+
+[dependencies]
+serde.workspace = true

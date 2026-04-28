@@ -963,6 +963,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "dirtydata-dsp-fft"
+version = "0.1.0"
+dependencies = [
+ "rustfft",
+ "serde",
+]
+
+[[package]]
 name = "dirtydata-dsp-ks"
 version = "0.1.0"
 dependencies = [
@@ -1023,6 +1031,13 @@ dependencies = [
 
 [[package]]
 name = "dirtydata-dsp-vocal"
+version = "0.1.0"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "dirtydata-dsp-wavelet"
 version = "0.1.0"
 dependencies = [
  "serde",

@@ -1,0 +1,12 @@
+[package]
+name = "dirtydata-dsp-fft"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Fast Fourier Transform and STFT processing utilities"
+repository.workspace = true
+keywords.workspace = true
+
+[dependencies]
+rustfft = "6.1"
+serde.workspace = true

@@ -1,7 +1,5 @@
 # DirtyData: Research-Grade Forensic Audio & Circuit Simulation Framework
 
-> "GUI is for tourists. CLI is for the Judiciary (Engineers)."
-
 DirtyData is a high-fidelity, headless audio engine built for **deterministic sound reconstruction**, **cryptographic causality**, and **ML-driven exploration**. 
 
 Unlike traditional DAWs or DSP environments that treat sound as a transient stream, DirtyData treats every sample as a **verifiable lineage of intent** tracked via a Merkle DAG. It is the "Git of Sound," designed for researchers who demand absolute reproducibility and forensic integrity.
