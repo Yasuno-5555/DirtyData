@@ -1,6 +1,6 @@
-use dirtydata_core::types::ConfigSnapshot;
 use super::base::*;
-use rustfft::{FftPlanner, num_complex::Complex};
+use dirtydata_core::types::ConfigSnapshot;
+use rustfft::{num_complex::Complex, FftPlanner};
 
 #[derive(Clone)]
 pub struct SpectralFreezeNode {
@@ -26,18 +26,28 @@ impl SpectralFreezeNode {
 }
 
 impl DspNode for SpectralFreezeNode {
-    fn process(&mut self, inputs: &[f32], outputs: &mut [[f32; 2]], config: &ConfigSnapshot, _ctx: &ProcessContext) {
-        let freeze = config.get("freeze").and_then(|v| v.as_bool()).unwrap_or(false);
+    fn process(
+        &mut self,
+        inputs: &[f32],
+        outputs: &mut [[f32; 2]],
+        config: &ConfigSnapshot,
+        _ctx: &ProcessContext,
+    ) {
+        let freeze = config
+            .get("freeze")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
         let input = inputs.get(0).cloned().unwrap_or(0.0);
 
         if freeze && !self.frozen {
             let mut planner = FftPlanner::new();
             let fft = planner.plan_fft_forward(self.size);
-            let mut complex_buf: Vec<Complex<f32>> = self.buffer.iter().map(|&x| Complex::new(x, 0.0)).collect();
+            let mut complex_buf: Vec<Complex<f32>> =
+                self.buffer.iter().map(|&x| Complex::new(x, 0.0)).collect();
             fft.process(&mut complex_buf);
             self.fft_result = complex_buf;
             self.frozen = true;
-            
+
             let ifft = planner.plan_fft_inverse(self.size);
             let mut inv_buf = self.fft_result.clone();
             ifft.process(&mut inv_buf);
@@ -54,9 +64,9 @@ impl DspNode for SpectralFreezeNode {
         }
 
         let out_val = if self.frozen {
-             let v = self.buffer[self.read_pos];
-             self.read_pos = (self.read_pos + 1) % self.size;
-             v
+            let v = self.buffer[self.read_pos];
+            self.read_pos = (self.read_pos + 1) % self.size;
+            v
         } else {
             input
         };
@@ -89,7 +99,13 @@ impl FFTConvolveNode {
 }
 
 impl DspNode for FFTConvolveNode {
-    fn process(&mut self, inputs: &[f32], outputs: &mut [[f32; 2]], _config: &ConfigSnapshot, _ctx: &ProcessContext) {
+    fn process(
+        &mut self,
+        inputs: &[f32],
+        outputs: &mut [[f32; 2]],
+        _config: &ConfigSnapshot,
+        _ctx: &ProcessContext,
+    ) {
         let input = inputs.get(0).cloned().unwrap_or(0.0);
         let impulse = inputs.get(1).cloned().unwrap_or(0.0);
 
@@ -100,20 +116,28 @@ impl DspNode for FFTConvolveNode {
         if self.pos >= self.size {
             let mut planner = FftPlanner::new();
             let fft = planner.plan_fft_forward(self.size);
-            
-            let mut in_complex: Vec<Complex<f32>> = self.input_buffer.iter().map(|&x| Complex::new(x, 0.0)).collect();
-            let mut imp_complex: Vec<Complex<f32>> = self.impulse_buffer.iter().map(|&x| Complex::new(x, 0.0)).collect();
-            
+
+            let mut in_complex: Vec<Complex<f32>> = self
+                .input_buffer
+                .iter()
+                .map(|&x| Complex::new(x, 0.0))
+                .collect();
+            let mut imp_complex: Vec<Complex<f32>> = self
+                .impulse_buffer
+                .iter()
+                .map(|&x| Complex::new(x, 0.0))
+                .collect();
+
             fft.process(&mut in_complex);
             fft.process(&mut imp_complex);
-            
+
             for i in 0..self.size {
                 in_complex[i] *= imp_complex[i];
             }
-            
+
             let ifft = planner.plan_fft_inverse(self.size);
             ifft.process(&mut in_complex);
-            
+
             for (i, c) in in_complex.iter().enumerate() {
                 self.result_buffer[i] = c.re / self.size as f32;
             }
@@ -149,7 +173,12 @@ impl GranularNode {
         let buf_size = (sample_rate * 2.0) as usize; // 2 seconds buffer
         let mut grains = Vec::new();
         for _ in 0..16 {
-            grains.push(Grain { pos: 0.0, duration_samples: 0.0, current_sample: 0.0, active: false });
+            grains.push(Grain {
+                pos: 0.0,
+                duration_samples: 0.0,
+                current_sample: 0.0,
+                active: false,
+            });
         }
         Self {
             buffer: vec![[0.0, 0.0]; buf_size],
@@ -161,13 +190,28 @@ impl GranularNode {
 }
 
 impl DspNode for GranularNode {
-    fn process(&mut self, inputs: &[f32], outputs: &mut [[f32; 2]], config: &ConfigSnapshot, ctx: &ProcessContext) {
-        let pos_norm = config.get("position").and_then(|v| v.as_float()).unwrap_or(0.5) as f32;
-        let size_ms = config.get("size").and_then(|v| v.as_float()).unwrap_or(50.0) as f32;
-        let density = config.get("density").and_then(|v| v.as_float()).unwrap_or(0.5) as f32;
-        
+    fn process(
+        &mut self,
+        inputs: &[f32],
+        outputs: &mut [[f32; 2]],
+        config: &ConfigSnapshot,
+        ctx: &ProcessContext,
+    ) {
+        let pos_norm = config
+            .get("position")
+            .and_then(|v| v.as_float())
+            .unwrap_or(0.5) as f32;
+        let size_ms = config
+            .get("size")
+            .and_then(|v| v.as_float())
+            .unwrap_or(50.0) as f32;
+        let density = config
+            .get("density")
+            .and_then(|v| v.as_float())
+            .unwrap_or(0.5) as f32;
+
         let size_samples = (size_ms * 0.001 * ctx.sample_rate) as f32;
-        
+
         for i in 0..outputs.len() {
             let in_l = inputs.get(i * 2).cloned().unwrap_or(0.0);
             let in_r = inputs.get(i * 2 + 1).cloned().unwrap_or(0.0);
@@ -193,10 +237,10 @@ impl DspNode for GranularNode {
                 let read_base = (grain.pos * (self.buffer.len() as f32 - 1.0)) as usize;
                 let read_idx = (read_base + grain.current_sample as usize) % self.buffer.len();
                 let val = self.buffer[read_idx];
-                
+
                 mixed[0] += val[0] * window;
                 mixed[1] += val[1] * window;
-                
+
                 grain.current_sample += 1.0;
                 if grain.current_sample >= grain.duration_samples {
                     grain.active = false;

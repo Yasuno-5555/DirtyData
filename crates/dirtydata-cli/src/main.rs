@@ -1,9 +1,9 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use colored::*;
-use dirtydata_host::Workspace;
+use dirty_exporter::{BuildTarget, Transmuter};
 use dirty_mutate::Mutator;
-use dirty_exporter::{Transmuter, BuildTarget};
+use dirtydata_host::Workspace;
 use std::path::{Path, PathBuf};
 
 /// DirtyData: Headless Forensic Audio Workbench
@@ -77,13 +77,22 @@ async fn main() -> Result<()> {
             let report = workspace.audit()?;
 
             println!("\n{}", "--- Forensic Audit Report ---".dimmed());
-            
-            let status = if report.is_healthy() { "HEALTHY".green() } else { "CORRUPTED".red() };
+
+            let status = if report.is_healthy() {
+                "HEALTHY".green()
+            } else {
+                "CORRUPTED".red()
+            };
             println!("Status: {}", status);
-            
+
             let check = |label: &str, valid: bool| {
                 let icon = if valid { "✓".green() } else { "✗".red() };
-                println!("  {} {:<20} [{}]", icon, label, if valid { "OK".green() } else { "FAIL".red() });
+                println!(
+                    "  {} {:<20} [{}]",
+                    icon,
+                    label,
+                    if valid { "OK".green() } else { "FAIL".red() }
+                );
             };
 
             check("Root Hash", report.root_hash_valid);
@@ -102,9 +111,15 @@ async fn main() -> Result<()> {
             println!("{}\n", "-----------------------------".dimmed());
 
             if report.is_healthy() {
-                println!("{} All forensic checks passed. You can trust this workspace.", "🛡️".green());
+                println!(
+                    "{} All forensic checks passed. You can trust this workspace.",
+                    "🛡️".green()
+                );
             } else {
-                println!("{} Workspace integrity compromised. Repair required.", "⚠️".red());
+                println!(
+                    "{} Workspace integrity compromised. Repair required.",
+                    "⚠️".red()
+                );
                 std::process::exit(1);
             }
         }
@@ -120,8 +135,18 @@ async fn main() -> Result<()> {
                 println!("   Linked intent: {}", i.blue());
             }
         }
-        Commands::Mutate { node_id, level, epochs } => {
-            println!("{} Mutating node {} (level: {}, epochs: {})", "🧬".bold(), node_id, level, epochs);
+        Commands::Mutate {
+            node_id,
+            level,
+            epochs,
+        } => {
+            println!(
+                "{} Mutating node {} (level: {}, epochs: {})",
+                "🧬".bold(),
+                node_id,
+                level,
+                epochs
+            );
             let workspace = Workspace::open(".")?;
             let mutation_level = match level.as_str() {
                 "safe" => 0.01,
@@ -130,7 +155,10 @@ async fn main() -> Result<()> {
                 _ => 0.1,
             };
             let patch = Mutator::evolve(workspace.graph(), &node_id, epochs, mutation_level)?;
-            println!("{} Mutation generated. Apply it with `dirty patch`.", "✓".green());
+            println!(
+                "{} Mutation generated. Apply it with `dirty patch`.",
+                "✓".green()
+            );
             println!("   Hash: {}", hex::encode(patch.deterministic_hash));
         }
         Commands::Build { target, release } => {
@@ -144,7 +172,11 @@ async fn main() -> Result<()> {
                 _ => BuildTarget::Vst3,
             };
             let output = Transmuter::transmute(workspace.graph(), target_enum, Path::new("build"))?;
-            println!("{} Transmutation complete. Project generated at: {:?}", "✓".green(), output);
+            println!(
+                "{} Transmutation complete. Project generated at: {:?}",
+                "✓".green(),
+                output
+            );
         }
         Commands::Verify => {
             println!("{} Verifying forensic spec compliance...", "🔎".bold());

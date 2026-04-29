@@ -15,14 +15,29 @@ pub fn render_dsl(graph: &Graph) -> String {
     let mut out = String::new();
 
     // Header
-    writeln!(out, "# DirtyData Surface DSL — revision {}", graph.revision.0).unwrap();
-    writeln!(out, "# Hash: blake3:{}", hex_short(&hash::hash_graph(graph))).unwrap();
+    writeln!(
+        out,
+        "# DirtyData Surface DSL — revision {}",
+        graph.revision.0
+    )
+    .unwrap();
+    writeln!(
+        out,
+        "# Hash: blake3:{}",
+        hex_short(&hash::hash_graph(graph))
+    )
+    .unwrap();
     writeln!(out, "# Patches: {}", graph.lineage.applied_patches.len()).unwrap();
     writeln!(out).unwrap();
 
     // Build name lookup for connections
     let name_of = |id: &StableId| -> String {
-        graph.topology.nodes.get(id).map(node_name).unwrap_or_else(|| id.to_string())
+        graph
+            .topology
+            .nodes
+            .get(id)
+            .map(node_name)
+            .unwrap_or_else(|| id.to_string())
     };
 
     // Nodes
@@ -61,15 +76,13 @@ pub fn render_dsl(graph: &Graph) -> String {
         for edge in graph.topology.edges.values() {
             let src_name = name_of(&edge.source.node_id);
             let tgt_name = name_of(&edge.target.node_id);
-            
-            let kind_tag = "# normal"; 
-            
+
+            let kind_tag = "# normal";
+
             writeln!(
                 out,
                 "{}.{} -> {}.{}  {}",
-                src_name, edge.source.port_name,
-                tgt_name, edge.target.port_name,
-                kind_tag
+                src_name, edge.source.port_name, tgt_name, edge.target.port_name, kind_tag
             )
             .unwrap();
         }

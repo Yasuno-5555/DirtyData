@@ -1,4 +1,4 @@
-use dirtydata_sdk::{DspPlugin, declare_plugin};
+use dirtydata_sdk::{declare_plugin, DspPlugin};
 
 #[derive(Default)]
 pub struct BitcrushPlugin {
@@ -26,12 +26,12 @@ impl DspPlugin for BitcrushPlugin {
         self.counter += 1.0;
         if self.counter >= self.rate_divider {
             self.counter = 0.0;
-            
+
             let quantize = |x: f32| {
                 let levels = 2.0f32.powf(self.bits);
                 (x * levels).round() / levels
             };
-            
+
             self.last_val = [quantize(in_l), quantize(in_r)];
         }
         self.last_val

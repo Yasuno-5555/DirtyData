@@ -1,5 +1,5 @@
-use dirtydata_core::types::ConfigSnapshot;
 use super::base::*;
+use dirtydata_core::types::ConfigSnapshot;
 use dirtydata_host::PluginHost;
 
 pub struct ForeignNode {
@@ -41,9 +41,19 @@ impl ForeignNode {
 }
 
 impl DspNode for ForeignNode {
-    fn process(&mut self, inputs: &[f32], outputs: &mut [[f32; 2]], _config: &ConfigSnapshot, _ctx: &ProcessContext) {
-        if self.has_crashed { return; }
-        let host = self.host.get_or_insert_with(|| PluginHost::new(&self.plugin_name, self.buffer_size).expect("Failed to load plugin"));
+    fn process(
+        &mut self,
+        inputs: &[f32],
+        outputs: &mut [[f32; 2]],
+        _config: &ConfigSnapshot,
+        _ctx: &ProcessContext,
+    ) {
+        if self.has_crashed {
+            return;
+        }
+        let host = self.host.get_or_insert_with(|| {
+            PluginHost::new(&self.plugin_name, self.buffer_size).expect("Failed to load plugin")
+        });
         if inputs.len() >= 2 {
             self.in_buffer[self.buffer_idx] = inputs[0];
             self.in_buffer[self.buffer_idx + self.buffer_size] = inputs[1];
@@ -61,26 +71,52 @@ impl DspNode for ForeignNode {
     }
     fn update_parameter(&mut self, param: &str, value: f32) {
         if let Some(host) = &mut self.host {
-            if let Ok(id) = param.parse::<u32>() { let _ = host.set_parameter(id, value); }
+            if let Ok(id) = param.parse::<u32>() {
+                let _ = host.set_parameter(id, value);
+            }
         }
     }
 }
 
 #[derive(Clone)]
-pub struct InputProxyNode { pub value: f32 }
-impl InputProxyNode { pub fn new() -> Self { Self { value: 0.0 } } }
+pub struct InputProxyNode {
+    pub value: f32,
+}
+impl InputProxyNode {
+    pub fn new() -> Self {
+        Self { value: 0.0 }
+    }
+}
 impl DspNode for InputProxyNode {
-    fn process(&mut self, _inputs: &[f32], outputs: &mut [[f32; 2]], _config: &ConfigSnapshot, _ctx: &ProcessContext) {
+    fn process(
+        &mut self,
+        _inputs: &[f32],
+        outputs: &mut [[f32; 2]],
+        _config: &ConfigSnapshot,
+        _ctx: &ProcessContext,
+    ) {
         outputs[0] = [self.value, self.value];
     }
-    fn update_parameter(&mut self, _param: &str, value: f32) { self.value = value; }
+    fn update_parameter(&mut self, _param: &str, value: f32) {
+        self.value = value;
+    }
 }
 
 #[derive(Clone)]
 pub struct OutputProxyNode;
-impl OutputProxyNode { pub fn new() -> Self { Self } }
+impl OutputProxyNode {
+    pub fn new() -> Self {
+        Self
+    }
+}
 impl DspNode for OutputProxyNode {
-    fn process(&mut self, inputs: &[f32], outputs: &mut [[f32; 2]], _config: &ConfigSnapshot, _ctx: &ProcessContext) {
+    fn process(
+        &mut self,
+        inputs: &[f32],
+        outputs: &mut [[f32; 2]],
+        _config: &ConfigSnapshot,
+        _ctx: &ProcessContext,
+    ) {
         let val = inputs.get(0).cloned().unwrap_or(0.0);
         outputs[0] = [val, val];
     }
@@ -94,13 +130,26 @@ pub struct SubGraphNode {
 
 impl SubGraphNode {
     pub fn new() -> Self {
-        Self { runner: None, last_graph_hash: String::new() }
+        Self {
+            runner: None,
+            last_graph_hash: String::new(),
+        }
     }
 }
 
 impl DspNode for SubGraphNode {
-    fn process(&mut self, inputs: &[f32], outputs: &mut [[f32; 2]], config: &ConfigSnapshot, ctx: &ProcessContext) {
-        let graph_json = config.get("graph_json").and_then(|v| v.as_string()).map(|s| s.as_str()).unwrap_or("");
+    fn process(
+        &mut self,
+        inputs: &[f32],
+        outputs: &mut [[f32; 2]],
+        config: &ConfigSnapshot,
+        ctx: &ProcessContext,
+    ) {
+        let graph_json = config
+            .get("graph_json")
+            .and_then(|v| v.as_string())
+            .map(|s| s.as_str())
+            .unwrap_or("");
         let hash = blake3::hash(graph_json.as_bytes()).to_string();
 
         if hash != self.last_graph_hash && !graph_json.is_empty() {
@@ -122,11 +171,13 @@ impl DspNode for SubGraphNode {
                     node.update_parameter("value", inputs.get(0).cloned().unwrap_or(0.0));
                 }
             }
-            
+
             let sub_out = runner.process_sample(ctx);
             outputs[0] = sub_out;
         } else {
-            for o in outputs { *o = [0.0, 0.0]; }
+            for o in outputs {
+                *o = [0.0, 0.0];
+            }
         }
     }
 }
@@ -151,7 +202,12 @@ impl Clone for WasmNode {
 
 impl WasmNode {
     pub fn new() -> Self {
-        Self { instance: None, store: None, process_fn: None, failed: false }
+        Self {
+            instance: None,
+            store: None,
+            process_fn: None,
+            failed: false,
+        }
     }
 
     fn init(&mut self, path: &str) -> anyhow::Result<()> {
@@ -160,7 +216,7 @@ impl WasmNode {
         let mut store = wasmtime::Store::new(&engine, ());
         let instance = wasmtime::Instance::new(&mut store, &module, &[])?;
         let process_fn = instance.get_typed_func::<(f32, f32), i64>(&mut store, "process")?;
-        
+
         self.instance = Some(instance);
         self.store = Some(store);
         self.process_fn = Some(process_fn);
@@ -169,7 +225,13 @@ impl WasmNode {
 }
 
 impl DspNode for WasmNode {
-    fn process(&mut self, inputs: &[f32], outputs: &mut [[f32; 2]], config: &ConfigSnapshot, _ctx: &ProcessContext) {
+    fn process(
+        &mut self,
+        inputs: &[f32],
+        outputs: &mut [[f32; 2]],
+        config: &ConfigSnapshot,
+        _ctx: &ProcessContext,
+    ) {
         if self.instance.is_none() && !self.failed {
             if let Some(path) = config.get("path").and_then(|v| v.as_string()) {
                 if let Err(e) = self.init(path) {
@@ -183,7 +245,7 @@ impl DspNode for WasmNode {
             for i in 0..outputs.len() {
                 let in_l = inputs.get(i * 2).cloned().unwrap_or(0.0);
                 let in_r = inputs.get(i * 2 + 1).cloned().unwrap_or(0.0);
-                
+
                 match f.call(&mut *store, (in_l, in_r)) {
                     Ok(res) => {
                         let out_l = f32::from_bits((res >> 32) as u32);
@@ -199,7 +261,7 @@ impl DspNode for WasmNode {
             for i in 0..outputs.len() {
                 outputs[i] = [
                     inputs.get(i * 2).cloned().unwrap_or(0.0),
-                    inputs.get(i * 2 + 1).cloned().unwrap_or(0.0)
+                    inputs.get(i * 2 + 1).cloned().unwrap_or(0.0),
                 ];
             }
         }

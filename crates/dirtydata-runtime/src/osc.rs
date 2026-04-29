@@ -1,8 +1,8 @@
-use std::net::UdpSocket;
-use rosc::{OscPacket, OscMessage as RoscMessage};
-use crossbeam_channel::{Sender, Receiver};
 use crate::nodes::OscMessage;
 use crate::{EngineCommand, ParameterUpdate, StableId};
+use crossbeam_channel::{Receiver, Sender};
+use rosc::{OscMessage as RoscMessage, OscPacket};
+use std::net::UdpSocket;
 
 pub struct OscHandler {
     command_tx: Sender<EngineCommand>,
@@ -44,7 +44,11 @@ impl OscHandler {
     }
 
     fn handle_message(command_tx: &Sender<EngineCommand>, msg: RoscMessage) {
-        let parts: Vec<&str> = msg.addr.split('/').filter(|s: &&str| !s.is_empty()).collect();
+        let parts: Vec<&str> = msg
+            .addr
+            .split('/')
+            .filter(|s: &&str| !s.is_empty())
+            .collect();
         if parts.len() == 3 && parts[0] == "node" {
             if let (Ok(node_id), Some(val)) = (parts[1].parse::<StableId>(), msg.args.first()) {
                 let float_val = match val {
@@ -73,7 +77,10 @@ impl OscHandler {
                 }
             };
             while let Ok(msg) = rx.recv() {
-                let packet = OscPacket::Message(RoscMessage { addr: msg.addr, args: msg.args });
+                let packet = OscPacket::Message(RoscMessage {
+                    addr: msg.addr,
+                    args: msg.args,
+                });
                 if let Ok(bytes) = rosc::encoder::encode(&packet) {
                     let b: Vec<u8> = bytes;
                     let _ = socket.send_to(&b, &target_addr);

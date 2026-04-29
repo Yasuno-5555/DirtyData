@@ -3,8 +3,8 @@
 //! Every struct here is a word in the DirtyData vocabulary.
 //! If it's not defined here, it doesn't exist.
 
-use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use std::fmt;
 
 // ──────────────────────────────────────────────
@@ -211,9 +211,7 @@ pub enum NodeKind {
     /// Trust boundary marker — §8/§13.
     Boundary,
     /// Modularized MNA circuit node.
-    CircuitModule {
-        definition_id: StableId,
-    },
+    CircuitModule { definition_id: StableId },
 }
 
 /// §SSS: Circuit Definition for modularization.
@@ -223,7 +221,7 @@ pub struct CircuitDefinition {
     pub name: String,
     pub archetype: Option<CircuitArchetype>,
     /// The serialized elements of the circuit.
-    pub elements_json: String, 
+    pub elements_json: String,
     pub input_mappings: BTreeMap<String, usize>,
     pub output_mappings: BTreeMap<String, usize>,
     /// The "DNA" — changes that led to this specific instance.
@@ -260,17 +258,29 @@ pub struct MutationReport {
     pub novelty_score: f32,     // How much it deviates from "Legend"
     pub risk_level: f32,        // Chance of total failure
     pub warmth_delta: f32,
-    pub dna_string: String,     // Human readable "系譜"
+    pub dna_string: String, // Human readable "系譜"
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum MutationType {
     /// Tier 1: Drift & Tolerance
-    ParamDrift { index: usize, key: String, amount: f32 },
+    ParamDrift {
+        index: usize,
+        key: String,
+        amount: f32,
+    },
     /// Tier 2: Component Surgery
-    ComponentSwap { index: usize, old_type: String, new_type: String },
+    ComponentSwap {
+        index: usize,
+        old_type: String,
+        new_type: String,
+    },
     /// Tier 3: Topology Mutation
-    TopologyChange { description: String, added_nodes: Vec<usize>, removed_nodes: Vec<usize> },
+    TopologyChange {
+        description: String,
+        added_nodes: Vec<usize>,
+        removed_nodes: Vec<usize>,
+    },
     /// Tier 4: Evolution (Goal oriented)
     Evolution { goal: String, generations: usize },
 }
@@ -306,14 +316,14 @@ pub enum PortSemantic {
     Trigger,
     Clock,
     Reset,
-    
+
     // Circuit (MNA)
     VoltageIn,
     VoltageOut,
     CurrentIn,
     CurrentOut,
     Ground,
-    
+
     // Electronic Components
     Anode,
     Cathode,
@@ -326,7 +336,7 @@ pub enum PortSemantic {
     InPositive,
     InNegative,
     Feedback,
-    
+
     // Musical
     Pitch,
     Velo,
@@ -335,8 +345,8 @@ pub enum PortSemantic {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
 pub enum PortPolarity {
-    Unipolar,   // 0.0 to 1.0
-    Bipolar,    // -1.0 to 1.0
+    Unipolar, // 0.0 to 1.0
+    Bipolar,  // -1.0 to 1.0
     #[default]
     Unknown,
 }

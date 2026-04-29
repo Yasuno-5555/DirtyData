@@ -21,23 +21,42 @@ pub struct Capacitor {
 }
 impl Capacitor {
     pub fn new(capacitance: f32, sample_rate: f32) -> Self {
-        Self { rp: 1.0 / (2.0 * capacitance * sample_rate), state: 0.0 }
+        Self {
+            rp: 1.0 / (2.0 * capacitance * sample_rate),
+            state: 0.0,
+        }
     }
 }
 impl WdfNode for Capacitor {
-    fn wave_up(&mut self) -> f32 { self.state }
-    fn set_wave_down(&mut self, wave: f32) { self.state = wave; }
-    fn port_resistance(&self) -> f32 { self.rp }
+    fn wave_up(&mut self) -> f32 {
+        self.state
+    }
+    fn set_wave_down(&mut self, wave: f32) {
+        self.state = wave;
+    }
+    fn port_resistance(&self) -> f32 {
+        self.rp
+    }
 }
 
 /// WDF Resistor
 #[derive(Clone)]
-pub struct Resistor { rp: f32 }
-impl Resistor { pub fn new(r: f32) -> Self { Self { rp: r.max(1e-6) } } }
+pub struct Resistor {
+    rp: f32,
+}
+impl Resistor {
+    pub fn new(r: f32) -> Self {
+        Self { rp: r.max(1e-6) }
+    }
+}
 impl WdfNode for Resistor {
-    fn wave_up(&mut self) -> f32 { 0.0 }
+    fn wave_up(&mut self) -> f32 {
+        0.0
+    }
     fn set_wave_down(&mut self, _wave: f32) {}
-    fn port_resistance(&self) -> f32 { self.rp }
+    fn port_resistance(&self) -> f32 {
+        self.rp
+    }
 }
 
 /// WDF Inductor
@@ -48,13 +67,22 @@ pub struct Inductor {
 }
 impl Inductor {
     pub fn new(inductance: f32, sample_rate: f32) -> Self {
-        Self { rp: 2.0 * inductance * sample_rate, state: 0.0 }
+        Self {
+            rp: 2.0 * inductance * sample_rate,
+            state: 0.0,
+        }
     }
 }
 impl WdfNode for Inductor {
-    fn wave_up(&mut self) -> f32 { -self.state }
-    fn set_wave_down(&mut self, wave: f32) { self.state = wave; }
-    fn port_resistance(&self) -> f32 { self.rp }
+    fn wave_up(&mut self) -> f32 {
+        -self.state
+    }
+    fn set_wave_down(&mut self, wave: f32) {
+        self.state = wave;
+    }
+    fn port_resistance(&self) -> f32 {
+        self.rp
+    }
 }
 
 /// Simple RC circuit topology
@@ -68,8 +96,13 @@ impl WdfSimpleRc {
     pub fn new(r: f32, c: f32, sample_rate: f32) -> Self {
         let capacitor = Capacitor::new(c, sample_rate);
         let resistor = Resistor::new(r);
-        let rho = resistor.port_resistance() / (resistor.port_resistance() + capacitor.port_resistance());
-        Self { capacitor, _resistor: resistor, rho }
+        let rho =
+            resistor.port_resistance() / (resistor.port_resistance() + capacitor.port_resistance());
+        Self {
+            capacitor,
+            _resistor: resistor,
+            rho,
+        }
     }
 
     pub fn process(&mut self, voltage_in: f32) -> f32 {
@@ -89,13 +122,27 @@ impl WdfSimpleRc {
 
 /// WDF 3-Port Series Adaptor
 #[derive(Clone)]
-pub struct SeriesAdaptor { r1: f32, r2: f32, r3: f32 }
+pub struct SeriesAdaptor {
+    r1: f32,
+    r2: f32,
+    r3: f32,
+}
 impl SeriesAdaptor {
-    pub fn new(r1: f32, r2: f32) -> Self { Self { r1, r2, r3: r1 + r2 } }
-    pub fn set_resistances(&mut self, r1: f32, r2: f32) {
-        self.r1 = r1; self.r2 = r2; self.r3 = r1 + r2;
+    pub fn new(r1: f32, r2: f32) -> Self {
+        Self {
+            r1,
+            r2,
+            r3: r1 + r2,
+        }
     }
-    pub fn port3_resistance(&self) -> f32 { self.r3 }
+    pub fn set_resistances(&mut self, r1: f32, r2: f32) {
+        self.r1 = r1;
+        self.r2 = r2;
+        self.r3 = r1 + r2;
+    }
+    pub fn port3_resistance(&self) -> f32 {
+        self.r3
+    }
     pub fn process(&self, a1: f32, a2: f32, a3: f32) -> (f32, f32, f32) {
         let b3 = -(a1 + a2);
         let diff = a3 - b3;
@@ -107,19 +154,29 @@ impl SeriesAdaptor {
 
 /// WDF 3-Port Parallel Adaptor
 #[derive(Clone)]
-pub struct ParallelAdaptor { g1: f32, g2: f32, g3: f32 }
+pub struct ParallelAdaptor {
+    g1: f32,
+    g2: f32,
+    g3: f32,
+}
 impl ParallelAdaptor {
     pub fn new(r1: f32, r2: f32) -> Self {
         let g1 = 1.0 / r1.max(1e-9);
         let g2 = 1.0 / r2.max(1e-9);
-        Self { g1, g2, g3: g1 + g2 }
+        Self {
+            g1,
+            g2,
+            g3: g1 + g2,
+        }
     }
     pub fn set_resistances(&mut self, r1: f32, r2: f32) {
         self.g1 = 1.0 / r1.max(1e-9);
         self.g2 = 1.0 / r2.max(1e-9);
         self.g3 = self.g1 + self.g2;
     }
-    pub fn port3_resistance(&self) -> f32 { 1.0 / self.g3 }
+    pub fn port3_resistance(&self) -> f32 {
+        1.0 / self.g3
+    }
     pub fn process(&self, a1: f32, a2: f32, a3: f32) -> (f32, f32, f32) {
         let b3 = (self.g1 * a1 + self.g2 * a2) / self.g3;
         let diff = a3 - b3;
@@ -141,7 +198,12 @@ pub struct WdfDiodePair {
 
 impl WdfDiodePair {
     pub fn new(is: f32, vt: f32) -> Self {
-        Self { rp: 1.0, is, vt: vt.max(0.001), nr_iters: 8 }
+        Self {
+            rp: 1.0,
+            is,
+            vt: vt.max(0.001),
+            nr_iters: 8,
+        }
     }
 
     pub fn set_port_resistance(&mut self, rp: f32) {
@@ -179,13 +241,17 @@ impl WdfDiodePair {
             let f_val = a - 2.0 * v - 2.0 * rp * i_d;
             let f_prime = -2.0 - 2.0 * rp * di_dv;
 
-            if f_prime.abs() < 1e-12 { break; }
+            if f_prime.abs() < 1e-12 {
+                break;
+            }
 
             let delta = f_val / f_prime;
             v -= delta;
 
             // Convergence check
-            if delta.abs() < 1e-6 { break; }
+            if delta.abs() < 1e-6 {
+                break;
+            }
         }
 
         // Reflected wave: b = 2*v - a
@@ -209,7 +275,12 @@ impl WdfDiodeClipper {
         let mut diodes = WdfDiodePair::new(2.52e-9, 0.02585);
         let p1 = ParallelAdaptor::new(capacitor.port_resistance(), resistor.port_resistance());
         diodes.set_port_resistance(p1.port3_resistance());
-        Self { resistor, capacitor, diodes, p1 }
+        Self {
+            resistor,
+            capacitor,
+            diodes,
+            p1,
+        }
     }
 
     pub fn process(&mut self, voltage_in: f32) -> f32 {

@@ -1,24 +1,24 @@
-pub mod nodes;
-pub mod osc;
-pub mod offline;
 pub mod freeze;
 pub mod jit;
+pub mod nodes;
+pub mod offline;
+pub mod osc;
 #[cfg(test)]
 mod tests {
     mod null_test;
 }
 
-use dirtydata_core::ir::{Graph, EdgeKind};
-use dirtydata_core::types::{StableId, NodeKind, PortDirection};
-use dirtydata_core::graph_utils::topological_sort;
 use crate::nodes::*;
 use crate::osc::OscHandler;
+use dirtydata_core::graph_utils::topological_sort;
+use dirtydata_core::ir::{EdgeKind, Graph};
+use dirtydata_core::types::{NodeKind, PortDirection, StableId};
 
+use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+use crossbeam_channel::{Receiver, Sender};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-use crossbeam_channel::{Sender, Receiver};
 
 pub struct ParameterUpdate {
     pub node_id: StableId,
@@ -92,7 +92,9 @@ impl SharedState {
     }
 
     pub fn get_diagnostic(&self, node_id: &StableId) -> Option<DiagnosticRecord> {
-        self.node_diagnostics.get(node_id).map(|d: dashmap::mapref::one::Ref<'_, StableId, DiagnosticRecord>| d.clone())
+        self.node_diagnostics
+            .get(node_id)
+            .map(|d: dashmap::mapref::one::Ref<'_, StableId, DiagnosticRecord>| d.clone())
     }
 
     pub fn scope_buffer(&self) -> Arc<crossbeam_queue::ArrayQueue<f32>> {
@@ -157,20 +159,16 @@ impl DspRunner {
                     NodeKind::Foreign(plugin_name) => {
                         Box::new(ForeignNode::new(plugin_name.clone(), 256))
                     }
-                    NodeKind::SubGraph => {
-                        Box::new(SubGraphNode::new())
-                    }
-                    NodeKind::InputProxy => {
-                        Box::new(InputProxyNode::new())
-                    }
-                    NodeKind::OutputProxy => {
-                        Box::new(OutputProxyNode::new())
-                    }
+                    NodeKind::SubGraph => Box::new(SubGraphNode::new()),
+                    NodeKind::InputProxy => Box::new(InputProxyNode::new()),
+                    NodeKind::OutputProxy => Box::new(OutputProxyNode::new()),
                     _ => {
                         let name = node.config.get("name").and_then(|v| v.as_string());
                         match name.map(|s| s.as_str()).unwrap_or("Unknown") {
                             "Oscillator" | "Sine" => Box::new(OscillatorNode::new()),
-                            "Noise" => Box::new(NoiseNode::new(format!("{}", id).as_bytes().len() as u64)),
+                            "Noise" => {
+                                Box::new(NoiseNode::new(format!("{}", id).as_bytes().len() as u64))
+                            }
                             "Gain" => Box::new(GainNode::new()),
                             "Add" => Box::new(AddNode::new()),
                             "Multiply" => Box::new(MultiplyNode::new()),
@@ -183,7 +181,12 @@ impl DspRunner {
                                 let data = if let Some(path) = path_val {
                                     match hound::WavReader::open(path) {
                                         Ok(mut reader) => {
-                                            let samples: Vec<f32> = reader.samples::<f32>().map(|s: Result<f32, hound::Error>| s.unwrap_or(0.0)).collect::<Vec<f32>>();
+                                            let samples: Vec<f32> = reader
+                                                .samples::<f32>()
+                                                .map(|s: Result<f32, hound::Error>| {
+                                                    s.unwrap_or(0.0)
+                                                })
+                                                .collect::<Vec<f32>>();
                                             Arc::new(samples)
                                         }
                                         Err(e) => {
@@ -211,7 +214,7 @@ impl DspRunner {
                             "Lorenz" => Box::new(LorenzNode::new()),
                             "MackeyGlass" => Box::new(MackeyGlassNode::new(10.0, sample_rate)),
                             "GrayScott" | "ReactionDiffusion" => Box::new(GrayScottNode::new(256)),
-                            
+
                             // Destruction
                             "BitCrush" => Box::new(BitCrushNode::new()),
                             "WaveShaper" => Box::new(WaveShaperNode::new()),
@@ -228,7 +231,9 @@ impl DspRunner {
                             "Logic" => Box::new(LogicNode::new()),
                             "SpectralFreeze" => Box::new(SpectralFreezeNode::new(1024)),
                             "FFTConvolve" => Box::new(FFTConvolveNode::new(1024)),
-                            "ZdfLadder" | "TB303Ladder" | "Ladder" => Box::new(ZdfLadderNode::new(sample_rate)),
+                            "ZdfLadder" | "TB303Ladder" | "Ladder" => {
+                                Box::new(ZdfLadderNode::new(sample_rate))
+                            }
                             "Svf" | "SVFFilter" => Box::new(SvfNode::new(sample_rate)),
                             "DiodeClipper" => Box::new(DiodeClipperNode::new()),
                             "BbdDelay" => Box::new(BbdDelayNode::new(sample_rate)),
@@ -237,14 +242,21 @@ impl DspRunner {
                             "ChuaCircuit" | "Chua" => Box::new(ChuaCircuitNode::new(sample_rate)),
                             "TapeMachine" | "Tape" => Box::new(TapeMachineNode::new(sample_rate)),
                             "MatrixMixer" => Box::new(MatrixMixerNode::new(8, 8)),
-                            "Euclidean" | "EuclideanSequencer" => Box::new(EuclideanSequencerNode::new()),
+                            "Euclidean" | "EuclideanSequencer" => {
+                                Box::new(EuclideanSequencerNode::new())
+                            }
                             "Wasm" => Box::new(WasmNode::new()),
                             _ => Box::new(GainNode::new()),
                         }
                     }
                 };
                 nodes.push((id, dsp_node));
-                let port_count = node.ports.iter().filter(|p| p.direction == PortDirection::Output).count().max(1);
+                let port_count = node
+                    .ports
+                    .iter()
+                    .filter(|p| p.direction == PortDirection::Output)
+                    .count()
+                    .max(1);
                 node_outputs.insert(id, vec![[0.0, 0.0]; port_count]);
             }
         }
@@ -284,12 +296,23 @@ impl DspRunner {
             node_saturation.insert(*id, 0.0);
         }
 
-        Self { nodes, node_outputs, graph, feedback_latches, feedback_reads, feedback_writes, modulation_mappings, node_saturation, jit_program: None, parameter_provenance: HashMap::new() }
+        Self {
+            nodes,
+            node_outputs,
+            graph,
+            feedback_latches,
+            feedback_reads,
+            feedback_writes,
+            modulation_mappings,
+            node_saturation,
+            jit_program: None,
+            parameter_provenance: HashMap::new(),
+        }
     }
 
     pub fn process_sample(&mut self, ctx: &ProcessContext) -> [f32; 2] {
         if let Some(jit) = &mut self.jit_program {
-            return jit.execute(ctx);
+            return jit.execute(0.0, 0.0, ctx);
         }
 
         for m in &self.modulation_mappings {
@@ -331,7 +354,12 @@ impl DspRunner {
                 node_diagnostics: ctx.node_diagnostics,
                 node_id: Some(*id),
             };
-            node.process(&inputs, &mut outputs[..], &self.graph.nodes.get(id).unwrap().config, &ctx);
+            node.process(
+                &inputs,
+                &mut outputs[..],
+                &self.graph.nodes.get(id).unwrap().config,
+                &ctx,
+            );
 
             // --- Pre-emptive Safety Saturation ---
             let mut sat_accum = 0.0;
@@ -342,7 +370,7 @@ impl DspRunner {
                     if x.abs() > 1.2 {
                         *s = 1.2 * x.signum();
                     } else {
-                        *s = x - (x.powi(3) * 0.23); 
+                        *s = x - (x.powi(3) * 0.23);
                     }
                     sat_accum += (x - *s).abs();
                 }
@@ -378,15 +406,27 @@ impl DspRunner {
         &mut self.nodes
     }
 
-    pub fn update_parameter(&mut self, node_id: StableId, param: &str, value: f32, provenance: Vec<String>) {
-        self.parameter_provenance.entry(node_id).or_default().insert(param.to_string(), provenance);
+    pub fn update_parameter(
+        &mut self,
+        node_id: StableId,
+        param: &str,
+        value: f32,
+        provenance: Vec<String>,
+    ) {
+        self.parameter_provenance
+            .entry(node_id)
+            .or_default()
+            .insert(param.to_string(), provenance);
         if let Some((_, node)) = self.nodes.iter_mut().find(|(id, _)| *id == node_id) {
             node.update_parameter(param, value);
         }
     }
 
     pub fn extract_all_states(&self) -> HashMap<StableId, NodeState> {
-        self.nodes.iter().map(|(id, node)| (*id, node.extract_state())).collect()
+        self.nodes
+            .iter()
+            .map(|(id, node)| (*id, node.extract_state()))
+            .collect()
     }
 
     pub fn inject_all_states(&mut self, states: &HashMap<StableId, NodeState>) {
@@ -423,7 +463,9 @@ impl AudioEngine {
     pub fn new(shared_state: Arc<SharedState>, midi_rx: Receiver<MidiEvent>) -> Self {
         tracing::info!("Initializing AudioEngine");
         let host = cpal::default_host();
-        let device = host.default_output_device().expect("no output device available");
+        let device = host
+            .default_output_device()
+            .expect("no output device available");
         let config = device.default_output_config().unwrap();
         let sample_rate = config.sample_rate().0 as f32;
         let channels = config.channels() as usize;
@@ -443,102 +485,141 @@ impl AudioEngine {
         let mut global_sample_index: u64 = 0;
         let midi_rx_internal = midi_rx.clone();
         let crash_flag_callback = crash_flag_for_audio.clone();
-        
+
         // Metrics Accumulators: node_id -> (sum, sum_sq, peak, sat_sum, count)
         let mut metrics_acc: HashMap<StableId, (f32, f32, f32, f32, usize)> = HashMap::new();
 
         let stream = match config.sample_format() {
-            cpal::SampleFormat::F32 => device.build_output_stream(
-                &config.into(),
-                move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
-                    while let Ok(cmd) = command_rx.try_recv() {
-                        match cmd {
-                            EngineCommand::UpdateParameter(update) => {
-                                shared_state_for_audio.parameter_provenance.entry(update.node_id).or_default().insert(update.param.clone(), update.provenance.clone());
-                                if let Some(runner) = &mut current_runner {
-                                    runner.update_parameter(update.node_id, &update.param, update.value, update.provenance);
+            cpal::SampleFormat::F32 => device
+                .build_output_stream(
+                    &config.into(),
+                    move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
+                        while let Ok(cmd) = command_rx.try_recv() {
+                            match cmd {
+                                EngineCommand::UpdateParameter(update) => {
+                                    shared_state_for_audio
+                                        .parameter_provenance
+                                        .entry(update.node_id)
+                                        .or_default()
+                                        .insert(update.param.clone(), update.provenance.clone());
+                                    if let Some(runner) = &mut current_runner {
+                                        runner.update_parameter(
+                                            update.node_id,
+                                            &update.param,
+                                            update.value,
+                                            update.provenance,
+                                        );
+                                    }
                                 }
-                            }
-                            EngineCommand::ReplaceGraph(graph, jit_prog) => {
-                                shared_state_for_audio.log(format!("Replacing Graph: {} nodes", graph.nodes.len()));
-                                let mut new_runner = DspRunner::new(graph, Some(midi_rx_internal.clone()), sample_rate);
-                                if let Some(old_runner) = &current_runner {
-                                    let states = old_runner.extract_all_states();
-                                    new_runner.inject_all_states(&states);
+                                EngineCommand::ReplaceGraph(graph, jit_prog) => {
+                                    shared_state_for_audio.log(format!(
+                                        "Replacing Graph: {} nodes",
+                                        graph.nodes.len()
+                                    ));
+                                    let mut new_runner = DspRunner::new(
+                                        graph,
+                                        Some(midi_rx_internal.clone()),
+                                        sample_rate,
+                                    );
+                                    if let Some(old_runner) = &current_runner {
+                                        let states = old_runner.extract_all_states();
+                                        new_runner.inject_all_states(&states);
+                                    }
+                                    new_runner.jit_program = jit_prog;
+                                    current_runner = Some(new_runner);
+                                    shared_state_for_audio
+                                        .log("Graph Replacement (JIT enabled) OK.");
                                 }
-                                new_runner.jit_program = jit_prog;
-                                current_runner = Some(new_runner);
-                                shared_state_for_audio.log("Graph Replacement (JIT enabled) OK.");
                             }
                         }
-                    }
 
-                    let Some(runner) = &mut current_runner else { data.fill(0.0); return; };
-
-                    for frame in data.chunks_mut(channels) {
-                        let ctx = ProcessContext {
-                            sample_rate,
-                            global_sample_index,
-                            crash_flag: Some(&crash_flag_callback),
-                            osc_tx: Some(&osc_tx),
-                            convergence_info: Some(&shared_state_for_audio.convergence_info),
-                            node_diagnostics: Some(&shared_state_for_audio.node_diagnostics),
-                            node_id: None,
+                        let Some(runner) = &mut current_runner else {
+                            data.fill(0.0);
+                            return;
                         };
-                        let out = runner.process_sample(&ctx);
-                        for (node_id, ports) in &runner.node_outputs {
-                            let val = (ports[0][0] + ports[0][1]) * 0.5;
-                            let acc = metrics_acc.entry(*node_id).or_insert((0.0, 0.0, 0.0, 0.0, 0));
-                            acc.0 += val; // sum for DC
-                            acc.1 += val * val; // sum_sq for RMS
-                            acc.2 = acc.2.max(val.abs()); // peak
-                            
-                            let sat = runner.node_saturation.get_mut(node_id).map(|s| {
-                                let v = *s;
-                                *s = 0.0;
-                                v
-                            }).unwrap_or(0.0);
-                            acc.3 += sat; // sum for Saturation
-                            acc.4 += 1;
 
-                            if acc.4 >= 128 {
-                                let (sum, sum_sq, peak, sat_sum, count) = *acc;
-                                let f_count = count as f32;
-                                let dc = sum / f_count;
-                                let rms = (sum_sq / f_count).sqrt();
-                                
-                                shared_state_for_audio.node_metrics.insert(*node_id, SignalMetrics {
-                                    rms,
-                                    peak,
-                                    dc_offset: dc,
-                                    dominant_freq: 0.0, // TODO: FFT or Zero-crossing
-                                    activity_score: (rms * 10.0).min(1.0),
-                                    saturation: sat_sum / f_count,
-                                });
-                                *acc = (0.0, 0.0, 0.0, 0.0, 0);
-                            }
+                        for frame in data.chunks_mut(channels) {
+                            let ctx = ProcessContext {
+                                sample_rate,
+                                global_sample_index,
+                                crash_flag: Some(&crash_flag_callback),
+                                osc_tx: Some(&osc_tx),
+                                convergence_info: Some(&shared_state_for_audio.convergence_info),
+                                node_diagnostics: Some(&shared_state_for_audio.node_diagnostics),
+                                node_id: None,
+                            };
+                            let out = runner.process_sample(&ctx);
+                            for (node_id, ports) in &runner.node_outputs {
+                                let val = (ports[0][0] + ports[0][1]) * 0.5;
+                                let acc = metrics_acc
+                                    .entry(*node_id)
+                                    .or_insert((0.0, 0.0, 0.0, 0.0, 0));
+                                acc.0 += val; // sum for DC
+                                acc.1 += val * val; // sum_sq for RMS
+                                acc.2 = acc.2.max(val.abs()); // peak
 
-                            let probes = &shared_state_for_audio.probe_buffers;
-                            if let Some(buf_ref) = probes.get(node_id) {
-                                let _ = buf_ref.value().push(val);
+                                let sat = runner
+                                    .node_saturation
+                                    .get_mut(node_id)
+                                    .map(|s| {
+                                        let v = *s;
+                                        *s = 0.0;
+                                        v
+                                    })
+                                    .unwrap_or(0.0);
+                                acc.3 += sat; // sum for Saturation
+                                acc.4 += 1;
+
+                                if acc.4 >= 128 {
+                                    let (sum, sum_sq, peak, sat_sum, count) = *acc;
+                                    let f_count = count as f32;
+                                    let dc = sum / f_count;
+                                    let rms = (sum_sq / f_count).sqrt();
+
+                                    shared_state_for_audio.node_metrics.insert(
+                                        *node_id,
+                                        SignalMetrics {
+                                            rms,
+                                            peak,
+                                            dc_offset: dc,
+                                            dominant_freq: 0.0, // TODO: FFT or Zero-crossing
+                                            activity_score: (rms * 10.0).min(1.0),
+                                            saturation: sat_sum / f_count,
+                                        },
+                                    );
+                                    *acc = (0.0, 0.0, 0.0, 0.0, 0);
+                                }
+
+                                let probes = &shared_state_for_audio.probe_buffers;
+                                if let Some(buf_ref) = probes.get(node_id) {
+                                    let _ = buf_ref.value().push(val);
+                                }
+                                if val.is_nan() {
+                                    crash_flag_callback.store(true, Ordering::SeqCst);
+                                }
                             }
-                            if val.is_nan() { crash_flag_callback.store(true, Ordering::SeqCst); }
+                            frame[0] = out[0];
+                            if channels > 1 {
+                                frame[1] = out[1];
+                            }
+                            global_sample_index += 1;
                         }
-                        frame[0] = out[0];
-                        if channels > 1 { frame[1] = out[1]; }
-                        global_sample_index += 1;
-                    }
-                },
-                |err| {
-                    tracing::error!("an error occurred on stream: {}", err);
-                },
-                None
-            ).unwrap(),
+                    },
+                    |err| {
+                        tracing::error!("an error occurred on stream: {}", err);
+                    },
+                    None,
+                )
+                .unwrap(),
             _ => panic!("unsupported sample format"),
         };
 
         stream.play().unwrap();
-        Self { _stream: stream, command_tx, shared_state }
+        Self {
+            _stream: stream,
+            command_tx,
+            shared_state,
+        }
     }
 
     pub fn shared_state(&self) -> Arc<SharedState> {
@@ -546,15 +627,19 @@ impl AudioEngine {
     }
 
     pub fn update_parameter(&self, node_id: StableId, param: String, value: f32) {
-        let _ = self.command_tx.send(EngineCommand::UpdateParameter(ParameterUpdate {
-            node_id,
-            param,
-            value,
-            provenance: vec!["host".to_string()],
-        }));
+        let _ = self
+            .command_tx
+            .send(EngineCommand::UpdateParameter(ParameterUpdate {
+                node_id,
+                param,
+                value,
+                provenance: vec!["host".to_string()],
+            }));
     }
 
     pub fn replace_graph(&self, graph: Graph, jit_prog: Option<jit::JitProgram>) {
-        let _ = self.command_tx.send(EngineCommand::ReplaceGraph(graph, jit_prog));
+        let _ = self
+            .command_tx
+            .send(EngineCommand::ReplaceGraph(graph, jit_prog));
     }
 }

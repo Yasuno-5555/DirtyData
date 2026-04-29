@@ -21,20 +21,15 @@ pub enum IntentStrategy {
     /// 手動。ユーザーがパッチを適用して紐付ける。
     Manual,
     /// 自動。特定のノードを挿入する。
-    InsertNode { 
-        kind: NodeKind, 
+    InsertNode {
+        kind: NodeKind,
         name: String,
-        config: ConfigSnapshot 
+        config: ConfigSnapshot,
     },
     /// 自動。既存のノードを接続する。
-    Bridge { 
-        from_node: String, 
-        to_node: String 
-    },
+    Bridge { from_node: String, to_node: String },
     /// 自動。安全な Frozen Asset に置換する。
-    Freeze { 
-        target_node: String 
-    },
+    Freeze { target_node: String },
 }
 
 impl Default for IntentStrategy {
@@ -109,13 +104,17 @@ impl IntentState {
 
     /// 制約を評価し、違反内容を返す。
     /// これが Semantic Timeline で「なぜ壊れたか」を表示する基盤となる。
-    pub fn evaluate_constraints(&self, id: IntentId, graph: &dirtydata_core::ir::Graph) -> Vec<String> {
+    pub fn evaluate_constraints(
+        &self,
+        id: IntentId,
+        graph: &dirtydata_core::ir::Graph,
+    ) -> Vec<String> {
         let intent = match self.intents.get(&id) {
             Some(i) => i,
             None => return vec![format!("Intent {} not found", id)],
         };
         let mut violations = Vec::new();
-        
+
         for constraint in &intent.constraints {
             match constraint {
                 IntentConstraint::Must(bound) => {
@@ -140,8 +139,10 @@ impl IntentState {
 
     fn get_param_value(&self, graph: &dirtydata_core::ir::Graph, path: &str) -> Option<f32> {
         let parts: Vec<&str> = path.split('.').collect();
-        if parts.len() != 2 { return None; }
-        
+        if parts.len() != 2 {
+            return None;
+        }
+
         let node_name = parts[0];
         let param_key = parts[1];
 

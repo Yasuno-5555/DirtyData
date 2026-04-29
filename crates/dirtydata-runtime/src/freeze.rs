@@ -1,11 +1,11 @@
+use hound::{WavSpec, WavWriter};
 use std::path::Path;
-use hound::{WavWriter, WavSpec};
 
-use dirtydata_core::ir::{Graph, Node, Edge};
-use dirtydata_core::types::{StableId, ConfigValue, PortRef};
-use dirtydata_core::patch::{Operation, Patch};
-use dirtydata_core::graph_utils;
 use crate::offline::OfflineRenderer;
+use dirtydata_core::graph_utils;
+use dirtydata_core::ir::{Edge, Graph, Node};
+use dirtydata_core::patch::{Operation, Patch};
+use dirtydata_core::types::{ConfigValue, PortRef, StableId};
 
 #[derive(Debug, thiserror::Error)]
 pub enum FreezeError {
@@ -19,7 +19,7 @@ pub enum FreezeError {
     Patch(#[from] dirtydata_core::patch::PatchError),
 }
 
-/// Freezes a node and its upstream dependencies into a WAV asset and returns a Patch 
+/// Freezes a node and its upstream dependencies into a WAV asset and returns a Patch
 /// to replace the subgraph with an AssetReaderNode.
 pub fn freeze_node(
     graph: &Graph,
@@ -45,8 +45,14 @@ pub fn freeze_node(
     // 4. Connect target_node to the capture Sink
     // Assume port "out" exists on target (standard for processors/sources)
     let edge = Edge::new(
-        PortRef { node_id: target_node_id, port_name: "out".into() },
-        PortRef { node_id: sink_id, port_name: "in".into() }
+        PortRef {
+            node_id: target_node_id,
+            port_name: "out".into(),
+        },
+        PortRef {
+            node_id: sink_id,
+            port_name: "in".into(),
+        },
     );
     render_graph.edges.insert(edge.id, edge);
 
@@ -58,7 +64,7 @@ pub fn freeze_node(
     if let Some(parent) = asset_path.parent() {
         std::fs::create_dir_all(parent)?;
     }
-    
+
     let spec = WavSpec {
         channels: 2,
         sample_rate: sample_rate as u32,
@@ -82,8 +88,17 @@ pub fn freeze_node(
     // B. Add the replacement AssetReaderNode
     let asset_node_id = StableId::new();
     let mut asset_node = Node::new_source("FrozenAsset");
-    asset_node.config.insert("path".into(), ConfigValue::String(asset_path.to_string_lossy().into()));
-    asset_node.config.insert("name".into(), ConfigValue::String(format!("Frozen_{}", target_node_id.to_string()[..4].to_string())));
+    asset_node.config.insert(
+        "path".into(),
+        ConfigValue::String(asset_path.to_string_lossy().into()),
+    );
+    asset_node.config.insert(
+        "name".into(),
+        ConfigValue::String(format!(
+            "Frozen_{}",
+            target_node_id.to_string()[..4].to_string()
+        )),
+    );
     operations.push(Operation::AddNode(asset_node));
 
     // C. Reconnect downstream consumers
@@ -113,7 +128,9 @@ pub struct DifferentialCache {
 
 impl DifferentialCache {
     pub fn new() -> Self {
-        Self { entries: std::collections::HashMap::new() }
+        Self {
+            entries: std::collections::HashMap::new(),
+        }
     }
 
     pub fn get_cached_asset(&self, graph: &Graph) -> Option<std::path::PathBuf> {
