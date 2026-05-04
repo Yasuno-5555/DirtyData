@@ -1,0 +1,15 @@
+{
+  "description": "Testing the Wasm Lorenz Plugin",
+  "intent": "Verify Wasm load and modulate something",
+  "actions": [
+    { "action": "add_source", "name": "Sine" },
+    { "action": "add_foreign", "name": "MyLorenz", "plugin": "/Users/yasuno/projects/DirtyRack/DirtyRack/target/wasm32-wasip1/release/dirtydata_plugin_lorenz.wasm" },
+    { "action": "add_processor", "name": "MoogFilter" },
+    { "action": "add_sink", "name": "Output" },
+    { "action": "connect", "from": "Sine", "to": "MoogFilter" },
+    { "action": "connect", "from": "MoogFilter", "to": "Output" },
+    { "action": "set_config", "node": "Sine", "key": "freq", "value": 110.0 },
+    { "action": "set_config", "node": "MoogFilter", "key": "resonance", "value": 0.9 },
+    { "action": "add_modulation", "source_node": "MyLorenz", "source_port": "out", "target_node": "MoogFilter", "target_param": "cutoff", "amount": 0.5 }
+  ]
+}

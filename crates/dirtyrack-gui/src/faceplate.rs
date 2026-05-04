@@ -112,6 +112,12 @@ pub fn draw_module(
             });
             ui.close_menu();
         }
+        if rack.modules[module_idx].descriptor.id == "dirty_circuit" {
+            if ui.button("🛠 Edit Circuit").clicked() {
+                cable_action = Some(CableAction::OpenCircuitEditor { module_idx });
+                ui.close_menu();
+            }
+        }
         ui.separator();
         if ui.button("🔄 Initialize").clicked() {
             cable_action = Some(CableAction::ResetModule { module_idx });
@@ -544,7 +550,14 @@ fn draw_knob(
         }
     });
 
-    if response.drag_started() {
+    if response.double_clicked() || (response.clicked() && ui.input(|i| i.modifiers.command || i.modifiers.ctrl)) {
+        action = Some(CableAction::ParamUpdate {
+            module_idx,
+            name: name.to_string(),
+            value: default,
+            intent: IntentBoundary::Commit(IntentClass::Edit, None),
+        });
+    } else if response.drag_started() {
         action = Some(CableAction::ParamUpdate {
             module_idx,
             name: name.to_string(),
@@ -552,7 +565,8 @@ fn draw_knob(
             intent: IntentBoundary::Begin,
         });
     } else if response.dragged() {
-        let delta = -response.drag_delta().y * 0.005;
+        let sensitivity = if ui.input(|i| i.modifiers.shift) { 0.0005 } else { 0.005 };
+        let delta = -response.drag_delta().y * sensitivity;
         let v = (current + delta * (max - min)).clamp(min, max);
         action = Some(CableAction::ParamUpdate {
             module_idx,

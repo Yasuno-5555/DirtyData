@@ -27,3 +27,4 @@ anyhow = "1.0"
 indicatif = "0.17"
 tokio = { version = "1.32", features = ["full"] }
 hex = "0.4"
+tracing-subscriber.workspace = true

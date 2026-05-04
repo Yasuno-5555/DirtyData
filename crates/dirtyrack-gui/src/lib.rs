@@ -4,6 +4,7 @@
 //! モジュールブラウザ、リアルタイムオーディオエンジン統合。
 
 pub mod browser;
+pub mod circuit_editor;
 pub mod cable;
 pub mod engine;
 pub mod exporter;
@@ -13,6 +14,7 @@ pub mod visual_data;
 
 use crate::rack::{CableAction, RackState, IntentBoundary, IntentClass};
 use dirtyrack_modules::registry::ModuleRegistry;
+use dirtyrack_modules::RackDspNode;
 use engine::RackAudioEngine;
 use egui::{Color32, Rect, Stroke};
 
@@ -58,6 +60,7 @@ pub struct DirtyRackApp {
     #[allow(dead_code)]
     parallel_mode: bool,
     inspector_open: bool,
+    circuit_editor: circuit_editor::CircuitEditor,
 }
 
 impl DirtyRackApp {
@@ -89,9 +92,11 @@ impl DirtyRackApp {
             diagnosis_report: None,
             parallel_mode: false,
             inspector_open: false,
+            circuit_editor: circuit_editor::CircuitEditor::new(),
         }
     }
 
+    #[allow(dead_code)]
     fn run_verification(&mut self) {
         use dirtyrack_modules::renderer::OfflineRenderer;
         use dirtyrack_modules::signal::SeedScope;
@@ -390,7 +395,7 @@ impl eframe::App for DirtyRackApp {
                 ui.label(format!("Modules: {}", self.rack.modules.len()));
                 ui.label(format!("Cables: {}", self.rack.cables.len()));
                 
-                if let Some(engine) = &self.engine {
+                if let Some(_) = &self.engine {
                     ui.label(egui::RichText::new("🟢 Active").color(Color32::LIGHT_GREEN));
                 } else {
                     ui.label(egui::RichText::new("🔴 Error").color(Color32::RED));
@@ -592,11 +597,31 @@ impl eframe::App for DirtyRackApp {
             let bg_id = ui.make_persistent_id("rack_bg");
             let bg_resp = ui.interact(viewport, bg_id, egui::Sense::click_and_drag());
 
-            // Zoom
+            // Scroll & Zoom (VCV Style)
             if bg_resp.hovered() {
                 let scroll = ui.input(|i| i.smooth_scroll_delta);
-                if scroll.y != 0.0 {
-                    self.zoom = (self.zoom * (1.0 + scroll.y * 0.001)).clamp(0.3, 3.0);
+                let modifiers = ui.input(|i| i.modifiers);
+
+                if modifiers.command || modifiers.ctrl {
+                    // Zoom (Cursor centered)
+                    if scroll.y != 0.0 {
+                        let old_zoom = self.zoom;
+                        let zoom_factor = 1.0 + scroll.y * 0.001;
+                        self.zoom = (self.zoom * zoom_factor).clamp(0.2, 4.0);
+                        
+                        if let Some(ptr) = ui.input(|i| i.pointer.hover_pos()) {
+                            // Adjust pan to keep cursor over the same world position
+                            let ptr_vec = ptr.to_vec2();
+                            self.pan = ptr_vec - (ptr_vec - self.pan) * (self.zoom / old_zoom);
+                        }
+                    }
+                } else if modifiers.shift {
+                    // Horizontal Scroll
+                    self.pan.x += scroll.y + scroll.x;
+                } else {
+                    // Vertical Scroll
+                    self.pan.y += scroll.y;
+                    self.pan.x += scroll.x;
                 }
             }
 
@@ -733,6 +758,27 @@ impl eframe::App for DirtyRackApp {
                         // Rebuild once when drag ends
                         self.rebuild_engine();
                     }
+                    CableAction::OpenCircuitEditor { module_idx } => {
+                        let m = &mut self.rack.modules[module_idx];
+                        let any = m.dsp.as_any_mut();
+                        if let Some(circuit) = any.downcast_mut::<dirtyrack_modules::circuit::CircuitModule>() {
+                            // Extract current definition
+                            if let Some(state) = circuit.extract_state() {
+                                if let Ok(def) = serde_json::from_slice::<dirtyrack_modules::circuit::CircuitDefinition>(&state) {
+                                    self.circuit_editor.definition = def;
+                                }
+                            }
+                        }
+                        let stable_id = m.stable_id;
+                        self.circuit_editor.target_module_stable_id = Some(stable_id);
+                        self.circuit_editor.open = true;
+                    }
+                    CableAction::UpdateCircuit { module_idx, definition } => {
+                        if let Some(m) = self.rack.modules.get_mut(module_idx) {
+                            m.dsp.inject_state(&serde_json::to_vec(&definition).unwrap());
+                            self.rebuild_engine();
+                        }
+                    }
                     _ => {
                         self.rack.handle_action(action, &self.registry, self.zoom, self.pan);
                         self.rebuild_engine();
@@ -752,6 +798,23 @@ impl eframe::App for DirtyRackApp {
                 }
             }
         });
+
+        // --- Circuit Editor Pass ---
+        if let Some(new_def) = self.circuit_editor.show(ctx) {
+            if let Some(stable_id) = self.circuit_editor.target_module_stable_id {
+                if let Some(idx) = self.rack.modules.iter().position(|m| m.stable_id == stable_id) {
+                    let _action = CableAction::UpdateCircuit {
+                        module_idx: idx,
+                        definition: new_def.clone(),
+                    };
+                    // Apply immediately
+                    if let Some(m) = self.rack.modules.get_mut(idx) {
+                        m.dsp.inject_state(&serde_json::to_vec(&new_def).unwrap());
+                        self.rebuild_engine();
+                    }
+                }
+            }
+        }
 
         // Request repaint for audio-driven visuals
         ctx.request_repaint_after(std::time::Duration::from_millis(16));

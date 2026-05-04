@@ -42,6 +42,7 @@ pub struct ModuleInstance {
     pub hp_position: f32,
     pub row: usize,
     pub bypassed: bool,
+    pub alias: Option<String>,
 }
 
 impl ModuleInstance {
@@ -73,6 +74,7 @@ impl ModuleInstance {
             hp_position: 0.0,
             row: 0,
             bypassed: false,
+            alias: None,
         }
     }
 
@@ -156,6 +158,13 @@ pub enum CableAction {
     PasteSelection {
         pointer_pos: Pos2,
     },
+    OpenCircuitEditor {
+        module_idx: usize,
+    },
+    UpdateCircuit {
+        module_idx: usize,
+        definition: dirtyrack_modules::circuit::CircuitDefinition,
+    },
     CancelDrag,
 }
 
@@ -163,6 +172,7 @@ pub struct DraggingCable {
     pub from_module: usize,
     pub from_port: String,
     pub is_from_output: bool,
+    pub color: Option<Color32>,
 }
 
 pub struct DraggingModule {
@@ -180,6 +190,7 @@ pub struct SerializableModule {
     pub row: usize,
     pub bypassed: bool,
     pub dsp_state: Option<Vec<u8>>,
+    pub alias: Option<String>,
 }
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
@@ -204,6 +215,7 @@ pub struct SerializableRack {
     pub cable_tension: f32,
     pub causality_log: Vec<CausalityEvent>,
     pub snapshots: BTreeMap<String, BTreeMap<u64, BTreeMap<String, f32>>>,
+    pub aliases: BTreeMap<String, u64>,
 }
 
 pub struct RackState {
@@ -227,6 +239,7 @@ pub struct RackState {
     pub clipboard: Option<SerializableRack>,
     pub history: VecDeque<SerializableRack>,
     pub causality_log: Vec<CausalityEvent>,
+    pub aliases: BTreeMap<String, u64>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -260,6 +273,7 @@ impl RackState {
             clipboard: None,
             history: VecDeque::with_capacity(MAX_HISTORY),
             causality_log: Vec::new(),
+            aliases: BTreeMap::new(),
         }
     }
 
@@ -338,6 +352,7 @@ impl RackState {
                 row: m.row,
                 bypassed: m.bypassed,
                 dsp_state: m.dsp.extract_state(),
+                alias: m.alias.clone(),
             }).collect(),
             cables: self.cables.iter().map(|c| {
                 let from_stable = self.modules.get(c.from_module).map(|m| m.stable_id).unwrap_or(0);
@@ -357,6 +372,7 @@ impl RackState {
             cable_tension: self.cable_tension,
             causality_log: self.causality_log.clone(),
             snapshots: self.snapshots.clone(),
+            aliases: self.aliases.clone(),
         }
     }
 
@@ -376,6 +392,7 @@ impl RackState {
                 if let Some(state) = sm.dsp_state {
                     inst.dsp.inject_state(&state);
                 }
+                inst.alias = sm.alias.clone();
                 if inst.stable_id > max_stable_id {
                     max_stable_id = inst.stable_id;
                 }
@@ -425,6 +442,7 @@ impl RackState {
             clipboard: None,
             history: VecDeque::with_capacity(MAX_HISTORY),
             causality_log: serial.causality_log,
+            aliases: serial.aliases,
         }
     }
 
@@ -436,10 +454,43 @@ impl RackState {
                 port_name,
                 is_output,
             } => {
+                // VCV Style: If dragging from an input port that already has a cable,
+                // "pick up" that cable (detach it from here and drag it).
+                if !is_output {
+                    let mut cable_to_pickup = None;
+                    for (i, cable) in self.cables.iter().enumerate() {
+                        if cable.to_module == module_idx && cable.to_port == port_name {
+                            cable_to_pickup = Some(i);
+                            break;
+                        }
+                    }
+
+                    if let Some(cable_idx) = cable_to_pickup {
+                        let cable = self.cables.remove(cable_idx);
+                        
+                        // Notify engine of disconnection
+                        self.event_queue.push(PatchEvent::CableDisconnected {
+                            to_id: self.modules[cable.to_module].stable_id,
+                            to_port: cable.to_port,
+                        });
+
+                        // Start dragging from the source (output) end
+                        self.dragging_cable = Some(DraggingCable {
+                            from_module: cable.from_module,
+                            from_port: cable.from_port,
+                            is_from_output: true,
+                            color: Some(cable.color),
+                        });
+                        return;
+                    }
+                }
+
+                // Default: Start a new cable
                 self.dragging_cable = Some(DraggingCable {
                     from_module: module_idx,
                     from_port: port_name,
                     is_from_output: is_output,
+                    color: None,
                 });
             }
             CableAction::EndDrag { pointer_pos } => {
@@ -456,24 +507,26 @@ impl RackState {
                             };
 
                             if src_mod != dst_mod {
-                                let color = crate::cable::CABLE_COLORS
-                                    [self.cables.len() % crate::cable::CABLE_COLORS.len()];
-                                let channels = self.modules[src_mod]
-                                    .descriptor
-                                    .ports
-                                    .iter()
-                                    .find(|p| p.name == src_port)
-                                    .map(|p| p.max_channels)
-                                    .unwrap_or(1);
+                            let color = drag.color.unwrap_or_else(|| {
+                                crate::cable::CABLE_COLORS
+                                    [self.cables.len() % crate::cable::CABLE_COLORS.len()]
+                            });
+                            let channels = self.modules[src_mod]
+                                .descriptor
+                                .ports
+                                .iter()
+                                .find(|p| p.name == src_port)
+                                .map(|p| p.max_channels)
+                                .unwrap_or(1);
 
-                                self.cables.push(Cable {
-                                    from_module: src_mod,
-                                    from_port: src_port.clone(),
-                                    to_module: dst_mod,
-                                    to_port: dst_port.clone(),
-                                    color,
-                                    channels,
-                                });
+                            self.cables.push(Cable {
+                                from_module: src_mod,
+                                from_port: src_port.clone(),
+                                to_module: dst_mod,
+                                to_port: dst_port.clone(),
+                                color,
+                                channels,
+                            });
                                 self.event_queue.push(PatchEvent::CableConnected {
                                     from_id: self.modules[src_mod].stable_id,
                                     from_port: src_port,
@@ -546,7 +599,7 @@ impl RackState {
                 if let Some(drag) = &self.dragging_module {
                     let target_world_pos = (pointer_pos + drag.offset - pan) / zoom;
                     
-                    let new_hp = target_world_pos.x / HP_PIXELS;
+                    let new_hp = (target_world_pos.x / HP_PIXELS).round();
                     let new_row_f = target_world_pos.y / (RACK_HEIGHT + 20.0);
                     let new_row = new_row_f.round().max(0.0) as usize;
 
@@ -692,6 +745,7 @@ impl RackState {
                         row: m.row,
                         bypassed: m.bypassed,
                         dsp_state: m.dsp.extract_state(),
+                        alias: m.alias.clone(),
                     });
                     old_to_new_idx.insert(*old_idx, i);
                 }
@@ -721,6 +775,7 @@ impl RackState {
                     cable_tension: self.cable_tension,
                     causality_log: Vec::new(), // Clipboards don't need full history
                     snapshots: BTreeMap::new(),
+                    aliases: BTreeMap::new(),
                 });
             }
             CableAction::PasteSelection { pointer_pos } => {
@@ -769,6 +824,8 @@ impl RackState {
                 self.dragging_cable = None;
                 self.dragging_module = None;
             }
+            CableAction::OpenCircuitEditor { .. } => {}
+            CableAction::UpdateCircuit { .. } => {}
         }
     }
 
@@ -1070,19 +1127,28 @@ pub fn draw_rack_rails(painter: &Painter, viewport: Rect, zoom: f32, pan: Vec2) 
             0.0,
             rail_color,
         );
-        let screw_spacing = 10.0 * HP_PIXELS * zoom;
+        let screw_spacing = 1.0 * HP_PIXELS * zoom; // Every 1HP
         let mut x = pan.x % screw_spacing;
+        if x < 0.0 { x += screw_spacing; }
+        
         while x < viewport.width() {
             for rail_y in [
                 base_y + rail_h * 0.5,
                 base_y + RACK_HEIGHT * zoom - rail_h * 0.5,
             ] {
-                painter.circle_filled(Pos2::new(x, rail_y), 3.0 * zoom, screw_color);
-                painter.circle_stroke(
-                    Pos2::new(x, rail_y),
-                    3.0 * zoom,
-                    Stroke::new(0.5, Color32::from_gray(80)),
-                );
+                // Screw hole
+                painter.circle_filled(Pos2::new(x, rail_y), 1.5 * zoom, Color32::from_gray(10));
+                
+                // Only draw actual screws every 4HP or something? 
+                // In VCV it depends on the module, but the rails have holes everywhere.
+                if (x / screw_spacing).round() as i32 % 2 == 0 {
+                    painter.circle_filled(Pos2::new(x, rail_y), 2.5 * zoom, screw_color);
+                    painter.circle_stroke(
+                        Pos2::new(x, rail_y),
+                        2.5 * zoom,
+                        Stroke::new(0.5, Color32::from_gray(80)),
+                    );
+                }
             }
             x += screw_spacing;
         }

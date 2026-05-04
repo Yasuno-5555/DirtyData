@@ -64,7 +64,7 @@ pub fn render_dsl(graph: &Graph) -> String {
             NodeKind::CircuitModule { .. } => "circuit_module",
         };
 
-        writeln!(out, "{} \"{}\" {{", kind_str, node_name(node)).unwrap();
+        writeln!(out, "{} \"{}\" {{ # id: {}", kind_str, node_name(node), node.id).unwrap();
         render_node_body(&mut out, node);
         writeln!(out, "}}").unwrap();
         writeln!(out).unwrap();

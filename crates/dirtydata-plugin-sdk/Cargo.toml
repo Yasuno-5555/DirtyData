@@ -1,0 +1,8 @@
+[package]
+name = "dirtydata-plugin-sdk"
+version = "0.1.0"
+edition = "2021"
+description = "Lightweight SDK for building Wasm and Native DSP plugins for DirtyData"
+
+[dependencies]
+# No heavy dependencies like wasmtime or cpal here!

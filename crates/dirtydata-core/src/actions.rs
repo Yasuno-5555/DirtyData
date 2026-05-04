@@ -144,25 +144,26 @@ pub fn compile_actions(
     for action in actions {
         match action {
             UserAction::AddSource { name, channels } => {
-                let node = make_node(NodeKind::Source, name, *channels);
+                let node = make_node("source", name, *channels);
                 created.insert(name.clone(), node.id);
                 ops.push(Operation::AddNode(node));
             }
             UserAction::AddProcessor { name, channels } => {
-                let node = make_node(NodeKind::Processor, name, *channels);
+                let node = make_node("processor", name, *channels);
                 created.insert(name.clone(), node.id);
                 ops.push(Operation::AddNode(node));
             }
             UserAction::AddAnalyzer { name, channels } => {
-                let node = make_node(NodeKind::Analyzer, name, *channels);
+                let node = make_node("analyzer", name, *channels);
                 created.insert(name.clone(), node.id);
                 ops.push(Operation::AddNode(node));
             }
             UserAction::AddSink { name, channels } => {
-                let node = make_node(NodeKind::Sink, name, *channels);
+                let node = make_node("sink", name, *channels);
                 created.insert(name.clone(), node.id);
                 ops.push(Operation::AddNode(node));
             }
+<<<<<<< HEAD
             UserAction::AddForeign {
                 name,
                 plugin,
@@ -180,6 +181,16 @@ pub fn compile_actions(
             } => {
                 let src_id = resolve_name(from, graph, &created)?;
                 let tgt_id = resolve_name(to, graph, &created)?;
+=======
+            UserAction::AddForeign { name, plugin, channels } => {
+                let node = make_node(&format!("foreign:{}", plugin), name, *channels);
+                created.insert(name.clone(), node.id);
+                ops.push(Operation::AddNode(node));
+            }
+            UserAction::Connect { from, from_port, to, to_port } => {
+                let src_id = resolve_name(from, graph, &created).map_err(|e| { eprintln!("Connect Error: src {} not found", from); e })?;
+                let tgt_id = resolve_name(to, graph, &created).map_err(|e| { eprintln!("Connect Error: tgt {} not found", to); e })?;
+>>>>>>> fe9c97d (feat: enhance modular synthesis architecture, add circuit simulation modules, and update GUI/SDK)
                 let edge = Edge::new(
                     PortRef {
                         node_id: src_id,
@@ -221,9 +232,14 @@ pub fn compile_actions(
                 ops.push(Operation::RemoveNode(id));
             }
             UserAction::SetConfig { node, key, value } => {
+<<<<<<< HEAD
                 let id = resolve_name(node, graph, &created)?;
                 let config_val = json_to_config_value(value)
                     .map_err(|e| ActionError::InvalidConfig(key.clone(), e))?;
+=======
+                let id = resolve_name(node, graph, &created).map_err(|e| { eprintln!("SetConfig Error: node {} not found", node); e })?;
+                let config_val = json_to_config_value(value).map_err(|e| ActionError::InvalidConfig(key.clone(), e))?;
+>>>>>>> fe9c97d (feat: enhance modular synthesis architecture, add circuit simulation modules, and update GUI/SDK)
                 let mut delta = std::collections::BTreeMap::new();
                 delta.insert(
                     key.clone(),
@@ -234,6 +250,7 @@ pub fn compile_actions(
                 );
                 ops.push(Operation::ModifyConfig { node_id: id, delta });
             }
+<<<<<<< HEAD
             UserAction::AddModulation {
                 source_node,
                 source_port,
@@ -243,6 +260,11 @@ pub fn compile_actions(
             } => {
                 let src_id = resolve_name(source_node, graph, &created)?;
                 let tgt_id = resolve_name(target_node, graph, &created)?;
+=======
+            UserAction::AddModulation { source_node, source_port, target_node, target_param, amount } => {
+                let src_id = resolve_name(source_node, graph, &created).map_err(|e| { eprintln!("AddMod Error: src {} not found", source_node); e })?;
+                let tgt_id = resolve_name(target_node, graph, &created).map_err(|e| { eprintln!("AddMod Error: tgt {} not found", target_node); e })?;
+>>>>>>> fe9c97d (feat: enhance modular synthesis architecture, add circuit simulation modules, and update GUI/SDK)
                 let mod_ir = crate::ir::Modulation::new(
                     PortRef {
                         node_id: src_id,
@@ -317,15 +339,10 @@ pub fn node_name(node: &Node) -> String {
         .unwrap_or_else(|| node.id.to_string())
 }
 
-fn make_node(kind: NodeKind, name: &str, _channels: u32) -> Node {
-    let mut n = match kind {
-        NodeKind::Source => Node::new_source(name),
-        NodeKind::Processor => Node::new_processor(name),
-        NodeKind::Sink => Node::new_sink(name),
-        _ => Node::new_processor(name),
-    };
-    n.kind = kind;
-    // Adjust channels if needed... (stub)
+fn make_node(kind_str: &str, name: &str, _channels: u32) -> Node {
+    let mut n = Node::new_processor(name);
+    // Store the requested type in config for the runtime to pick up
+    n.config.insert("type".to_string(), ConfigValue::String(kind_str.to_string()));
     n
 }
 

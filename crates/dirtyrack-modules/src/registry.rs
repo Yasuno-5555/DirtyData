@@ -73,7 +73,11 @@ impl ModuleRegistry {
             crate::clock_tree::descriptor(),
             crate::drift::descriptor(),
             crate::output::descriptor(),
-            crate::scope::descriptor(),
+            crate::circuit::descriptor(),
+            crate::automata::descriptor(),
+            crate::merkle_delay::descriptor(),
+            crate::fluid_lfo::descriptor(),
+            crate::erosion::descriptor(),
         ];
 
         for d in builtins {

@@ -54,10 +54,7 @@ dirty build --target vst3
 4.  **Manifest**: `dirty build` でプロダクション用バイナリを書き出し。
 
 ## 📜 仕様
-- **RFC 001**: [フォレンジック規格](docs/ja/RFC_001_DIRTYDATA_SPEC.md)
-- **RFC 002**: [API Stability Policy](docs/RFC_002_API_STABILITY.md)
-- **RFC 003**: [Architecture Manifesto](docs/RFC_003_ARCHITECTURE_MANIFESTO.md)
-- **Architecture**: [コア設計](docs/ja/architecture.md)
-- **API Reference**: [SDKリファレンス](docs/ja/api_reference.md)
-- **Plugin Development**: [SDKガイド](docs/ja/plugin_development.md)
-- **API Usage**: [使用ガイド](docs/ja/API%20Usage.md)
+- **フォレンジック規格**: [RFC 001](docs/ja/RFC_001_DIRTYDATA_SPEC.md)
+- **開発者ガイド**: [モジュール開発 (Wasm/Native)](docs/ja/Developer_Guide.ja.md)
+- **コア設計**: [アーキテクチャ](docs/ja/architecture.md)
+- **使用ガイド**: [API Usage](docs/ja/API%20Usage.md)

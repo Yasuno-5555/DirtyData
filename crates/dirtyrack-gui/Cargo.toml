@@ -21,6 +21,7 @@ crossbeam-queue = "0.3"
 arc-swap = "1.7"
 egui_plot = "0.29"
 dirtyrack-sdk = { path = "../dirtyrack-sdk" }
+dirtydata-dsp-circuit = { path = "../dirtydata-dsp-circuit" }
 triple_buffer = "9.0"
 rand = "0.8"
 blake3 = "1.5"

@@ -52,7 +52,7 @@ dirty build --target vst3
 4.  **Manifest**: Build production-ready binaries with `dirty build`.
 
 ## 📜 Specifications
-- **RFC 001**: [The Forensic Standard](docs/RFC_001_DIRTYDATA_SPEC.md)
+- **Forensic Standard**: [RFC 001](docs/RFC_001_DIRTYDATA_SPEC.md)
 - **Architecture**: [Core Design](docs/architecture.md)
-- **Plugin Development**: [SDK Guide](docs/plugin_development.md)
+- **Developer Guide**: [Creating Modules (Wasm/Native)](docs/Developer_Guide.md)
 - **API Usage**: [Usage Guide](docs/API%20Usage.md)

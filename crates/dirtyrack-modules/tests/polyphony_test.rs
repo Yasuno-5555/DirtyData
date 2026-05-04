@@ -2,7 +2,7 @@
 mod tests {
     use dirtyrack_modules::midi::MidiCvModule;
     use dirtyrack_modules::runner::{Connection, GraphSnapshot, RackRunner};
-    use dirtyrack_modules::signal::{RackDspNode, RackProcessContext, SeedScope};
+    use dirtyrack_modules::signal::{RackDspNode, SeedScope};
     use dirtyrack_modules::vco::VcoModule;
 
     #[test]

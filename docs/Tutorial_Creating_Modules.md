@@ -1,6 +1,8 @@
-# Tutorial: Creating Your First DirtyRack Module
+# Tutorial: Creating Your First Native Module
 
-In this tutorial, you will learn how to participate in the DirtyRack ecosystem by creating a simple "Gain" module that doubles the input signal.
+*Note: For the highly recommended WebAssembly (Wasm) workflow, see the [Developer Guide](Developer_Guide.md).*
+
+In this tutorial, you will learn how to participate in the DirtyRack ecosystem by creating a "Gain" module using the Native C-ABI (`dirtyrack-sdk`).
 
 ## Step 1: Create the Project
 

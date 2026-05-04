@@ -16,7 +16,7 @@ members = [
     "crates/dirtyrack-gui",
     "crates/dirtyrack-sdk",
     "crates/example-thirdparty-module",
-    "crates/dirtyrack-cli",
+    "crates/dirtyrack-cli", "crates/dirtydata-plugin-lorenz", "crates/dirtydata-plugin-sdk",
 ]
 resolver = "2"
 

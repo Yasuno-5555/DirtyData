@@ -1,0 +1,17 @@
+{
+  "description": "Subtractive Synth Voice",
+  "intent": "Fat bass sound",
+  "constraints": [],
+  "actions": [
+    { "action": "add_source", "name": "SubOsc" },
+    { "action": "add_processor", "name": "MoogFilter" },
+    { "action": "add_processor", "name": "Drive" },
+    { "action": "add_source", "name": "LFO" },
+    { "action": "connect", "from": "SubOsc", "to": "MoogFilter" },
+    { "action": "connect", "from": "MoogFilter", "to": "Drive" },
+    { "action": "connect", "from": "Drive", "to": "Output" },
+    { "action": "set_config", "node": "MoogFilter", "key": "cutoff", "value": 400.0 },
+    { "action": "set_config", "node": "MoogFilter", "key": "resonance", "value": 0.8 },
+    { "action": "add_modulation", "source_node": "LFO", "source_port": "out", "target_node": "MoogFilter", "target_param": "cutoff", "amount": 200.0 }
+  ]
+}

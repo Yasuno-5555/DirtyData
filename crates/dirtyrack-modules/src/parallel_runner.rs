@@ -90,10 +90,11 @@ impl ParallelRunner {
                     let dst = &mut self.input_buffers[conn.to_module][dst_start..dst_start + 16];
                     
                     for i in (0..16).step_by(4) {
-                        let s = f32x4::from_slice(&src[i..i+4]);
-                        let d = f32x4::from_slice(&dst[i..i+4]);
-                        let res = s + d;
-                        res.write_to_slice(&mut dst[i..i+4]);
+                        let s = f32x4::new([src[i], src[i+1], src[i+2], src[i+3]]);
+                        let d = f32x4::new([dst[i], dst[i+1], dst[i+2], dst[i+3]]);
+                        let out = s + d;
+                        let out_arr: [f32; 4] = out.into();
+                        dst[i..i+4].copy_from_slice(&out_arr);
                     }
                 }
             }

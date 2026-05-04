@@ -17,11 +17,13 @@
 //! すべての `RackDspNode::process()` は **1サンプル単位** で呼ばれる。
 //! ブロック処理は存在しない。Gate/Triggerの立ち上がり検出は
 //! サンプル境界で正確に行われることを契約とする。
+pub mod signal;
 
 pub mod attenuverter;
 pub mod bernoulli;
 pub mod biquad;
 pub mod chaos;
+pub mod circuit;
 pub mod clock;
 pub mod clock_tree;
 pub mod compressor;
@@ -39,6 +41,7 @@ pub mod mixer;
 pub mod mod_matrix;
 pub mod noise;
 pub mod output;
+pub mod parallel_runner;
 pub mod quantizer;
 pub mod recorder;
 pub mod registry;
@@ -49,7 +52,6 @@ pub mod saturation;
 pub mod scope;
 pub mod sequencer;
 pub mod sh;
-pub mod signal;
 pub mod switch;
 pub mod vca;
 pub mod vcf;
@@ -59,7 +61,10 @@ pub mod wdf;
 pub mod wdf_filter;
 pub mod xfade;
 pub mod zdf_filter;
-
+pub mod automata;
+pub mod merkle_delay;
+pub mod fluid_lfo;
+pub mod erosion;
 pub use registry::{ModuleDescriptor, ModuleRegistry};
 pub use signal::{
     f32x4, AllocationPolicy, BuiltinModuleDescriptor, IntentBoundary, IntentClass, IntentMetadata,
