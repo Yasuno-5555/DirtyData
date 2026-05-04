@@ -157,7 +157,7 @@ pub fn hash_graph(graph: &Graph) -> [u8; 32] {
     for edge in graph.edges.values() {
         hash_edge(&mut hasher, edge);
     }
-    for (_, m) in &graph.modulations {
+    for m in graph.modulations.values() {
         hash_modulation(&mut hasher, m);
     }
 

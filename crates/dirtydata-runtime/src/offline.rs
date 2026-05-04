@@ -13,7 +13,10 @@ impl OfflineRenderer {
     pub fn new(graph: Graph, sample_rate: f32) -> Self {
         // Offline rendering currently doesn't support live MIDI input
         let runner = DspRunner::new(graph, None, sample_rate);
-        Self { runner, sample_rate }
+        Self {
+            runner,
+            sample_rate,
+        }
     }
 
     /// Renders the specified duration of audio.
@@ -40,17 +43,21 @@ impl OfflineRenderer {
     }
 
     /// Verifies that two independent runs produce the exact same output.
-    pub fn verify_determinism(graph: Graph, duration_secs: f32, sample_rate: f32) -> Result<bool, String> {
+    pub fn verify_determinism(
+        graph: Graph,
+        duration_secs: f32,
+        sample_rate: f32,
+    ) -> Result<bool, String> {
         let mut r1 = Self::new(graph.clone(), sample_rate);
         let mut r2 = Self::new(graph, sample_rate);
-        
+
         let out1 = r1.render(duration_secs);
         let out2 = r2.render(duration_secs);
-        
+
         if out1.len() != out2.len() {
             return Err("Output length mismatch between identical runs".into());
         }
-        
+
         for (s1, s2) in out1.iter().zip(out2.iter()) {
             if (*s1 - *s2).abs() > 0.0 {
                 return Ok(false);
@@ -90,13 +97,16 @@ impl OfflineRenderer {
             // Compare outputs of all nodes that exist in both runners
             let ids: Vec<_> = r_a.get_graph().nodes.keys().cloned().collect();
             for id in ids {
-                if let (Some(out_a), Some(out_b)) = (r_a.get_node_outputs(&id), r_b.get_node_outputs(&id)) {
+                if let (Some(out_a), Some(out_b)) =
+                    (r_a.get_node_outputs(&id), r_b.get_node_outputs(&id))
+                {
                     for (p_idx, (v_a, v_b)) in out_a.iter().zip(out_b.iter()).enumerate() {
                         let diff_l = (v_a[0] - v_b[0]).abs();
                         let diff_r = (v_a[1] - v_b[1]).abs();
                         let mag = diff_l.max(diff_r);
 
-                        if mag > 1e-7 { // Tolerance for floating point
+                        if mag > 1e-7 {
+                            // Tolerance for floating point
                             map.add_point(DivergencePoint {
                                 sample_index: i as u64,
                                 node_id: id,
@@ -106,7 +116,7 @@ impl OfflineRenderer {
                                 actual_value: *v_b,
                                 diff_magnitude: mag,
                             });
-                            
+
                             if map.points.len() > 100 {
                                 return map; // Cap it for now
                             }

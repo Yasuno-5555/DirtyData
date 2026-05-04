@@ -1,6 +1,6 @@
-use serde::{Deserialize, Serialize};
-use dirtydata_core::types::{StableId, IntentId, PatchId, Timestamp};
 use dirtydata_core::patch::Patch;
+use dirtydata_core::types::{IntentId, PatchId, StableId, Timestamp};
+use serde::{Deserialize, Serialize};
 
 /// 音の「犯人」を追跡する
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -35,7 +35,9 @@ impl Attributor {
         for patch in patches.iter().rev() {
             for op in &patch.operations {
                 match op {
-                    dirtydata_core::patch::Operation::ModifyConfig { node_id: id, delta } if *id == node_id => {
+                    dirtydata_core::patch::Operation::ModifyConfig { node_id: id, delta }
+                        if *id == node_id =>
+                    {
                         if delta.contains_key(param_name) {
                             return Some(Attribution {
                                 intent_id: patch.intent_ref,

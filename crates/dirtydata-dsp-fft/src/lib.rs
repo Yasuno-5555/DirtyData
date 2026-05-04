@@ -1,8 +1,8 @@
 //! Fast Fourier Transform Civilization
 
-use rustfft::{FftPlanner, num_complex::Complex};
+use rustfft::{num_complex::Complex, FftPlanner};
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum WindowType {
@@ -14,13 +14,18 @@ pub enum WindowType {
 
 impl WindowType {
     pub fn get_coefficient(&self, index: usize, length: usize) -> f32 {
-        if length <= 1 { return 1.0; }
+        if length <= 1 {
+            return 1.0;
+        }
         let x = index as f32 / (length - 1) as f32;
         match self {
             WindowType::Rectangular => 1.0,
             WindowType::Hann => 0.5 * (1.0 - (2.0 * std::f32::consts::PI * x).cos()),
             WindowType::Hamming => 0.54 - 0.46 * (2.0 * std::f32::consts::PI * x).cos(),
-            WindowType::Blackman => 0.42 - 0.5 * (2.0 * std::f32::consts::PI * x).cos() + 0.08 * (4.0 * std::f32::consts::PI * x).cos(),
+            WindowType::Blackman => {
+                0.42 - 0.5 * (2.0 * std::f32::consts::PI * x).cos()
+                    + 0.08 * (4.0 * std::f32::consts::PI * x).cos()
+            }
         }
     }
 
@@ -104,14 +109,18 @@ impl FftProcessor {
         let mut num = 0.0;
         let mut den = 0.0;
         let bin_to_freq = sample_rate / (2.0 * (mag.len() - 1) as f32);
-        
+
         for (i, &m) in mag.iter().enumerate() {
             let freq = i as f32 * bin_to_freq;
             num += freq * m;
             den += m;
         }
-        
-        if den == 0.0 { 0.0 } else { num / den }
+
+        if den == 0.0 {
+            0.0
+        } else {
+            num / den
+        }
     }
 
     /// Computes the spectral spread (bandwidth).
@@ -127,7 +136,11 @@ impl FftProcessor {
             den += m;
         }
 
-        if den == 0.0 { 0.0 } else { (num / den).sqrt() }
+        if den == 0.0 {
+            0.0
+        } else {
+            (num / den).sqrt()
+        }
     }
 
     /// Computes the spectral rolloff frequency.
@@ -161,15 +174,21 @@ impl FftProcessor {
 
         let am = sum / n;
         let gm = (log_sum / n).exp();
-        
-        if am == 0.0 { 0.0 } else { gm / am }
+
+        if am == 0.0 {
+            0.0
+        } else {
+            gm / am
+        }
     }
 
     /// Computes spectral skewness.
     pub fn spectral_skewness(mag: &[f32], sample_rate: f32) -> f32 {
         let centroid = Self::spectral_centroid(mag, sample_rate);
         let spread = Self::spectral_spread(mag, sample_rate);
-        if spread == 0.0 { return 0.0; }
+        if spread == 0.0 {
+            return 0.0;
+        }
 
         let mut num = 0.0;
         let mut den = 0.0;
@@ -188,7 +207,9 @@ impl FftProcessor {
     pub fn spectral_kurtosis(mag: &[f32], sample_rate: f32) -> f32 {
         let centroid = Self::spectral_centroid(mag, sample_rate);
         let spread = Self::spectral_spread(mag, sample_rate);
-        if spread == 0.0 { return 0.0; }
+        if spread == 0.0 {
+            return 0.0;
+        }
 
         let mut num = 0.0;
         let mut den = 0.0;
@@ -235,7 +256,8 @@ impl StftProcessor {
     /// Process a single sample through the STFT and OLA.
     /// Returns the processed sample if enough samples have been accumulated.
     pub fn process<F>(&mut self, input: f32, mut f: F) -> f32
-    where F: FnMut(&mut [Complex<f32>]) 
+    where
+        F: FnMut(&mut [Complex<f32>]),
     {
         // Store input in circular buffer
         self.input_buffer[self.input_ptr] = input;
@@ -267,13 +289,14 @@ impl StftProcessor {
         let out = self.output_accumulator[self.output_ptr];
         self.output_accumulator[self.output_ptr] = 0.0; // Clear for next round
         self.output_ptr = (self.output_ptr + 1) % self.output_accumulator.len();
-        
+
         out
     }
 
     /// Process a block of samples.
-    pub fn process_block<F>(&mut self, input: &[f32], output: &mut [f32], mut f: F) 
-    where F: FnMut(&mut [Complex<f32>]) 
+    pub fn process_block<F>(&mut self, input: &[f32], output: &mut [f32], mut f: F)
+    where
+        F: FnMut(&mut [Complex<f32>]),
     {
         for (i, &s) in input.iter().enumerate() {
             output[i] = self.process(s, &mut f);
@@ -289,18 +312,18 @@ mod tests {
     fn test_fft_roundtrip() {
         let size = 1024;
         let mut processor = FftProcessor::new(size, WindowType::Rectangular);
-        
+
         let mut input = vec![0.0; size];
         for i in 0..size {
             input[i] = (i as f32 * 0.1).sin();
         }
-        
+
         let mut spectrum = vec![Complex::default(); size];
         let mut output = vec![0.0; size];
-        
+
         processor.forward(&input, &mut spectrum);
         processor.inverse(&spectrum, &mut output);
-        
+
         for (a, b) in input.iter().zip(output.iter()) {
             assert!((a - b).abs() < 1e-5);
         }
@@ -312,12 +335,12 @@ mod tests {
         let mut mag = vec![0.0; size];
         // Sine at bin 10
         mag[10] = 1.0;
-        
+
         let sr = 44100.0;
         let centroid = FftProcessor::spectral_centroid(&mag, sr);
         let expected_centroid = 10.0 * (sr / (2.0 * (size - 1) as f32));
         assert!((centroid - expected_centroid).abs() < 1.0);
-        
+
         let flatness = FftProcessor::spectral_flatness(&mag);
         assert!(flatness < 0.1); // Sine is not flat
 
@@ -333,12 +356,12 @@ mod tests {
         let win_size = 1024;
         let hop_size = 256;
         let mut stft = StftProcessor::new(win_size, hop_size, WindowType::Hann);
-        
+
         let input = vec![1.0; 4096];
         let mut output = vec![0.0; 4096];
-        
+
         stft.process_block(&input, &mut output, |_| {});
-        
+
         // After initial latency, it should be approximately constant
         // (Hann window COLA: sum of Hann windows with 1/4 overlap is constant if normalized)
         // Note: rustfft doesn't normalize, and we don't normalize for COLA yet, so just check if it's non-zero

@@ -1,0 +1,73 @@
+{
+  "identity": "01KQ4RPS1PTEX8ZRH3NBTMYCET",
+  "operations": [
+    {
+      "AddNode": {
+        "id": "01KQ4RPS1NZ10PJPNNQJSS3TJ6",
+        "kind": "Source",
+        "ports": [
+          {
+            "name": "out",
+            "direction": "Output",
+            "domain": "Sample",
+            "data_type": {
+              "Audio": {
+                "channels": 2
+              }
+            },
+            "semantic": "Signal",
+            "polarity": "Bipolar"
+          }
+        ],
+        "config": {
+          "name": {
+            "String": "Sine_01KQ"
+          }
+        },
+        "metadata": null,
+        "confidence": "Verified"
+      }
+    }
+  ],
+  "intent_ref": null,
+  "deterministic_hash": [
+    143,
+    66,
+    7,
+    140,
+    90,
+    136,
+    191,
+    112,
+    248,
+    31,
+    83,
+    121,
+    147,
+    116,
+    155,
+    217,
+    31,
+    91,
+    136,
+    232,
+    147,
+    56,
+    11,
+    187,
+    34,
+    158,
+    223,
+    163,
+    210,
+    170,
+    202,
+    243
+  ],
+  "parents": [
+    "01KQ4RBAXCRCYYH6XD2BM0R7W4"
+  ],
+  "timestamp": 1777202848822014,
+  "source": "UserDirect",
+  "trust": "Trusted"
+}

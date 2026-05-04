@@ -23,14 +23,20 @@ impl KarplusStrong {
     pub fn new(sample_rate: f32) -> Self {
         Self {
             delay_line: vec![0.0; sample_rate as usize],
-            write_idx: 0, sample_rate,
-            lp_z1: 0.0, lp_z2: 0.0,
-            ap_state: [0.0; 3], ap_prev_in: [0.0; 3],
-            dc_prev_in: 0.0, dc_prev_out: 0.0,
+            write_idx: 0,
+            sample_rate,
+            lp_z1: 0.0,
+            lp_z2: 0.0,
+            ap_state: [0.0; 3],
+            ap_prev_in: [0.0; 3],
+            dc_prev_in: 0.0,
+            dc_prev_out: 0.0,
         }
     }
 
-    pub fn set_sample_rate(&mut self, sample_rate: f32) { self.sample_rate = sample_rate; }
+    pub fn set_sample_rate(&mut self, sample_rate: f32) {
+        self.sample_rate = sample_rate;
+    }
 
     #[inline]
     fn lagrange3(buf: &[f32], pos: f32, len: usize) -> f32 {
@@ -38,7 +44,10 @@ impl KarplusStrong {
         let d = pos - i as f32;
         let idx = |o: isize| -> usize {
             let mut x = (i + o) % len as isize;
-            if x < 0 { x += len as isize; } x as usize
+            if x < 0 {
+                x += len as isize;
+            }
+            x as usize
         };
         let (y_1, y0, y1, y2) = (buf[idx(-1)], buf[idx(0)], buf[idx(1)], buf[idx(2)]);
         let c0 = y0;
@@ -51,10 +60,19 @@ impl KarplusStrong {
     #[inline]
     fn allpass1(input: f32, g: f32, prev_in: &mut f32, state: &mut f32) -> f32 {
         let out = g * input + *prev_in - g * *state;
-        *prev_in = input; *state = out; out
+        *prev_in = input;
+        *state = out;
+        out
     }
 
-    pub fn process(&mut self, exciter: f32, freq_hz: f32, damping: f32, dispersion: f32, pick_pos: f32) -> f32 {
+    pub fn process(
+        &mut self,
+        exciter: f32,
+        freq_hz: f32,
+        damping: f32,
+        dispersion: f32,
+        pick_pos: f32,
+    ) -> f32 {
         let freq = freq_hz.clamp(20.0, self.sample_rate * 0.45);
         let period = self.sample_rate / freq;
         let len = self.delay_line.len();
@@ -62,23 +80,33 @@ impl KarplusStrong {
         // Pick position comb
         let pd = (period * pick_pos.clamp(0.01, 0.99)).max(1.0);
         let mut pp = self.write_idx as f32 - pd;
-        if pp < 0.0 { pp += len as f32; }
+        if pp < 0.0 {
+            pp += len as f32;
+        }
         let excited = exciter - Self::lagrange3(&self.delay_line, pp, len) * 0.5;
 
         // Main delay read
         let mut rp = self.write_idx as f32 - period;
-        if rp < 0.0 { rp += len as f32; }
+        if rp < 0.0 {
+            rp += len as f32;
+        }
         let mut delayed = Self::lagrange3(&self.delay_line, rp, len);
 
         // Dispersion allpass cascade
         let dc = dispersion.clamp(0.0, 0.99) * 0.5;
         for i in 0..3 {
-            delayed = Self::allpass1(delayed, dc * (1.0 - i as f32 * 0.2),
-                &mut self.ap_prev_in[i], &mut self.ap_state[i]);
+            delayed = Self::allpass1(
+                delayed,
+                dc * (1.0 - i as f32 * 0.2),
+                &mut self.ap_prev_in[i],
+                &mut self.ap_state[i],
+            );
         }
 
         // Frequency-dependent damping
-        let w = 2.0 * std::f32::consts::PI * (20000.0 * (1.0 - damping.clamp(0.0, 0.99))).max(100.0) / self.sample_rate;
+        let w =
+            2.0 * std::f32::consts::PI * (20000.0 * (1.0 - damping.clamp(0.0, 0.99))).max(100.0)
+                / self.sample_rate;
         let a = w / (1.0 + w);
         self.lp_z1 += a * (delayed - self.lp_z1);
         self.lp_z2 += a * (self.lp_z1 - self.lp_z2);
@@ -89,7 +117,8 @@ impl KarplusStrong {
 
         // DC blocker
         let out = fb - self.dc_prev_in + 0.995 * self.dc_prev_out;
-        self.dc_prev_in = fb; self.dc_prev_out = out;
+        self.dc_prev_in = fb;
+        self.dc_prev_out = out;
         out
     }
 }

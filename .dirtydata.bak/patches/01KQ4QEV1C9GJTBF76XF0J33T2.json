@@ -1,0 +1,73 @@
+{
+  "identity": "01KQ4QEV1C9GJTBF76XF0J33T2",
+  "operations": [
+    {
+      "AddNode": {
+        "id": "01KQ4QEV1CPEZJ1P15NKKQ9V4B",
+        "kind": "Source",
+        "ports": [
+          {
+            "name": "out",
+            "direction": "Output",
+            "domain": "Sample",
+            "data_type": {
+              "Audio": {
+                "channels": 2
+              }
+            },
+            "semantic": "Signal",
+            "polarity": "Bipolar"
+          }
+        ],
+        "config": {
+          "name": {
+            "String": "Osc_01KQ"
+          }
+        },
+        "metadata": null,
+        "confidence": "Verified"
+      }
+    }
+  ],
+  "intent_ref": null,
+  "deterministic_hash": [
+    62,
+    197,
+    225,
+    198,
+    172,
+    248,
+    37,
+    67,
+    16,
+    151,
+    89,
+    9,
+    89,
+    209,
+    255,
+    63,
+    168,
+    71,
+    144,
+    23,
+    4,
+    92,
+    97,
+    66,
+    206,
+    109,
+    124,
+    92,
+    182,
+    254,
+    246,
+    152
+  ],
+  "parents": [
+    "01KQ4QB9Z3Z31A3806NPNXZD6C"
+  ],
+  "timestamp": 1777201540140560,
+  "source": "UserDirect",
+  "trust": "Trusted"
+}

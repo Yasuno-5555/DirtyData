@@ -1,0 +1,1698 @@
+{
+  "nodes": {
+    "01KQ4RPS1NZ10PJPNNQJSS3TJ6": {
+      "id": "01KQ4RPS1NZ10PJPNNQJSS3TJ6",
+      "kind": "Source",
+      "ports": [
+        {
+          "name": "out",
+          "direction": "Output",
+          "domain": "Sample",
+          "data_type": {
+            "Audio": {
+              "channels": 2
+            }
+          },
+          "semantic": "Signal",
+          "polarity": "Bipolar"
+        }
+      ],
+      "config": {
+        "name": {
+          "String": "Sine_01KQ"
+        }
+      },
+      "metadata": null,
+      "confidence": "Verified"
+    },
+    "01KQ4RRFB3JVW42V4BXP9PAKKT": {
+      "id": "01KQ4RRFB3JVW42V4BXP9PAKKT",
+      "kind": "Sink",
+      "ports": [
+        {
+          "name": "in",
+          "direction": "Input",
+          "domain": "Sample",
+          "data_type": {
+            "Audio": {
+              "channels": 2
+            }
+          },
+          "semantic": "Signal",
+          "polarity": "Bipolar"
+        }
+      ],
+      "config": {
+        "name": {
+          "String": "_01KQ"
+        }
+      },
+      "metadata": null,
+      "confidence": "Verified"
+    }
+  },
+  "edges": {},
+  "modulations": {},
+  "revision": 27,
+  "applied_patches": [
+    "01KQ0YB2Y5QYW5H5HQCRHNPXZ5",
+    "01KQ4QAFAFJ5X88WYFM32HR053",
+    "01KQ4QATB2RR4D4BA4H427NC3K",
+    "01KQ4QB9Z3Z31A3806NPNXZD6C",
+    "01KQ4QEV1C9GJTBF76XF0J33T2",
+    "01KQ4QF77F2J0FS54JR7D2VZGC",
+    "01KQ4R38NTSTC3ZG50BWAYSDGX",
+    "01KQ4R3DT9S47DXN7NHZ5KZF5C",
+    "01KQ4R3M2VH5DTNYQ2ZQW1HX3Y",
+    "01KQ4R84XAYNZNS5J1YBBZ165F",
+    "01KQ4R894P9NW3MH58P5B8Q7FX",
+    "01KQ4RB1R51629EECMZP93CH2W",
+    "01KQ4RB48EF8331KH9X4CRKE03",
+    "01KQ4RB8G5NX92ZVC855YT4RQA",
+    "01KQ4RBAXCRCYYH6XD2BM0R7W4",
+    "01KQ4RPS1PTEX8ZRH3NBTMYCET",
+    "01KQ4RQVNDM8VQDPYF3GKPXGYH",
+    "01KQ4RQVNFS23023YYA6XYRSGB",
+    "01KQ4RRFB39WFAA7XTHACY7CRV",
+    "01KQ4RS51YHN94PCWJ6B3N6S6K",
+    "01KQ4RSECB8DH697244CTP8S3R",
+    "01KQ4RT9PYWJKERF6BA4K5E9ZA",
+    "01KQ4RTAXXA9YR1BRK29BN48AF",
+    "01KQ4RTFXXXK7QS4BQHE88K7AM",
+    "01KQ4RTHB5M93NZA50K5JZE6R9",
+    "01KQ4RTJBZC9336DKHPQ74G103",
+    "01KQ4RTKTBY6FEEQQRHRQ7Y5YA"
+  ],
+  "history": {
+    "01KQ4QAFAFJ5X88WYFM32HR053": {
+      "identity": "01KQ4QAFAFJ5X88WYFM32HR053",
+      "operations": [
+        {
+          "AddNode": {
+            "id": "01KQ4QAFAE2K1C7WR2X1GJG0P7",
+            "kind": "Processor",
+            "ports": [
+              {
+                "name": "in",
+                "direction": "Input",
+                "domain": "Sample",
+                "data_type": {
+                  "Audio": {
+                    "channels": 2
+                  }
+                },
+                "semantic": "Signal",
+                "polarity": "Bipolar"
+              },
+              {
+                "name": "out",
+                "direction": "Output",
+                "domain": "Sample",
+                "data_type": {
+                  "Audio": {
+                    "channels": 2
+                  }
+                },
+                "semantic": "Signal",
+                "polarity": "Bipolar"
+              }
+            ],
+            "config": {
+              "name": {
+                "String": "Gain_01KQ"
+              }
+            },
+            "metadata": null,
+            "confidence": "Verified"
+          }
+        }
+      ],
+      "intent_ref": null,
+      "deterministic_hash": [
+        171,
+        42,
+        233,
+        99,
+        16,
+        68,
+        194,
+        203,
+        57,
+        2,
+        187,
+        165,
+        28,
+        135,
+        23,
+        236,
+        32,
+        161,
+        119,
+        7,
+        90,
+        236,
+        239,
+        190,
+        92,
+        145,
+        30,
+        228,
+        120,
+        65,
+        74,
+        102
+      ],
+      "parents": [
+        "01KQ0YB2Y5QYW5H5HQCRHNPXZ5"
+      ],
+      "timestamp": 1777201397071249,
+      "source": "UserDirect",
+      "trust": "Trusted"
+    },
+    "01KQ4QATB2RR4D4BA4H427NC3K": {
+      "identity": "01KQ4QATB2RR4D4BA4H427NC3K",
+      "operations": [
+        {
+          "AddNode": {
+            "id": "01KQ4QATB2EPX3REYNJFB1GJ7M",
+            "kind": "Processor",
+            "ports": [
+              {
+                "name": "in",
+                "direction": "Input",
+                "domain": "Sample",
+                "data_type": {
+                  "Audio": {
+                    "channels": 2
+                  }
+                },
+                "semantic": "Signal",
+                "polarity": "Bipolar"
+              },
+              {
+                "name": "out",
+                "direction": "Output",
+                "domain": "Sample",
+                "data_type": {
+                  "Audio": {
+                    "channels": 2
+                  }
+                },
+                "semantic": "Signal",
+                "polarity": "Bipolar"
+              }
+            ],
+            "config": {
+              "name": {
+                "String": "Gain_01KQ"
+              }
+            },
+            "metadata": null,
+            "confidence": "Verified"
+          }
+        }
+      ],
+      "intent_ref": null,
+      "deterministic_hash": [
+        67,
+        155,
+        93,
+        145,
+        126,
+        3,
+        159,
+        219,
+        50,
+        72,
+        242,
+        178,
+        219,
+        98,
+        11,
+        74,
+        3,
+        2,
+        124,
+        185,
+        228,
+        183,
+        205,
+        223,
+        33,
+        125,
+        239,
+        4,
+        152,
+        41,
+        210,
+        232
+      ],
+      "parents": [
+        "01KQ4QAFAFJ5X88WYFM32HR053"
+      ],
+      "timestamp": 1777201408354603,
+      "source": "UserDirect",
+      "trust": "Trusted"
+    },
+    "01KQ4QB9Z3Z31A3806NPNXZD6C": {
+      "identity": "01KQ4QB9Z3Z31A3806NPNXZD6C",
+      "operations": [
+        {
+          "AddNode": {
+            "id": "01KQ4QB9Z2PCP4130S6450SF2P",
+            "kind": "Processor",
+            "ports": [
+              {
+                "name": "in",
+                "direction": "Input",
+                "domain": "Sample",
+                "data_type": {
+                  "Audio": {
+                    "channels": 2
+                  }
+                },
+                "semantic": "Signal",
+                "polarity": "Bipolar"
+              },
+              {
+                "name": "out",
+                "direction": "Output",
+                "domain": "Sample",
+                "data_type": {
+                  "Audio": {
+                    "channels": 2
+                  }
+                },
+                "semantic": "Signal",
+                "polarity": "Bipolar"
+              }
+            ],
+            "config": {
+              "name": {
+                "String": "Gain_01KQ"
+              }
+            },
+            "metadata": null,
+            "confidence": "Verified"
+          }
+        }
+      ],
+      "intent_ref": null,
+      "deterministic_hash": [
+        198,
+        155,
+        80,
+        159,
+        163,
+        100,
+        205,
+        6,
+        213,
+        110,
+        254,
+        21,
+        119,
+        25,
+        204,
+        156,
+        90,
+        104,
+        145,
+        225,
+        245,
+        237,
+        145,
+        235,
+        119,
+        148,
+        116,
+        234,
+        64,
+        152,
+        72,
+        180
+      ],
+      "parents": [
+        "01KQ4QATB2RR4D4BA4H427NC3K"
+      ],
+      "timestamp": 1777201424355097,
+      "source": "UserDirect",
+      "trust": "Trusted"
+    },
+    "01KQ4QEV1C9GJTBF76XF0J33T2": {
+      "identity": "01KQ4QEV1C9GJTBF76XF0J33T2",
+      "operations": [
+        {
+          "AddNode": {
+            "id": "01KQ4QEV1CPEZJ1P15NKKQ9V4B",
+            "kind": "Source",
+            "ports": [
+              {
+                "name": "out",
+                "direction": "Output",
+                "domain": "Sample",
+                "data_type": {
+                  "Audio": {
+                    "channels": 2
+                  }
+                },
+                "semantic": "Signal",
+                "polarity": "Bipolar"
+              }
+            ],
+            "config": {
+              "name": {
+                "String": "Osc_01KQ"
+              }
+            },
+            "metadata": null,
+            "confidence": "Verified"
+          }
+        }
+      ],
+      "intent_ref": null,
+      "deterministic_hash": [
+        62,
+        197,
+        225,
+        198,
+        172,
+        248,
+        37,
+        67,
+        16,
+        151,
+        89,
+        9,
+        89,
+        209,
+        255,
+        63,
+        168,
+        71,
+        144,
+        23,
+        4,
+        92,
+        97,
+        66,
+        206,
+        109,
+        124,
+        92,
+        182,
+        254,
+        246,
+        152
+      ],
+      "parents": [
+        "01KQ4QB9Z3Z31A3806NPNXZD6C"
+      ],
+      "timestamp": 1777201540140560,
+      "source": "UserDirect",
+      "trust": "Trusted"
+    },
+    "01KQ4QF77F2J0FS54JR7D2VZGC": {
+      "identity": "01KQ4QF77F2J0FS54JR7D2VZGC",
+      "operations": [
+        {
+          "AddNode": {
+            "id": "01KQ4QF77F1CVN0VASH0F29BHW",
+            "kind": "Processor",
+            "ports": [
+              {
+                "name": "in",
+                "direction": "Input",
+                "domain": "Sample",
+                "data_type": {
+                  "Audio": {
+                    "channels": 2
+                  }
+                },
+                "semantic": "Signal",
+                "polarity": "Bipolar"
+              },
+              {
+                "name": "out",
+                "direction": "Output",
+                "domain": "Sample",
+                "data_type": {
+                  "Audio": {
+                    "channels": 2
+                  }
+                },
+                "semantic": "Signal",
+                "polarity": "Bipolar"
+              }
+            ],
+            "config": {
+              "name": {
+                "String": "Gain_01KQ"
+              }
+            },
+            "metadata": null,
+            "confidence": "Verified"
+          }
+        }
+      ],
+      "intent_ref": null,
+      "deterministic_hash": [
+        191,
+        208,
+        98,
+        151,
+        11,
+        182,
+        112,
+        133,
+        141,
+        145,
+        178,
+        83,
+        30,
+        74,
+        193,
+        149,
+        18,
+        212,
+        178,
+        200,
+        60,
+        64,
+        76,
+        15,
+        9,
+        177,
+        17,
+        17,
+        188,
+        155,
+        68,
+        46
+      ],
+      "parents": [
+        "01KQ4QEV1C9GJTBF76XF0J33T2"
+      ],
+      "timestamp": 1777201552623260,
+      "source": "UserDirect",
+      "trust": "Trusted"
+    },
+    "01KQ4R38NTSTC3ZG50BWAYSDGX": {
+      "identity": "01KQ4R38NTSTC3ZG50BWAYSDGX",
+      "operations": [
+        {
+          "RemoveNode": "01KQ0YB2Y4P1VC2GPZMH17EJ25"
+        }
+      ],
+      "intent_ref": null,
+      "deterministic_hash": [
+        121,
+        180,
+        224,
+        181,
+        198,
+        213,
+        105,
+        241,
+        149,
+        238,
+        246,
+        95,
+        159,
+        239,
+        165,
+        226,
+        58,
+        130,
+        194,
+        220,
+        111,
+        54,
+        73,
+        138,
+        245,
+        136,
+        169,
+        0,
+        54,
+        102,
+        50,
+        155
+      ],
+      "parents": [
+        "01KQ4QF77F2J0FS54JR7D2VZGC"
+      ],
+      "timestamp": 1777202209466712,
+      "source": "UserDirect",
+      "trust": "Trusted"
+    },
+    "01KQ4R3DT9S47DXN7NHZ5KZF5C": {
+      "identity": "01KQ4R3DT9S47DXN7NHZ5KZF5C",
+      "operations": [
+        {
+          "RemoveNode": "01KQ0YB2Y4VB0RA1KFGSDPC6Q9"
+        }
+      ],
+      "intent_ref": null,
+      "deterministic_hash": [
+        185,
+        70,
+        244,
+        118,
+        29,
+        104,
+        89,
+        179,
+        72,
+        247,
+        35,
+        218,
+        207,
+        213,
+        7,
+        54,
+        54,
+        10,
+        69,
+        169,
+        237,
+        46,
+        130,
+        32,
+        121,
+        38,
+        89,
+        1,
+        102,
+        121,
+        217,
+        123
+      ],
+      "parents": [
+        "01KQ4R38NTSTC3ZG50BWAYSDGX"
+      ],
+      "timestamp": 1777202214729783,
+      "source": "UserDirect",
+      "trust": "Trusted"
+    },
+    "01KQ4R3M2VH5DTNYQ2ZQW1HX3Y": {
+      "identity": "01KQ4R3M2VH5DTNYQ2ZQW1HX3Y",
+      "operations": [
+        {
+          "RemoveNode": "01KQ4QEV1CPEZJ1P15NKKQ9V4B"
+        }
+      ],
+      "intent_ref": null,
+      "deterministic_hash": [
+        214,
+        105,
+        12,
+        84,
+        126,
+        147,
+        70,
+        6,
+        29,
+        66,
+        86,
+        252,
+        209,
+        253,
+        113,
+        162,
+        106,
+        221,
+        86,
+        22,
+        84,
+        186,
+        38,
+        141,
+        183,
+        94,
+        248,
+        73,
+        133,
+        173,
+        125,
+        184
+      ],
+      "parents": [
+        "01KQ4R3DT9S47DXN7NHZ5KZF5C"
+      ],
+      "timestamp": 1777202221147539,
+      "source": "UserDirect",
+      "trust": "Trusted"
+    },
+    "01KQ4R84XAYNZNS5J1YBBZ165F": {
+      "identity": "01KQ4R84XAYNZNS5J1YBBZ165F",
+      "operations": [],
+      "intent_ref": null,
+      "deterministic_hash": [
+        106,
+        254,
+        105,
+        37,
+        210,
+        242,
+        254,
+        74,
+        139,
+        78,
+        95,
+        33,
+        11,
+        218,
+        180,
+        193,
+        86,
+        26,
+        98,
+        12,
+        110,
+        68,
+        146,
+        73,
+        196,
+        249,
+        252,
+        189,
+        234,
+        204,
+        128,
+        147
+      ],
+      "parents": [
+        "01KQ4R3M2VH5DTNYQ2ZQW1HX3Y"
+      ],
+      "timestamp": 1777202369450812,
+      "source": "UserDirect",
+      "trust": "Trusted"
+    },
+    "01KQ4R894P9NW3MH58P5B8Q7FX": {
+      "identity": "01KQ4R894P9NW3MH58P5B8Q7FX",
+      "operations": [],
+      "intent_ref": null,
+      "deterministic_hash": [
+        97,
+        71,
+        43,
+        209,
+        228,
+        97,
+        32,
+        19,
+        52,
+        54,
+        125,
+        229,
+        135,
+        56,
+        87,
+        147,
+        127,
+        102,
+        21,
+        111,
+        94,
+        41,
+        64,
+        87,
+        188,
+        144,
+        68,
+        211,
+        28,
+        223,
+        40,
+        198
+      ],
+      "parents": [
+        "01KQ4R84XAYNZNS5J1YBBZ165F"
+      ],
+      "timestamp": 1777202373782597,
+      "source": "UserDirect",
+      "trust": "Trusted"
+    },
+    "01KQ4RB1R51629EECMZP93CH2W": {
+      "identity": "01KQ4RB1R51629EECMZP93CH2W",
+      "operations": [
+        {
+          "RemoveNode": "01KQ4QF77F1CVN0VASH0F29BHW"
+        }
+      ],
+      "intent_ref": null,
+      "deterministic_hash": [
+        229,
+        231,
+        47,
+        74,
+        51,
+        135,
+        39,
+        198,
+        27,
+        85,
+        12,
+        232,
+        171,
+        44,
+        180,
+        116,
+        22,
+        220,
+        175,
+        237,
+        235,
+        219,
+        138,
+        214,
+        168,
+        14,
+        152,
+        91,
+        123,
+        239,
+        133,
+        76
+      ],
+      "parents": [
+        "01KQ4R894P9NW3MH58P5B8Q7FX"
+      ],
+      "timestamp": 1777202464517403,
+      "source": "UserDirect",
+      "trust": "Trusted"
+    },
+    "01KQ4RB48EF8331KH9X4CRKE03": {
+      "identity": "01KQ4RB48EF8331KH9X4CRKE03",
+      "operations": [
+        {
+          "RemoveNode": "01KQ4QB9Z2PCP4130S6450SF2P"
+        }
+      ],
+      "intent_ref": null,
+      "deterministic_hash": [
+        62,
+        63,
+        125,
+        121,
+        91,
+        36,
+        222,
+        3,
+        23,
+        124,
+        44,
+        11,
+        107,
+        47,
+        153,
+        136,
+        210,
+        18,
+        186,
+        105,
+        131,
+        241,
+        144,
+        36,
+        32,
+        48,
+        156,
+        51,
+        61,
+        252,
+        198,
+        251
+      ],
+      "parents": [
+        "01KQ4RB1R51629EECMZP93CH2W"
+      ],
+      "timestamp": 1777202467086650,
+      "source": "UserDirect",
+      "trust": "Trusted"
+    },
+    "01KQ4RB8G5NX92ZVC855YT4RQA": {
+      "identity": "01KQ4RB8G5NX92ZVC855YT4RQA",
+      "operations": [
+        {
+          "RemoveNode": "01KQ4QAFAE2K1C7WR2X1GJG0P7"
+        }
+      ],
+      "intent_ref": null,
+      "deterministic_hash": [
+        157,
+        90,
+        195,
+        207,
+        50,
+        83,
+        127,
+        159,
+        25,
+        198,
+        26,
+        89,
+        32,
+        154,
+        50,
+        38,
+        197,
+        8,
+        133,
+        151,
+        161,
+        21,
+        91,
+        7,
+        85,
+        149,
+        45,
+        81,
+        255,
+        212,
+        127,
+        162
+      ],
+      "parents": [
+        "01KQ4RB48EF8331KH9X4CRKE03"
+      ],
+      "timestamp": 1777202471429174,
+      "source": "UserDirect",
+      "trust": "Trusted"
+    },
+    "01KQ4RBAXCRCYYH6XD2BM0R7W4": {
+      "identity": "01KQ4RBAXCRCYYH6XD2BM0R7W4",
+      "operations": [
+        {
+          "RemoveNode": "01KQ4QATB2EPX3REYNJFB1GJ7M"
+        }
+      ],
+      "intent_ref": null,
+      "deterministic_hash": [
+        80,
+        133,
+        200,
+        188,
+        108,
+        110,
+        202,
+        103,
+        184,
+        145,
+        117,
+        215,
+        115,
+        141,
+        201,
+        201,
+        125,
+        141,
+        119,
+        49,
+        134,
+        176,
+        8,
+        236,
+        133,
+        179,
+        69,
+        110,
+        43,
+        253,
+        55,
+        174
+      ],
+      "parents": [
+        "01KQ4RB8G5NX92ZVC855YT4RQA"
+      ],
+      "timestamp": 1777202473900705,
+      "source": "UserDirect",
+      "trust": "Trusted"
+    },
+    "01KQ4RPS1PTEX8ZRH3NBTMYCET": {
+      "identity": "01KQ4RPS1PTEX8ZRH3NBTMYCET",
+      "operations": [
+        {
+          "AddNode": {
+            "id": "01KQ4RPS1NZ10PJPNNQJSS3TJ6",
+            "kind": "Source",
+            "ports": [
+              {
+                "name": "out",
+                "direction": "Output",
+                "domain": "Sample",
+                "data_type": {
+                  "Audio": {
+                    "channels": 2
+                  }
+                },
+                "semantic": "Signal",
+                "polarity": "Bipolar"
+              }
+            ],
+            "config": {
+              "name": {
+                "String": "Sine_01KQ"
+              }
+            },
+            "metadata": null,
+            "confidence": "Verified"
+          }
+        }
+      ],
+      "intent_ref": null,
+      "deterministic_hash": [
+        143,
+        66,
+        7,
+        140,
+        90,
+        136,
+        191,
+        112,
+        248,
+        31,
+        83,
+        121,
+        147,
+        116,
+        155,
+        217,
+        31,
+        91,
+        136,
+        232,
+        147,
+        56,
+        11,
+        187,
+        34,
+        158,
+        223,
+        163,
+        210,
+        170,
+        202,
+        243
+      ],
+      "parents": [
+        "01KQ4RBAXCRCYYH6XD2BM0R7W4"
+      ],
+      "timestamp": 1777202848822014,
+      "source": "UserDirect",
+      "trust": "Trusted"
+    },
+    "01KQ4RQVNDM8VQDPYF3GKPXGYH": {
+      "identity": "01KQ4RQVNDM8VQDPYF3GKPXGYH",
+      "operations": [
+        {
+          "AddNode": {
+            "id": "01KQ4RQVNDH1X3S4B6Z0113THM",
+            "kind": "Processor",
+            "ports": [
+              {
+                "name": "in",
+                "direction": "Input",
+                "domain": "Sample",
+                "data_type": {
+                  "Audio": {
+                    "channels": 2
+                  }
+                },
+                "semantic": "Signal",
+                "polarity": "Bipolar"
+              },
+              {
+                "name": "out",
+                "direction": "Output",
+                "domain": "Sample",
+                "data_type": {
+                  "Audio": {
+                    "channels": 2
+                  }
+                },
+                "semantic": "Signal",
+                "polarity": "Bipolar"
+              }
+            ],
+            "config": {
+              "name": {
+                "String": "VCA/Gain_01KQ"
+              }
+            },
+            "metadata": null,
+            "confidence": "Verified"
+          }
+        }
+      ],
+      "intent_ref": null,
+      "deterministic_hash": [
+        224,
+        208,
+        45,
+        220,
+        91,
+        112,
+        3,
+        187,
+        188,
+        214,
+        252,
+        15,
+        170,
+        178,
+        34,
+        105,
+        82,
+        36,
+        65,
+        98,
+        193,
+        33,
+        186,
+        19,
+        132,
+        238,
+        250,
+        92,
+        160,
+        30,
+        243,
+        59
+      ],
+      "parents": [
+        "01KQ4RPS1PTEX8ZRH3NBTMYCET"
+      ],
+      "timestamp": 1777202884269967,
+      "source": "UserDirect",
+      "trust": "Trusted"
+    },
+    "01KQ4RQVNFS23023YYA6XYRSGB": {
+      "identity": "01KQ4RQVNFS23023YYA6XYRSGB",
+      "operations": [
+        {
+          "AddEdge": {
+            "id": "01KQ4RQVNF80ZVZH9N0JNTK7AJ",
+            "source": {
+              "node_id": "01KQ4RPS1NZ10PJPNNQJSS3TJ6",
+              "port_name": "out"
+            },
+            "target": {
+              "node_id": "01KQ4RQVNDH1X3S4B6Z0113THM",
+              "port_name": "in"
+            },
+            "kind": "Normal"
+          }
+        }
+      ],
+      "intent_ref": null,
+      "deterministic_hash": [
+        112,
+        201,
+        5,
+        37,
+        109,
+        242,
+        69,
+        6,
+        244,
+        21,
+        230,
+        35,
+        18,
+        113,
+        148,
+        200,
+        103,
+        144,
+        151,
+        112,
+        177,
+        221,
+        3,
+        48,
+        218,
+        144,
+        173,
+        182,
+        128,
+        48,
+        224,
+        245
+      ],
+      "parents": [
+        "01KQ4RQVNDM8VQDPYF3GKPXGYH"
+      ],
+      "timestamp": 1777202884271751,
+      "source": "UserDirect",
+      "trust": "Trusted"
+    },
+    "01KQ4RRFB39WFAA7XTHACY7CRV": {
+      "identity": "01KQ4RRFB39WFAA7XTHACY7CRV",
+      "operations": [
+        {
+          "AddNode": {
+            "id": "01KQ4RRFB3JVW42V4BXP9PAKKT",
+            "kind": "Sink",
+            "ports": [
+              {
+                "name": "in",
+                "direction": "Input",
+                "domain": "Sample",
+                "data_type": {
+                  "Audio": {
+                    "channels": 2
+                  }
+                },
+                "semantic": "Signal",
+                "polarity": "Bipolar"
+              }
+            ],
+            "config": {
+              "name": {
+                "String": "_01KQ"
+              }
+            },
+            "metadata": null,
+            "confidence": "Verified"
+          }
+        }
+      ],
+      "intent_ref": null,
+      "deterministic_hash": [
+        100,
+        177,
+        85,
+        248,
+        74,
+        156,
+        73,
+        65,
+        98,
+        112,
+        215,
+        254,
+        237,
+        109,
+        153,
+        204,
+        197,
+        80,
+        11,
+        241,
+        178,
+        8,
+        55,
+        248,
+        216,
+        170,
+        84,
+        208,
+        73,
+        200,
+        188,
+        26
+      ],
+      "parents": [
+        "01KQ4RQVNFS23023YYA6XYRSGB"
+      ],
+      "timestamp": 1777202904419431,
+      "source": "UserDirect",
+      "trust": "Trusted"
+    },
+    "01KQ4RS51YHN94PCWJ6B3N6S6K": {
+      "identity": "01KQ4RS51YHN94PCWJ6B3N6S6K",
+      "operations": [
+        {
+          "RemoveNode": "01KQ4RQVNDH1X3S4B6Z0113THM"
+        }
+      ],
+      "intent_ref": null,
+      "deterministic_hash": [
+        17,
+        203,
+        108,
+        160,
+        23,
+        0,
+        80,
+        31,
+        247,
+        120,
+        109,
+        131,
+        212,
+        144,
+        75,
+        108,
+        171,
+        108,
+        15,
+        160,
+        185,
+        197,
+        235,
+        219,
+        65,
+        37,
+        206,
+        37,
+        184,
+        163,
+        202,
+        254
+      ],
+      "parents": [
+        "01KQ4RRFB39WFAA7XTHACY7CRV"
+      ],
+      "timestamp": 1777202926654378,
+      "source": "UserDirect",
+      "trust": "Trusted"
+    },
+    "01KQ4RSECB8DH697244CTP8S3R": {
+      "identity": "01KQ4RSECB8DH697244CTP8S3R",
+      "operations": [
+        {
+          "AddNode": {
+            "id": "01KQ4RSECB4G387QWGHR8AJTJB",
+            "kind": "Processor",
+            "ports": [
+              {
+                "name": "in",
+                "direction": "Input",
+                "domain": "Sample",
+                "data_type": {
+                  "Audio": {
+                    "channels": 2
+                  }
+                },
+                "semantic": "Signal",
+                "polarity": "Bipolar"
+              },
+              {
+                "name": "out",
+                "direction": "Output",
+                "domain": "Sample",
+                "data_type": {
+                  "Audio": {
+                    "channels": 2
+                  }
+                },
+                "semantic": "Signal",
+                "polarity": "Bipolar"
+              }
+            ],
+            "config": {
+              "name": {
+                "String": "OscOut_01KQ"
+              }
+            },
+            "metadata": null,
+            "confidence": "Verified"
+          }
+        }
+      ],
+      "intent_ref": null,
+      "deterministic_hash": [
+        23,
+        107,
+        247,
+        248,
+        116,
+        86,
+        231,
+        114,
+        101,
+        200,
+        151,
+        133,
+        247,
+        203,
+        79,
+        134,
+        15,
+        174,
+        144,
+        249,
+        187,
+        176,
+        86,
+        179,
+        162,
+        87,
+        172,
+        119,
+        54,
+        91,
+        154,
+        205
+      ],
+      "parents": [
+        "01KQ4RS51YHN94PCWJ6B3N6S6K"
+      ],
+      "timestamp": 1777202936203788,
+      "source": "UserDirect",
+      "trust": "Trusted"
+    },
+    "01KQ4RT9PYWJKERF6BA4K5E9ZA": {
+      "identity": "01KQ4RT9PYWJKERF6BA4K5E9ZA",
+      "operations": [
+        {
+          "AddNode": {
+            "id": "01KQ4RT9PXWFP71E8A3BTZK0XA",
+            "kind": "Source",
+            "ports": [
+              {
+                "name": "out",
+                "direction": "Output",
+                "domain": "Sample",
+                "data_type": {
+                  "Audio": {
+                    "channels": 2
+                  }
+                },
+                "semantic": "Signal",
+                "polarity": "Bipolar"
+              }
+            ],
+            "config": {
+              "name": {
+                "String": "Noise_01KQ"
+              }
+            },
+            "metadata": null,
+            "confidence": "Verified"
+          }
+        }
+      ],
+      "intent_ref": null,
+      "deterministic_hash": [
+        250,
+        230,
+        88,
+        132,
+        131,
+        80,
+        32,
+        129,
+        83,
+        64,
+        164,
+        74,
+        227,
+        177,
+        131,
+        213,
+        65,
+        27,
+        242,
+        219,
+        143,
+        117,
+        48,
+        161,
+        157,
+        78,
+        137,
+        132,
+        113,
+        121,
+        152,
+        154
+      ],
+      "parents": [
+        "01KQ4RSECB8DH697244CTP8S3R"
+      ],
+      "timestamp": 1777202964190026,
+      "source": "UserDirect",
+      "trust": "Trusted"
+    },
+    "01KQ4RTAXXA9YR1BRK29BN48AF": {
+      "identity": "01KQ4RTAXXA9YR1BRK29BN48AF",
+      "operations": [
+        {
+          "AddNode": {
+            "id": "01KQ4RTAXXMF91D6DQBJDA86DR",
+            "kind": "Source",
+            "ports": [
+              {
+                "name": "out",
+                "direction": "Output",
+                "domain": "Sample",
+                "data_type": {
+                  "Audio": {
+                    "channels": 2
+                  }
+                },
+                "semantic": "Signal",
+                "polarity": "Bipolar"
+              }
+            ],
+            "config": {
+              "name": {
+                "String": "Sampler_01KQ"
+              }
+            },
+            "metadata": null,
+            "confidence": "Verified"
+          }
+        }
+      ],
+      "intent_ref": null,
+      "deterministic_hash": [
+        77,
+        189,
+        193,
+        105,
+        255,
+        215,
+        56,
+        117,
+        157,
+        234,
+        193,
+        159,
+        246,
+        56,
+        42,
+        10,
+        205,
+        124,
+        80,
+        38,
+        195,
+        161,
+        215,
+        29,
+        132,
+        2,
+        193,
+        230,
+        139,
+        19,
+        29,
+        253
+      ],
+      "parents": [
+        "01KQ4RT9PYWJKERF6BA4K5E9ZA"
+      ],
+      "timestamp": 1777202965437636,
+      "source": "UserDirect",
+      "trust": "Trusted"
+    },
+    "01KQ4RTFXXXK7QS4BQHE88K7AM": {
+      "identity": "01KQ4RTFXXXK7QS4BQHE88K7AM",
+      "operations": [
+        {
+          "RemoveNode": "01KQ4RT9PXWFP71E8A3BTZK0XA"
+        }
+      ],
+      "intent_ref": null,
+      "deterministic_hash": [
+        38,
+        3,
+        134,
+        122,
+        57,
+        22,
+        169,
+        243,
+        177,
+        140,
+        231,
+        100,
+        215,
+        15,
+        239,
+        32,
+        57,
+        6,
+        227,
+        175,
+        32,
+        219,
+        55,
+        50,
+        171,
+        1,
+        243,
+        80,
+        223,
+        249,
+        43,
+        161
+      ],
+      "parents": [
+        "01KQ4RTAXXA9YR1BRK29BN48AF"
+      ],
+      "timestamp": 1777202970557129,
+      "source": "UserDirect",
+      "trust": "Trusted"
+    },
+    "01KQ4RTHB5M93NZA50K5JZE6R9": {
+      "identity": "01KQ4RTHB5M93NZA50K5JZE6R9",
+      "operations": [
+        {
+          "RemoveNode": "01KQ4RSECB4G387QWGHR8AJTJB"
+        }
+      ],
+      "intent_ref": null,
+      "deterministic_hash": [
+        141,
+        132,
+        248,
+        214,
+        220,
+        113,
+        60,
+        57,
+        14,
+        136,
+        6,
+        5,
+        94,
+        20,
+        221,
+        68,
+        30,
+        206,
+        35,
+        82,
+        56,
+        61,
+        254,
+        159,
+        192,
+        48,
+        136,
+        218,
+        124,
+        190,
+        85,
+        233
+      ],
+      "parents": [
+        "01KQ4RTFXXXK7QS4BQHE88K7AM"
+      ],
+      "timestamp": 1777202972005059,
+      "source": "UserDirect",
+      "trust": "Trusted"
+    },
+    "01KQ4RTJBZC9336DKHPQ74G103": {
+      "identity": "01KQ4RTJBZC9336DKHPQ74G103",
+      "operations": [
+        {
+          "RemoveNode": "01KQ4RTAXXMF91D6DQBJDA86DR"
+        }
+      ],
+      "intent_ref": null,
+      "deterministic_hash": [
+        208,
+        47,
+        233,
+        81,
+        191,
+        103,
+        149,
+        58,
+        190,
+        136,
+        70,
+        246,
+        125,
+        70,
+        88,
+        158,
+        175,
+        47,
+        248,
+        156,
+        194,
+        179,
+        84,
+        12,
+        49,
+        219,
+        47,
+        128,
+        94,
+        87,
+        32,
+        117
+      ],
+      "parents": [
+        "01KQ4RTHB5M93NZA50K5JZE6R9"
+      ],
+      "timestamp": 1777202973055739,
+      "source": "UserDirect",
+      "trust": "Trusted"
+    },
+    "01KQ4RTKTBY6FEEQQRHRQ7Y5YA": {
+      "identity": "01KQ4RTKTBY6FEEQQRHRQ7Y5YA",
+      "operations": [],
+      "intent_ref": null,
+      "deterministic_hash": [
+        45,
+        122,
+        88,
+        124,
+        137,
+        214,
+        106,
+        119,
+        47,
+        245,
+        255,
+        178,
+        72,
+        24,
+        121,
+        73,
+        117,
+        95,
+        171,
+        201,
+        79,
+        24,
+        166,
+        99,
+        136,
+        162,
+        0,
+        127,
+        180,
+        167,
+        24,
+        193
+      ],
+      "parents": [
+        "01KQ4RTJBZC9336DKHPQ74G103"
+      ],
+      "timestamp": 1777202974539723,
+      "source": "UserDirect",
+      "trust": "Trusted"
+    }
+  },
+  "circuit_registry": {}
+}

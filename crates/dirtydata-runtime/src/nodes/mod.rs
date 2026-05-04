@@ -36,8 +36,8 @@ pub use sources::MidiEvent;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use sources::EnvelopeNode;
     use dirtydata_core::types::ConfigSnapshot;
+    use sources::EnvelopeNode;
     use std::collections::BTreeMap;
 
     fn dummy_ctx() -> ProcessContext<'static> {
@@ -75,7 +75,7 @@ mod tests {
 
         // 4. Verify phase is restored
         assert_eq!(osc1.phase, osc2.phase);
-        
+
         // 5. Verify next sample matches
         osc1.process(&[], &mut outputs, &config, &ctx);
         let val1 = outputs[0][0];
@@ -89,7 +89,10 @@ mod tests {
         let mut env1 = EnvelopeNode::new();
         let mut outputs = [[0.0; 2]];
         let mut config = BTreeMap::new();
-        config.insert("attack".into(), dirtydata_core::types::ConfigValue::Float(0.1));
+        config.insert(
+            "attack".into(),
+            dirtydata_core::types::ConfigValue::Float(0.1),
+        );
         let snapshot = ConfigSnapshot::from(config);
         let ctx = dummy_ctx();
 
@@ -111,7 +114,7 @@ mod tests {
         let next_val1 = outputs[0][0];
         env2.process(&[1.0], &mut outputs, &snapshot, &ctx);
         let next_val2 = outputs[0][0];
-        
+
         assert_eq!(level1, level1); // Just checking stability
         assert_eq!(next_val1, next_val2);
     }

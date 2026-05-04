@@ -43,7 +43,15 @@ impl MorphMixer {
     pub fn new() -> Self {
         Self { x: 0.5, y: 0.5 }
     }
+}
 
+impl Default for MorphMixer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl MorphMixer {
     pub fn process(&self, a: f32, b: f32, c: f32, d: f32) -> f32 {
         let top = a * (1.0 - self.x) + b * self.x;
         let bottom = c * (1.0 - self.x) + d * self.x;

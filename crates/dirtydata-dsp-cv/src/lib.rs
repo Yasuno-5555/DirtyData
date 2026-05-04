@@ -6,7 +6,18 @@ pub struct Slew {
 }
 
 impl Slew {
-    pub fn new() -> Self { Self { state: 0.0 } }
+    pub fn new() -> Self {
+        Self { state: 0.0 }
+    }
+}
+
+impl Default for Slew {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Slew {
     pub fn process(&mut self, input: f32, rise: f32, fall: f32, sample_rate: f32) -> f32 {
         let diff = input - self.state;
         let rate = if diff > 0.0 { rise } else { fall };
@@ -27,14 +38,29 @@ pub struct Comparator {
 }
 
 impl Comparator {
-    pub fn new() -> Self { Self { state: false } }
+    pub fn new() -> Self {
+        Self { state: false }
+    }
+}
+
+impl Default for Comparator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Comparator {
     pub fn process(&mut self, input: f32, threshold: f32, hysteresis: f32) -> f32 {
         if input > threshold + hysteresis {
             self.state = true;
         } else if input < threshold - hysteresis {
             self.state = false;
         }
-        if self.state { 1.0 } else { 0.0 }
+        if self.state {
+            1.0
+        } else {
+            0.0
+        }
     }
 }
 
@@ -45,13 +71,31 @@ pub struct ClockDivider {
 }
 
 impl ClockDivider {
-    pub fn new() -> Self { Self { count: 0, prev_clock: 0.0 } }
+    pub fn new() -> Self {
+        Self {
+            count: 0,
+            prev_clock: 0.0,
+        }
+    }
+}
+
+impl Default for ClockDivider {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl ClockDivider {
     pub fn process(&mut self, clock: f32, divisor: u32) -> f32 {
         if clock > 0.5 && self.prev_clock <= 0.5 {
             self.count += 1;
         }
         self.prev_clock = clock;
-        if (self.count % divisor) == 0 && clock > 0.5 { 1.0 } else { 0.0 }
+        if self.count.wrapping_rem(divisor) == 0 && clock > 0.5 {
+            1.0
+        } else {
+            0.0
+        }
     }
 }
 
@@ -65,7 +109,24 @@ pub struct EuclideanSequencer {
 }
 
 impl EuclideanSequencer {
-    pub fn new() -> Self { Self { steps: 16, hits: 4, offset: 0, idx: 0, prev_clock: 0.0 } }
+    pub fn new() -> Self {
+        Self {
+            steps: 16,
+            hits: 4,
+            offset: 0,
+            idx: 0,
+            prev_clock: 0.0,
+        }
+    }
+}
+
+impl Default for EuclideanSequencer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl EuclideanSequencer {
     pub fn process(&mut self, clock: f32) -> f32 {
         let mut trigger = 0.0;
         if clock > 0.5 && self.prev_clock <= 0.5 {

@@ -1,4 +1,4 @@
-use crate::ir::{Graph, EdgeKind};
+use crate::ir::{EdgeKind, Graph};
 use crate::types::StableId;
 use std::collections::{HashMap, HashSet, VecDeque};
 
@@ -17,7 +17,9 @@ pub fn topological_sort(graph: &Graph) -> (Vec<StableId>, Vec<Vec<StableId>>) {
 
     for edge in graph.edges.values() {
         if edge.kind == EdgeKind::Normal {
-            adj.get_mut(&edge.source.node_id).unwrap().push(edge.target.node_id);
+            adj.get_mut(&edge.source.node_id)
+                .unwrap()
+                .push(edge.target.node_id);
             *in_degree.get_mut(&edge.target.node_id).unwrap() += 1;
         }
     }
@@ -80,25 +82,25 @@ pub fn get_upstream_nodes(graph: &Graph, target_node: StableId) -> HashSet<Stabl
 /// Creates a new minimal Graph containing only the specified nodes and the edges connecting them.
 pub fn clone_subgraph(graph: &Graph, node_ids: &HashSet<StableId>) -> Graph {
     let mut new_graph = Graph::new();
-    
+
     for &id in node_ids {
         if let Some(node) = graph.nodes.get(&id) {
             new_graph.nodes.insert(id, node.clone());
         }
     }
-    
+
     for edge in graph.edges.values() {
         if node_ids.contains(&edge.source.node_id) && node_ids.contains(&edge.target.node_id) {
             new_graph.edges.insert(edge.id, edge.clone());
         }
     }
-    
+
     // Copy modulations if both source and target are in the subgraph
     for m in graph.modulations.values() {
         if node_ids.contains(&m.source.node_id) && node_ids.contains(&m.target_node) {
             new_graph.modulations.insert(m.id, m.clone());
         }
     }
-    
+
     new_graph
 }

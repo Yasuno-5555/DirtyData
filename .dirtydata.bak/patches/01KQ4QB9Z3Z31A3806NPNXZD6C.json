@@ -1,0 +1,85 @@
+{
+  "identity": "01KQ4QB9Z3Z31A3806NPNXZD6C",
+  "operations": [
+    {
+      "AddNode": {
+        "id": "01KQ4QB9Z2PCP4130S6450SF2P",
+        "kind": "Processor",
+        "ports": [
+          {
+            "name": "in",
+            "direction": "Input",
+            "domain": "Sample",
+            "data_type": {
+              "Audio": {
+                "channels": 2
+              }
+            },
+            "semantic": "Signal",
+            "polarity": "Bipolar"
+          },
+          {
+            "name": "out",
+            "direction": "Output",
+            "domain": "Sample",
+            "data_type": {
+              "Audio": {
+                "channels": 2
+              }
+            },
+            "semantic": "Signal",
+            "polarity": "Bipolar"
+          }
+        ],
+        "config": {
+          "name": {
+            "String": "Gain_01KQ"
+          }
+        },
+        "metadata": null,
+        "confidence": "Verified"
+      }
+    }
+  ],
+  "intent_ref": null,
+  "deterministic_hash": [
+    198,
+    155,
+    80,
+    159,
+    163,
+    100,
+    205,
+    6,
+    213,
+    110,
+    254,
+    21,
+    119,
+    25,
+    204,
+    156,
+    90,
+    104,
+    145,
+    225,
+    245,
+    237,
+    145,
+    235,
+    119,
+    148,
+    116,
+    234,
+    64,
+    152,
+    72,
+    180
+  ],
+  "parents": [
+    "01KQ4QATB2RR4D4BA4H427NC3K"
+  ],
+  "timestamp": 1777201424355097,
+  "source": "UserDirect",
+  "trust": "Trusted"
+}

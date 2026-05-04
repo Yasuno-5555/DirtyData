@@ -1,6 +1,6 @@
-use std::path::{Path, PathBuf};
-use dirtydata_core::ir::Graph;
 use anyhow::Result;
+use dirtydata_core::ir::Graph;
+use std::path::{Path, PathBuf};
 
 pub enum BuildTarget {
     Vst3,
@@ -26,7 +26,8 @@ impl Transmuter {
         std::fs::create_dir_all(project_dir.join("src"))?;
 
         // 1. Generate Cargo.toml
-        let cargo_toml = format!(r#"[package]
+        let cargo_toml = format!(
+            r#"[package]
 name = "{}"
 version = "0.1.0"
 edition = "2021"
@@ -39,13 +40,18 @@ dirtydata-runtime = {{ path = "{}/crates/dirtydata-runtime" }}
 dirtydata-core = {{ path = "{}/crates/dirtydata-core" }}
 serde_json = "1.0"
 nih_plug = {{ git = "https://github.com/robbert-vdh/nih-plug.git" }}
-"#, name, std::env::current_dir()?.display(), std::env::current_dir()?.display());
+"#,
+            name,
+            std::env::current_dir()?.display(),
+            std::env::current_dir()?.display()
+        );
 
         std::fs::write(project_dir.join("Cargo.toml"), cargo_toml)?;
 
         // 2. Generate lib.rs (The Bridge)
         let _graph_json = serde_json::to_string(graph)?;
-        let lib_rs = format!(r#"
+        let lib_rs = format!(
+            r#"
 use nih_plug::prelude::*;
 use dirtydata_core::ir::Graph;
 use dirtydata_runtime::AudioEngine;
@@ -84,7 +90,8 @@ impl Plugin for DirtyPlugin {{
         ProcessStatus::Normal
     }}
 }}
-"#);
+"#
+        );
 
         std::fs::write(project_dir.join("src/lib.rs"), lib_rs)?;
 

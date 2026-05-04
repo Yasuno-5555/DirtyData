@@ -111,8 +111,22 @@ impl Node {
             id: StableId::new(),
             kind: NodeKind::SubGraph,
             ports: vec![
-                TypedPort { name: "in".into(), direction: PortDirection::Input, domain: ExecutionDomain::Sample, data_type: DataType::Audio { channels: 2 }, semantic: PortSemantic::Signal, polarity: PortPolarity::Bipolar },
-                TypedPort { name: "out".into(), direction: PortDirection::Output, domain: ExecutionDomain::Sample, data_type: DataType::Audio { channels: 2 }, semantic: PortSemantic::Signal, polarity: PortPolarity::Bipolar },
+                TypedPort {
+                    name: "in".into(),
+                    direction: PortDirection::Input,
+                    domain: ExecutionDomain::Sample,
+                    data_type: DataType::Audio { channels: 2 },
+                    semantic: PortSemantic::Signal,
+                    polarity: PortPolarity::Bipolar,
+                },
+                TypedPort {
+                    name: "out".into(),
+                    direction: PortDirection::Output,
+                    domain: ExecutionDomain::Sample,
+                    data_type: DataType::Audio { channels: 2 },
+                    semantic: PortSemantic::Signal,
+                    polarity: PortPolarity::Bipolar,
+                },
             ],
             config: {
                 let mut c = BTreeMap::new();
@@ -129,7 +143,14 @@ impl Node {
         Self {
             id: StableId::new(),
             kind: NodeKind::InputProxy,
-            ports: vec![TypedPort { name: "out".into(), direction: PortDirection::Output, domain: ExecutionDomain::Sample, data_type: DataType::Audio { channels: 2 }, semantic: PortSemantic::Signal, polarity: PortPolarity::Bipolar }],
+            ports: vec![TypedPort {
+                name: "out".into(),
+                direction: PortDirection::Output,
+                domain: ExecutionDomain::Sample,
+                data_type: DataType::Audio { channels: 2 },
+                semantic: PortSemantic::Signal,
+                polarity: PortPolarity::Bipolar,
+            }],
             config: {
                 let mut c = BTreeMap::new();
                 c.insert("name".into(), ConfigValue::String(name.into()));
@@ -144,7 +165,14 @@ impl Node {
         Self {
             id: StableId::new(),
             kind: NodeKind::OutputProxy,
-            ports: vec![TypedPort { name: "in".into(), direction: PortDirection::Input, domain: ExecutionDomain::Sample, data_type: DataType::Audio { channels: 2 }, semantic: PortSemantic::Signal, polarity: PortPolarity::Bipolar }],
+            ports: vec![TypedPort {
+                name: "in".into(),
+                direction: PortDirection::Input,
+                domain: ExecutionDomain::Sample,
+                data_type: DataType::Audio { channels: 2 },
+                semantic: PortSemantic::Signal,
+                polarity: PortPolarity::Bipolar,
+            }],
             config: {
                 let mut c = BTreeMap::new();
                 c.insert("name".into(), ConfigValue::String(name.into()));
@@ -231,7 +259,6 @@ pub struct CircuitRegistry {
     pub definitions: BTreeMap<StableId, crate::types::CircuitDefinition>,
 }
 
-
 /// The Canonical IR Graph — The Forensic Record of Sound.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Graph {
@@ -241,7 +268,7 @@ pub struct Graph {
     pub registry: CircuitRegistry,
     pub verification: Verification,
     pub revision: Revision,
-    
+
     // Compatibility fields for immediate legacy support
     #[serde(skip)]
     pub nodes: BTreeMap<StableId, Node>,
@@ -282,17 +309,21 @@ impl Graph {
     pub fn squash_history(&mut self) {
         let empty = Graph::new();
         let patch_set = empty.diff(self);
-        
+
         if let Some(baseline) = patch_set.patches.first() {
             self.lineage.applied_patches = vec![baseline.identity];
             self.lineage.history.clear();
-            self.lineage.history.insert(baseline.identity, baseline.clone());
+            self.lineage
+                .history
+                .insert(baseline.identity, baseline.clone());
         }
     }
 
     pub fn create_snapshot(&mut self, name: &str) {
         if let Some(&last_patch_id) = self.lineage.applied_patches.last() {
-            self.lineage.snapshots.insert(name.to_string(), last_patch_id);
+            self.lineage
+                .snapshots
+                .insert(name.to_string(), last_patch_id);
         }
     }
 
@@ -305,7 +336,8 @@ impl Graph {
     }
 
     pub fn validate_port_ref(&self, port_ref: &PortRef) -> bool {
-        self.topology.nodes
+        self.topology
+            .nodes
             .get(&port_ref.node_id)
             .map(|n| n.ports.iter().any(|p| p.name == port_ref.port_name))
             .unwrap_or(false)
@@ -321,7 +353,10 @@ impl Graph {
     pub fn remove_node(&mut self, id: StableId) {
         self.topology.nodes.remove(&id);
         // Remove associated edges
-        let edge_ids: Vec<StableId> = self.topology.edges.iter()
+        let edge_ids: Vec<StableId> = self
+            .topology
+            .edges
+            .iter()
             .filter(|(_, e)| e.source.node_id == id || e.target.node_id == id)
             .map(|(&eid, _)| eid)
             .collect();
@@ -332,9 +367,13 @@ impl Graph {
     }
 
     pub fn connect(&mut self, source: PortRef, target: PortRef) -> Result<StableId, String> {
-        if !self.validate_port_ref(&source) { return Err(format!("Invalid source port: {:?}", source)); }
-        if !self.validate_port_ref(&target) { return Err(format!("Invalid target port: {:?}", target)); }
-        
+        if !self.validate_port_ref(&source) {
+            return Err(format!("Invalid source port: {:?}", source));
+        }
+        if !self.validate_port_ref(&target) {
+            return Err(format!("Invalid target port: {:?}", target));
+        }
+
         let edge = Edge::new(source, target);
         let id = edge.id;
         self.topology.edges.insert(id, edge);
@@ -351,7 +390,12 @@ impl Graph {
         }
     }
 
-    pub fn set_config(&mut self, node_id: StableId, key: &str, value: ConfigValue) -> Result<(), String> {
+    pub fn set_config(
+        &mut self,
+        node_id: StableId,
+        key: &str,
+        value: ConfigValue,
+    ) -> Result<(), String> {
         if let Some(node) = self.topology.nodes.get_mut(&node_id) {
             node.config.insert(key.to_string(), value);
             self.sync();
@@ -370,6 +414,12 @@ impl Default for Graph {
 
 impl std::fmt::Display for Graph {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Graph(rev={}, nodes={}, edges={})", self.revision.0, self.nodes.len(), self.edges.len())
+        write!(
+            f,
+            "Graph(rev={}, nodes={}, edges={})",
+            self.revision.0,
+            self.nodes.len(),
+            self.edges.len()
+        )
     }
 }

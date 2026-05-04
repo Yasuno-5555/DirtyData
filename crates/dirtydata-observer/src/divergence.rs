@@ -1,6 +1,6 @@
+use dirtydata_core::types::{Hash, StableId, Timestamp};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use dirtydata_core::types::{StableId, Hash, Timestamp};
 
 /// 世界がズレた瞬間を記録する
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -56,9 +56,18 @@ pub struct CausalAnalysis {
 
 impl CausalAnalysis {
     pub fn from_divergence(map: &DivergenceMap) -> Self {
-        let max_mag = map.points.iter().map(|p| p.diff_magnitude).fold(0.0, f32::max);
-        let peak_sample = map.points.iter().find(|p| p.diff_magnitude >= max_mag).map(|p| p.sample_index).unwrap_or(0);
-        
+        let max_mag = map
+            .points
+            .iter()
+            .map(|p| p.diff_magnitude)
+            .fold(0.0, f32::max);
+        let peak_sample = map
+            .points
+            .iter()
+            .find(|p| p.diff_magnitude >= max_mag)
+            .map(|p| p.sample_index)
+            .unwrap_or(0);
+
         Self {
             parameter_delta: Vec::new(), // Populate this from Graph diff
             divergence_magnitude_db: 20.0 * max_mag.log10().max(-100.0),

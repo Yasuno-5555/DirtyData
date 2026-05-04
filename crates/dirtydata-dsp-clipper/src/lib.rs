@@ -21,11 +21,11 @@ impl Default for DiodeClipper {
 
 /// Clipping mode
 pub enum ClipMode {
-    Soft,       // tanh
-    Hard,       // clamp
-    Tube,       // Asymmetric tube-like
-    Diode,      // Shockley diode pair
-    FoldBack,   // Wavefolding
+    Soft,     // tanh
+    Hard,     // clamp
+    Tube,     // Asymmetric tube-like
+    Diode,    // Shockley diode pair
+    FoldBack, // Wavefolding
 }
 
 impl DiodeClipper {
@@ -59,19 +59,15 @@ impl DiodeClipper {
     /// Process with explicit clipping mode.
     pub fn process_mode(&mut self, input: f32, drive: f32, asymmetry: f32, mode: &ClipMode) -> f32 {
         let driven = input * drive.max(0.01);
-        
+
         // Apply asymmetry as DC offset before clipping
         let dc_offset = asymmetry * 0.3;
         let biased = driven + dc_offset;
-        
+
         // Clip based on mode
         let clipped = match mode {
-            ClipMode::Soft => {
-                biased.tanh()
-            }
-            ClipMode::Hard => {
-                biased.clamp(-1.0, 1.0)
-            }
+            ClipMode::Soft => biased.tanh(),
+            ClipMode::Hard => biased.clamp(-1.0, 1.0),
             ClipMode::Tube => {
                 // Asymmetric: soft on positive, harder on negative (triode-like)
                 if biased >= 0.0 {
@@ -81,26 +77,26 @@ impl DiodeClipper {
                 }
             }
             ClipMode::Diode => {
-                Self::shockley_clip(biased, 0.026)  // Vt ≈ 26mV
+                Self::shockley_clip(biased, 0.026) // Vt ≈ 26mV
             }
             ClipMode::FoldBack => {
                 // Sine wavefolder
                 (biased * std::f32::consts::PI * 0.5).sin()
             }
         };
-        
+
         // Remove DC offset introduced by asymmetry
         let compensated = clipped - dc_offset.tanh();
-        
+
         // Level compensation (drive increases volume, compensate)
         let gain_comp = 1.0 / drive.max(0.01).sqrt().min(4.0);
-        
+
         // DC blocker
         let dc_coeff = 0.995;
         let dc_out = compensated * gain_comp - self.dc_prev_in + dc_coeff * self.dc_prev_out;
         self.dc_prev_in = compensated * gain_comp;
         self.dc_prev_out = dc_out;
-        
+
         dc_out
     }
 }

@@ -1,9 +1,9 @@
-use dirtydata_core::ir::{Graph};
-use dirtydata_core::patch::{Patch, Operation};
-use dirtydata_core::types::{ConfigValue, PatchSource, TrustLevel, ConfigChange};
 use anyhow::Result;
-use rand::Rng;
+use dirtydata_core::ir::Graph;
+use dirtydata_core::patch::{Operation, Patch};
+use dirtydata_core::types::{ConfigChange, ConfigValue, PatchSource, TrustLevel};
 use indicatif::ProgressBar;
+use rand::Rng;
 
 pub struct Mutator;
 
@@ -27,16 +27,24 @@ impl Mutator {
             let mut rng = rand::thread_rng();
 
             // Mutate a random parameter of the target node
-            if let Some((id, node)) = current_graph.topology.nodes.iter().find(|(_, n)| n.id.to_string().contains(target_node_id)) {
+            if let Some((id, node)) = current_graph
+                .topology
+                .nodes
+                .iter()
+                .find(|(_, n)| n.id.to_string().contains(target_node_id))
+            {
                 for (key, val) in &node.config {
                     if let ConfigValue::Float(f) = val {
                         let delta = (rng.gen::<f64>() - 0.5) * mutation_level;
                         let mut config_delta = std::collections::BTreeMap::new();
-                        config_delta.insert(key.clone(), ConfigChange {
-                            old: Some(val.clone()),
-                            new: Some(ConfigValue::Float(f + delta)),
-                        });
-                        
+                        config_delta.insert(
+                            key.clone(),
+                            ConfigChange {
+                                old: Some(val.clone()),
+                                new: Some(ConfigValue::Float(f + delta)),
+                            },
+                        );
+
                         ops.push(Operation::ModifyConfig {
                             node_id: *id,
                             delta: config_delta,

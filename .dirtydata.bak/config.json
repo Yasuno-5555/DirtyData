@@ -1,0 +1,5 @@
+{
+  "hash_algorithm": "blake3",
+  "id_scheme": "ulid",
+  "version": "0.1.0"
+}

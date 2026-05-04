@@ -31,9 +31,21 @@ pub struct GlottalSource {
 
 impl GlottalSource {
     pub fn new() -> Self {
-        Self { phase: 0.0, freq: 100.0, noise_state: 12345 }
+        Self {
+            phase: 0.0,
+            freq: 100.0,
+            noise_state: 12345,
+        }
     }
+}
 
+impl Default for GlottalSource {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl GlottalSource {
     /// Fast pseudo-random noise (xorshift32, no dependency on rand)
     #[inline]
     fn noise(&mut self) -> f32 {
@@ -47,12 +59,14 @@ impl GlottalSource {
     /// `tension`: 0.0 = breathy, 1.0 = pressed/tense
     pub fn process(&mut self, sample_rate: f32, tension: f32) -> f32 {
         self.phase += self.freq / sample_rate;
-        if self.phase > 1.0 { self.phase -= 1.0; }
+        if self.phase > 1.0 {
+            self.phase -= 1.0;
+        }
 
         // Rosenberg C2 glottal pulse
         // Open phase: 0..Tp, Closing phase: Tp..Tp+Tn, Closed: rest
-        let tp = 0.4;   // Open phase ratio
-        let tn = 0.16;  // Closing phase ratio
+        let tp = 0.4; // Open phase ratio
+        let tn = 0.16; // Closing phase ratio
 
         let pulse = if self.phase < tp {
             // Opening: 3(t/Tp)^2 - 2(t/Tp)^3
@@ -64,7 +78,7 @@ impl GlottalSource {
             let cos_val = (t_norm * std::f32::consts::PI * 0.5).cos();
             cos_val * cos_val
         } else {
-            0.0  // Closed phase
+            0.0 // Closed phase
         };
 
         // Aspiration noise (modulated by glottal opening)
@@ -74,20 +88,26 @@ impl GlottalSource {
         pulse * tension.clamp(0.2, 1.0) + aspiration
     }
 
-    pub fn set_freq(&mut self, f: f32) { self.freq = f.clamp(50.0, 500.0); }
+    pub fn set_freq(&mut self, f: f32) {
+        self.freq = f.clamp(50.0, 500.0);
+    }
 }
 
 /// A single waveguide section with forward and backward traveling waves.
 #[derive(Clone)]
 pub struct WaveguideSection {
-    pub area: f32,          // Cross-sectional area (cm²)
-    pub forward: f32,       // Right-traveling (forward) wave
-    pub backward: f32,      // Left-traveling (backward) wave
+    pub area: f32,     // Cross-sectional area (cm²)
+    pub forward: f32,  // Right-traveling (forward) wave
+    pub backward: f32, // Left-traveling (backward) wave
 }
 
 impl WaveguideSection {
     fn new(area: f32) -> Self {
-        Self { area: area.max(0.01), forward: 0.0, backward: 0.0 }
+        Self {
+            area: area.max(0.01),
+            forward: 0.0,
+            backward: 0.0,
+        }
     }
 }
 
@@ -169,15 +189,19 @@ impl VocalTract {
     /// Uses area-weighted power-preserving junction.
     #[inline]
     fn scatter_3port(
-        f1_in: f32, b2_in: f32, b3_in: f32,
-        a1: f32, a2: f32, a3: f32,
+        f1_in: f32,
+        b2_in: f32,
+        b3_in: f32,
+        a1: f32,
+        a2: f32,
+        a3: f32,
     ) -> (f32, f32, f32) {
         let sum_a = (a1 + a2 + a3).max(0.001);
         // Junction pressure (continuity condition)
         let p_j = 2.0 * (a1 * f1_in + a2 * b2_in + a3 * b3_in) / sum_a;
-        let b1_out = p_j - f1_in;  // Reflected back to pharynx
-        let f2_out = p_j - b2_in;  // Forward into mouth
-        let f3_out = p_j - b3_in;  // Forward into nose
+        let b1_out = p_j - f1_in; // Reflected back to pharynx
+        let f2_out = p_j - b2_in; // Forward into mouth
+        let f3_out = p_j - b3_in; // Forward into nose
         (b1_out, f2_out, f3_out)
     }
 
@@ -206,10 +230,14 @@ impl VocalTract {
 
             if is_velum {
                 // 3-port junction at velum
-                let nasal_area = self.nasal_sections.get(0)
+                let nasal_area = self
+                    .nasal_sections
+                    .first()
                     .map(|s| s.area * self.velum_opening)
                     .unwrap_or(0.0);
-                let nasal_backward = self.nasal_sections.get(0)
+                let nasal_backward = self
+                    .nasal_sections
+                    .first()
                     .map(|s| s.backward)
                     .unwrap_or(0.0);
 
@@ -314,14 +342,38 @@ impl VocalTract {
     /// Configure vowel presets based on Japanese vowels.
     pub fn set_vowel(&mut self, vowel: char) {
         match vowel {
-            'a' | 'あ' => { self.set_tongue(0.5, 0.9); self.set_velum(0.0); }
-            'i' | 'い' => { self.set_tongue(0.8, 0.3); self.set_velum(0.0); }
-            'u' | 'う' => { self.set_tongue(0.3, 0.3); self.set_velum(0.0); }
-            'e' | 'え' => { self.set_tongue(0.7, 0.5); self.set_velum(0.0); }
-            'o' | 'お' => { self.set_tongue(0.4, 0.4); self.set_velum(0.0); }
-            'n' | 'ん' => { self.set_tongue(0.5, 0.7); self.set_velum(0.8); }
-            'm'        => { self.set_tongue(0.9, 0.01); self.set_velum(1.0); }
-            _          => { self.set_tongue(0.5, 0.7); self.set_velum(0.0); }
+            'a' | 'あ' => {
+                self.set_tongue(0.5, 0.9);
+                self.set_velum(0.0);
+            }
+            'i' | 'い' => {
+                self.set_tongue(0.8, 0.3);
+                self.set_velum(0.0);
+            }
+            'u' | 'う' => {
+                self.set_tongue(0.3, 0.3);
+                self.set_velum(0.0);
+            }
+            'e' | 'え' => {
+                self.set_tongue(0.7, 0.5);
+                self.set_velum(0.0);
+            }
+            'o' | 'お' => {
+                self.set_tongue(0.4, 0.4);
+                self.set_velum(0.0);
+            }
+            'n' | 'ん' => {
+                self.set_tongue(0.5, 0.7);
+                self.set_velum(0.8);
+            }
+            'm' => {
+                self.set_tongue(0.9, 0.01);
+                self.set_velum(1.0);
+            }
+            _ => {
+                self.set_tongue(0.5, 0.7);
+                self.set_velum(0.0);
+            }
         }
     }
 }

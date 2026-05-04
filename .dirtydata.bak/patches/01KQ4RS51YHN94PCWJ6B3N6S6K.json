@@ -1,0 +1,49 @@
+{
+  "identity": "01KQ4RS51YHN94PCWJ6B3N6S6K",
+  "operations": [
+    {
+      "RemoveNode": "01KQ4RQVNDH1X3S4B6Z0113THM"
+    }
+  ],
+  "intent_ref": null,
+  "deterministic_hash": [
+    17,
+    203,
+    108,
+    160,
+    23,
+    0,
+    80,
+    31,
+    247,
+    120,
+    109,
+    131,
+    212,
+    144,
+    75,
+    108,
+    171,
+    108,
+    15,
+    160,
+    185,
+    197,
+    235,
+    219,
+    65,
+    37,
+    206,
+    37,
+    184,
+    163,
+    202,
+    254
+  ],
+  "parents": [
+    "01KQ4RRFB39WFAA7XTHACY7CRV"
+  ],
+  "timestamp": 1777202926654378,
+  "source": "UserDirect",
+  "trust": "Trusted"
+}

@@ -1,5 +1,5 @@
-use std::io::{Read, Write};
 use libloading::{Library, Symbol};
+use std::io::{Read, Write};
 use std::path::Path;
 
 // VST3 Factory entry point signature
@@ -13,7 +13,7 @@ struct Vst3Host {
 impl Vst3Host {
     pub fn load<P: AsRef<Path>>(path: P) -> Result<Self, String> {
         let path = path.as_ref();
-        
+
         // Resolve actual dynamic library path inside the .vst3 bundle
         let dylib_path = if path.is_dir() {
             #[cfg(target_os = "macos")]
@@ -22,7 +22,7 @@ impl Vst3Host {
             let mut p = path.join("Contents/x86_64-win");
             #[cfg(target_os = "linux")]
             let mut p = path.join("Contents/x86_64-linux");
-            
+
             // Just guess the filename based on the bundle name
             let bundle_name = path.file_stem().unwrap().to_str().unwrap();
             #[cfg(target_os = "macos")]
@@ -31,7 +31,7 @@ impl Vst3Host {
             p.push(format!("{}.vst3", bundle_name));
             #[cfg(target_os = "linux")]
             p.push(format!("{}.so", bundle_name));
-            
+
             p
         } else {
             path.to_path_buf()
@@ -43,11 +43,12 @@ impl Vst3Host {
 
         unsafe {
             let lib = Library::new(&dylib_path).map_err(|e| e.to_string())?;
-            
+
             // VST3 standard entry point
-            let get_factory: Symbol<GetPluginFactory> = lib.get(b"GetPluginFactory\0").map_err(|e| e.to_string())?;
+            let get_factory: Symbol<GetPluginFactory> =
+                lib.get(b"GetPluginFactory\0").map_err(|e| e.to_string())?;
             let factory = get_factory();
-            
+
             if factory.is_null() {
                 return Err("GetPluginFactory returned null".to_string());
             }
@@ -64,7 +65,7 @@ impl Vst3Host {
         // For now, passthrough as the host architecture is being laid down
         out_buf.copy_from_slice(in_buf);
     }
-    
+
     pub fn set_parameter(&mut self, _id: u32, _value: f32) {
         // TODO: IEditController interaction
     }
@@ -92,7 +93,8 @@ fn main() {
         }
 
         match cmd_buf[0] {
-            0 => { // Process
+            0 => {
+                // Process
                 let mut size_buf = [0u8; 4];
                 stdin.read_exact(&mut size_buf).unwrap();
                 let size = u32::from_le_bytes(size_buf) as usize;
@@ -111,12 +113,13 @@ fn main() {
                 stdout.write_all(out_bytes).unwrap();
                 stdout.flush().unwrap();
             }
-            1 => { // SetParameter
+            1 => {
+                // SetParameter
                 let mut id_buf = [0u8; 4];
                 let mut val_buf = [0u8; 4];
                 stdin.read_exact(&mut id_buf).unwrap();
                 stdin.read_exact(&mut val_buf).unwrap();
-                
+
                 let param_id = u32::from_le_bytes(id_buf);
                 let value = f32::from_le_bytes(val_buf);
                 host.set_parameter(param_id, value);

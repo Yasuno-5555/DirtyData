@@ -1,0 +1,73 @@
+{
+  "identity": "01KQ4RRFB39WFAA7XTHACY7CRV",
+  "operations": [
+    {
+      "AddNode": {
+        "id": "01KQ4RRFB3JVW42V4BXP9PAKKT",
+        "kind": "Sink",
+        "ports": [
+          {
+            "name": "in",
+            "direction": "Input",
+            "domain": "Sample",
+            "data_type": {
+              "Audio": {
+                "channels": 2
+              }
+            },
+            "semantic": "Signal",
+            "polarity": "Bipolar"
+          }
+        ],
+        "config": {
+          "name": {
+            "String": "_01KQ"
+          }
+        },
+        "metadata": null,
+        "confidence": "Verified"
+      }
+    }
+  ],
+  "intent_ref": null,
+  "deterministic_hash": [
+    100,
+    177,
+    85,
+    248,
+    74,
+    156,
+    73,
+    65,
+    98,
+    112,
+    215,
+    254,
+    237,
+    109,
+    153,
+    204,
+    197,
+    80,
+    11,
+    241,
+    178,
+    8,
+    55,
+    248,
+    216,
+    170,
+    84,
+    208,
+    73,
+    200,
+    188,
+    26
+  ],
+  "parents": [
+    "01KQ4RQVNFS23023YYA6XYRSGB"
+  ],
+  "timestamp": 1777202904419431,
+  "source": "UserDirect",
+  "trust": "Trusted"
+}

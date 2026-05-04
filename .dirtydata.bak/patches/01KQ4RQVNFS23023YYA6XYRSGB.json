@@ -1,0 +1,60 @@
+{
+  "identity": "01KQ4RQVNFS23023YYA6XYRSGB",
+  "operations": [
+    {
+      "AddEdge": {
+        "id": "01KQ4RQVNF80ZVZH9N0JNTK7AJ",
+        "source": {
+          "node_id": "01KQ4RPS1NZ10PJPNNQJSS3TJ6",
+          "port_name": "out"
+        },
+        "target": {
+          "node_id": "01KQ4RQVNDH1X3S4B6Z0113THM",
+          "port_name": "in"
+        },
+        "kind": "Normal"
+      }
+    }
+  ],
+  "intent_ref": null,
+  "deterministic_hash": [
+    112,
+    201,
+    5,
+    37,
+    109,
+    242,
+    69,
+    6,
+    244,
+    21,
+    230,
+    35,
+    18,
+    113,
+    148,
+    200,
+    103,
+    144,
+    151,
+    112,
+    177,
+    221,
+    3,
+    48,
+    218,
+    144,
+    173,
+    182,
+    128,
+    48,
+    224,
+    245
+  ],
+  "parents": [
+    "01KQ4RQVNDM8VQDPYF3GKPXGYH"
+  ],
+  "timestamp": 1777202884271751,
+  "source": "UserDirect",
+  "trust": "Trusted"
+}

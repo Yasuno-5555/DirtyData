@@ -1,0 +1,73 @@
+{
+  "identity": "01KQ4RTAXXA9YR1BRK29BN48AF",
+  "operations": [
+    {
+      "AddNode": {
+        "id": "01KQ4RTAXXMF91D6DQBJDA86DR",
+        "kind": "Source",
+        "ports": [
+          {
+            "name": "out",
+            "direction": "Output",
+            "domain": "Sample",
+            "data_type": {
+              "Audio": {
+                "channels": 2
+              }
+            },
+            "semantic": "Signal",
+            "polarity": "Bipolar"
+          }
+        ],
+        "config": {
+          "name": {
+            "String": "Sampler_01KQ"
+          }
+        },
+        "metadata": null,
+        "confidence": "Verified"
+      }
+    }
+  ],
+  "intent_ref": null,
+  "deterministic_hash": [
+    77,
+    189,
+    193,
+    105,
+    255,
+    215,
+    56,
+    117,
+    157,
+    234,
+    193,
+    159,
+    246,
+    56,
+    42,
+    10,
+    205,
+    124,
+    80,
+    38,
+    195,
+    161,
+    215,
+    29,
+    132,
+    2,
+    193,
+    230,
+    139,
+    19,
+    29,
+    253
+  ],
+  "parents": [
+    "01KQ4RT9PYWJKERF6BA4K5E9ZA"
+  ],
+  "timestamp": 1777202965437636,
+  "source": "UserDirect",
+  "trust": "Trusted"
+}

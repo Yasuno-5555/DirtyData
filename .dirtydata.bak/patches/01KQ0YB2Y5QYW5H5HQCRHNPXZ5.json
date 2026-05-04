@@ -1,0 +1,173 @@
+{
+  "identity": "01KQ0YB2Y5QYW5H5HQCRHNPXZ5",
+  "operations": [
+    {
+      "AddNode": {
+        "id": "01KQ0YB2Y4P1VC2GPZMH17EJ25",
+        "kind": "Source",
+        "ports": [
+          {
+            "name": "out",
+            "direction": "Output",
+            "domain": "Sample",
+            "data_type": {
+              "Audio": {
+                "channels": 2
+              }
+            }
+          }
+        ],
+        "config": {
+          "name": {
+            "String": "Osc"
+          }
+        },
+        "metadata": null,
+        "confidence": "Verified"
+      }
+    },
+    {
+      "AddNode": {
+        "id": "01KQ0YB2Y4VB0RA1KFGSDPC6Q9",
+        "kind": "Sink",
+        "ports": [
+          {
+            "name": "in",
+            "direction": "Input",
+            "domain": "Sample",
+            "data_type": {
+              "Audio": {
+                "channels": 2
+              }
+            }
+          }
+        ],
+        "config": {
+          "name": {
+            "String": "Main"
+          }
+        },
+        "metadata": null,
+        "confidence": "Verified"
+      }
+    },
+    {
+      "ModifyConfig": {
+        "node_id": "01KQ0YB2Y4P1VC2GPZMH17EJ25",
+        "delta": {
+          "name": {
+            "old": null,
+            "new": {
+              "String": "Oscillator"
+            }
+          }
+        }
+      }
+    },
+    {
+      "ModifyConfig": {
+        "node_id": "01KQ0YB2Y4P1VC2GPZMH17EJ25",
+        "delta": {
+          "waveform": {
+            "old": null,
+            "new": {
+              "String": "sine"
+            }
+          }
+        }
+      }
+    },
+    {
+      "ModifyConfig": {
+        "node_id": "01KQ0YB2Y4P1VC2GPZMH17EJ25",
+        "delta": {
+          "frequency": {
+            "old": null,
+            "new": {
+              "Float": 440.0
+            }
+          }
+        }
+      }
+    },
+    {
+      "ModifyConfig": {
+        "node_id": "01KQ0YB2Y4VB0RA1KFGSDPC6Q9",
+        "delta": {
+          "name": {
+            "old": null,
+            "new": {
+              "String": "Gain"
+            }
+          }
+        }
+      }
+    },
+    {
+      "ModifyConfig": {
+        "node_id": "01KQ0YB2Y4VB0RA1KFGSDPC6Q9",
+        "delta": {
+          "gain_db": {
+            "old": null,
+            "new": {
+              "Float": -6.0
+            }
+          }
+        }
+      }
+    },
+    {
+      "AddEdge": {
+        "id": "01KQ0YB2Y442TA9S008VCFPRGC",
+        "source": {
+          "node_id": "01KQ0YB2Y4P1VC2GPZMH17EJ25",
+          "port_name": "out"
+        },
+        "target": {
+          "node_id": "01KQ0YB2Y4VB0RA1KFGSDPC6Q9",
+          "port_name": "in"
+        },
+        "causality": true
+      }
+    }
+  ],
+  "intent_ref": null,
+  "deterministic_hash": [
+    153,
+    66,
+    248,
+    92,
+    3,
+    48,
+    120,
+    75,
+    217,
+    230,
+    213,
+    150,
+    146,
+    101,
+    202,
+    48,
+    223,
+    181,
+    189,
+    46,
+    55,
+    247,
+    82,
+    251,
+    220,
+    95,
+    202,
+    176,
+    215,
+    38,
+    208,
+    126
+  ],
+  "parents": [],
+  "timestamp": 1777074539461141,
+  "source": "UserDirect",
+  "trust": "Trusted"
+}
