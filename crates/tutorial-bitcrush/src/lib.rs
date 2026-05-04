@@ -1,4 +1,4 @@
-use dirtydata_sdk::{declare_plugin, DspPlugin};
+use dirtydata_plugin_sdk::{DspPlugin, declare_plugin};
 
 #[derive(Default)]
 pub struct BitcrushPlugin {

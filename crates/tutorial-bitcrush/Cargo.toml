@@ -7,4 +7,4 @@ edition.workspace = true
 crate-type = ["cdylib"]
 
 [dependencies]
-dirtydata-sdk = { path = "../dirtydata-sdk" , version = "0.1.0" }
+dirtydata-plugin-sdk = { path = "../dirtydata-plugin-sdk" }

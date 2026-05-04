@@ -1,0 +1,22 @@
+{
+  "description": "Chaotic Tape Glitch Machine",
+  "intent": "Evolving, unpredictable, decaying soundscape",
+  "constraints": [],
+  "actions": [
+    { "action": "add_source", "name": "Sine" },
+    { "action": "add_processor", "name": "MerkleDelay" },
+    { "action": "add_processor", "name": "Erosion" },
+    { "action": "add_source", "name": "FluidLFO" },
+    { "action": "add_sink", "name": "Output" },
+    { "action": "connect", "from": "Sine", "to": "MerkleDelay" },
+    { "action": "connect", "from": "MerkleDelay", "to": "Erosion" },
+    { "action": "connect", "from": "Erosion", "to": "Output" },
+    { "action": "set_config", "node": "Sine", "key": "freq", "value": 220.0 },
+    { "action": "set_config", "node": "MerkleDelay", "key": "time", "value": 0.25 },
+    { "action": "set_config", "node": "MerkleDelay", "key": "glitch", "value": 0.8 },
+    { "action": "set_config", "node": "Erosion", "key": "entropy", "value": 0.3 },
+    { "action": "set_config", "node": "Erosion", "key": "feedback", "value": 1.1 },
+    { "action": "add_modulation", "source_node": "FluidLFO", "source_port": "u_out", "target_node": "MerkleDelay", "target_param": "time", "amount": 0.1 },
+    { "action": "add_modulation", "source_node": "FluidLFO", "source_port": "v_out", "target_node": "Erosion", "target_param": "entropy", "amount": 0.2 }
+  ]
+}

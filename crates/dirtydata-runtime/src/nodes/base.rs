@@ -124,6 +124,9 @@ pub trait DspNode: Send + Sync + dyn_clone::DynClone {
         ctx: &ProcessContext,
     );
     fn update_parameter(&mut self, _param: &str, _value: f32) {}
+    fn latency(&self) -> u32 {
+        0
+    }
     fn extract_state(&self) -> NodeState {
         NodeState::Empty
     }

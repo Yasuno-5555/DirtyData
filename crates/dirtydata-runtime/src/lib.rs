@@ -318,7 +318,7 @@ impl DspRunner {
 
     pub fn process_sample(&mut self, ctx: &ProcessContext) -> [f32; 2] {
         if let Some(jit) = &mut self.jit_program {
-            return jit.execute(ctx);
+            return jit.execute(0.0, 0.0, ctx);
         }
 
         for m in &self.modulation_mappings {
@@ -523,7 +523,7 @@ impl AudioEngine {
                                         graph.nodes.len()
                                     ));
                                     let mut new_runner = DspRunner::new(
-                                        *graph,
+                                        graph,
                                         Some(midi_rx_internal.clone()),
                                         sample_rate,
                                     );
@@ -646,6 +646,6 @@ impl AudioEngine {
     pub fn replace_graph(&self, graph: Graph, jit_prog: Option<jit::JitProgram>) {
         let _ = self
             .command_tx
-            .send(EngineCommand::ReplaceGraph(Box::new(graph), jit_prog));
+            .send(EngineCommand::ReplaceGraph(graph, jit_prog));
     }
 }

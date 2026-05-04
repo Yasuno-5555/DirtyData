@@ -20,33 +20,7 @@ impl crate::mutation::MutationEngine {
         for el in &elements {
             let el_val: CircuitElement = el.clone();
             solver.add_element(el_val);
-            let nodes = match el {
-                CircuitElement::Resistor { a, b, .. }
-                | CircuitElement::Capacitor { a, b, .. }
-                | CircuitElement::Inductor { a, b, .. }
-                | CircuitElement::Diode { a, k: b, .. }
-                | CircuitElement::Zener { a, k: b, .. }
-                | CircuitElement::Switch { a, b, .. }
-                | CircuitElement::VoltageSource { pos: a, neg: b, .. }
-                | CircuitElement::CurrentSource { pos: a, neg: b, .. } => vec![*a, *b],
-                CircuitElement::Triode { g, k, p, .. } => vec![*g, *k, *p],
-                CircuitElement::Bjt { b, c, e, .. } => vec![*b, *c, *e],
-                CircuitElement::Jfet { g, d, s, .. } => vec![*g, *d, *s],
-                CircuitElement::Transformer { a1, b1, a2, b2, .. } => vec![*a1, *b1, *a2, *b2],
-                CircuitElement::OpAmp { pos, neg, out, .. } => vec![*pos, *neg, *out],
-                CircuitElement::Potentiometer { a, wiper, b, .. } => vec![*a, *wiper, *b],
-                CircuitElement::ControlledSource {
-                    target_a,
-                    target_b,
-                    control_a,
-                    control_b,
-                    ..
-                } => vec![*target_a, *target_b, *control_a, *control_b],
-                CircuitElement::TransmissionLine { a1, b1, a2, b2, .. } => vec![*a1, *b1, *a2, *b2],
-                CircuitElement::Memristor { a, b, .. } => vec![*a, *b],
-                CircuitElement::ThermalCoupler { a, b, .. } => vec![*a, *b],
-                _ => vec![],
-            };
+            let nodes = el.nodes();
             for n in nodes {
                 max_node = max_node.max(n.0);
             }
@@ -66,7 +40,7 @@ impl crate::mutation::MutationEngine {
                 converged_count += 1;
             }
 
-            let out = state.voltages.first().copied().unwrap_or(0.0).abs();
+            let out = state.voltages.get(0).copied().unwrap_or(0.0).abs();
             energy += out;
             peak = f64::max(peak, out);
         }

@@ -72,7 +72,7 @@ mod tests {
             };
 
             let out_std = runner.process_sample(&test_ctx);
-            let out_jit = jit_prog.execute(&test_ctx);
+            let out_jit = jit_prog.execute(0.0, 0.0, &test_ctx);
 
             let expected_phase = (i as f32 * 440.0 / 44100.0) % 1.0;
             let expected_val = (expected_phase * 2.0 * std::f32::consts::PI).sin();

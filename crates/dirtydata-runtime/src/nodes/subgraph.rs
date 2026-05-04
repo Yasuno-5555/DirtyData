@@ -87,11 +87,6 @@ impl InputProxyNode {
         Self { value: 0.0 }
     }
 }
-impl Default for InputProxyNode {
-    fn default() -> Self {
-        Self::new()
-    }
-}
 impl DspNode for InputProxyNode {
     fn process(
         &mut self,
@@ -114,11 +109,6 @@ impl OutputProxyNode {
         Self
     }
 }
-impl Default for OutputProxyNode {
-    fn default() -> Self {
-        Self::new()
-    }
-}
 impl DspNode for OutputProxyNode {
     fn process(
         &mut self,
@@ -127,7 +117,7 @@ impl DspNode for OutputProxyNode {
         _config: &ConfigSnapshot,
         _ctx: &ProcessContext,
     ) {
-        let val = inputs.first().cloned().unwrap_or(0.0);
+        let val = inputs.get(0).cloned().unwrap_or(0.0);
         outputs[0] = [val, val];
     }
 }
@@ -144,11 +134,6 @@ impl SubGraphNode {
             runner: None,
             last_graph_hash: String::new(),
         }
-    }
-}
-impl Default for SubGraphNode {
-    fn default() -> Self {
-        Self::new()
     }
 }
 

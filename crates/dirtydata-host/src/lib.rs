@@ -186,7 +186,8 @@ impl Workspace {
         let mut temp = tempfile::NamedTempFile::new_in(path.parent().unwrap())?;
         let json = serde_json::to_string_pretty(data)?;
         temp.write_all(json.as_bytes())?;
-        temp.persist(path).map_err(std::io::Error::other)?;
+        temp.persist(path)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
         Ok(())
     }
 
@@ -215,11 +216,23 @@ impl Workspace {
     // --- High Level API ---
 
     pub fn apply_patch(&mut self, patch: dirtydata_core::patch::Patch) -> Result<(), HostError> {
-        self.graph
-            .apply_patch(&patch)
-            .map_err(|_| HostError::Crashed)?; // TODO: Better error mapping
+        self.graph.apply_patch(&patch)
+            .map_err(|e| {
+                println!("Failed to apply patch: {:?}", e);
+                HostError::Crashed
+            })?;
         self.save()?;
         Ok(())
+    }
+
+    pub fn apply_user_patch(&mut self, patch_file: dirtydata_core::actions::UserPatchFile) -> Result<(), HostError> {
+        let ops = dirtydata_core::actions::compile_actions(&patch_file.actions, &self.graph)
+            .map_err(|e| {
+                println!("Failed to compile actions: {:?}", e);
+                HostError::Crashed
+            })?;
+        let patch = dirtydata_core::patch::Patch::from_operations(ops);
+        self.apply_patch(patch)
     }
 
     /// Audits the forensic integrity of the workspace.

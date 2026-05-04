@@ -143,15 +143,6 @@ impl Lorenz {
             state: [0.1, 0.0, 0.0],
         }
     }
-}
-
-impl Default for Lorenz {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl Lorenz {
     pub fn process(&mut self, sigma: f32, rho: f32, beta: f32, dt: f32) -> [f32; 3] {
         let dx = sigma * (self.state[1] - self.state[0]);
         let dy = self.state[0] * (rho - self.state[2]) - self.state[1];
@@ -176,15 +167,6 @@ impl MackeyGlass {
             current_x: 0.5,
         }
     }
-}
-
-impl Default for MackeyGlass {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl MackeyGlass {
     pub fn process(&mut self, a: f32, b: f32, tau: usize, dt: f32) -> f32 {
         let x_tau = *self
             .history

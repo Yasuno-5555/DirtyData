@@ -19,8 +19,8 @@ impl ReactionDiffusion {
         let a0 = vec![1.0; size];
         let mut b0 = vec![0.0; size];
         // Seed
-        for val in b0.iter_mut().take(size / 2 + 5).skip(size / 2 - 5) {
-            *val = 0.5;
+        for i in (size / 2 - 5)..(size / 2 + 5) {
+            b0[i] = 0.5;
         }
         Self {
             a: [a0.clone(), vec![0.0; size]],

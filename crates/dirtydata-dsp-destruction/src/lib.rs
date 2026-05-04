@@ -13,15 +13,6 @@ impl BitCrush {
             count: 0.0,
         }
     }
-}
-
-impl Default for BitCrush {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl BitCrush {
     pub fn process(&mut self, input: f32, bits: f32, sr_div: f32) -> f32 {
         // Bit reduction
         let levels = 2.0f32.powf(bits.clamp(1.0, 24.0));
@@ -60,15 +51,6 @@ impl Pll {
             vco_freq: 100.0,
         }
     }
-}
-
-impl Default for Pll {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl Pll {
     pub fn process(&mut self, input: f32, lock_speed: f32, sample_rate: f32) -> f32 {
         let vco_out = self.phase.sin();
         let error = input * vco_out; // Phase detector

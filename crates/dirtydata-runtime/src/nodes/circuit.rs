@@ -120,43 +120,7 @@ impl CircuitModuleNode {
 
         let mut max_node = 0;
         for el in &elements {
-            let nodes = match el {
-                dirtydata_dsp_circuit::CircuitElement::Resistor { a, b, .. }
-                | dirtydata_dsp_circuit::CircuitElement::Capacitor { a, b, .. }
-                | dirtydata_dsp_circuit::CircuitElement::Inductor { a, b, .. }
-                | dirtydata_dsp_circuit::CircuitElement::Diode { a, k: b, .. }
-                | dirtydata_dsp_circuit::CircuitElement::Zener { a, k: b, .. }
-                | dirtydata_dsp_circuit::CircuitElement::Switch { a, b, .. }
-                | dirtydata_dsp_circuit::CircuitElement::VoltageSource { pos: a, neg: b, .. }
-                | dirtydata_dsp_circuit::CircuitElement::CurrentSource { pos: a, neg: b, .. } => {
-                    vec![*a, *b]
-                }
-                dirtydata_dsp_circuit::CircuitElement::Triode { g, k, p, .. } => vec![*g, *k, *p],
-                dirtydata_dsp_circuit::CircuitElement::Bjt { b, c, e, .. } => vec![*b, *c, *e],
-                dirtydata_dsp_circuit::CircuitElement::Jfet { g, d, s, .. } => vec![*g, *d, *s],
-                dirtydata_dsp_circuit::CircuitElement::Transformer { a1, b1, a2, b2, .. } => {
-                    vec![*a1, *b1, *a2, *b2]
-                }
-                dirtydata_dsp_circuit::CircuitElement::OpAmp { pos, neg, out, .. } => {
-                    vec![*pos, *neg, *out]
-                }
-                dirtydata_dsp_circuit::CircuitElement::Potentiometer { a, wiper, b, .. } => {
-                    vec![*a, *wiper, *b]
-                }
-                dirtydata_dsp_circuit::CircuitElement::ControlledSource {
-                    target_a,
-                    target_b,
-                    control_a,
-                    control_b,
-                    ..
-                } => vec![*target_a, *target_b, *control_a, *control_b],
-                dirtydata_dsp_circuit::CircuitElement::TransmissionLine {
-                    a1, b1, a2, b2, ..
-                } => vec![*a1, *b1, *a2, *b2],
-                dirtydata_dsp_circuit::CircuitElement::Memristor { a, b, .. } => vec![*a, *b],
-                dirtydata_dsp_circuit::CircuitElement::ThermalCoupler { a, b, .. } => vec![*a, *b],
-                _ => vec![],
-            };
+            let nodes = el.nodes();
             for n in nodes {
                 max_node = max_node.max(n.0);
             }

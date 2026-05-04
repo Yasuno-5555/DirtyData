@@ -1,0 +1,10 @@
+[package]
+name = "dirtydata-plugin-lorenz"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+dirtydata-plugin-sdk = { path = "../dirtydata-plugin-sdk" }

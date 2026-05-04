@@ -1,0 +1,23 @@
+[package]
+name = "dirtyrack-modules"
+description = "Eurorack module system — mono-signal, sample-accurate DSP"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+dirtyrack-sdk = { path = "../dirtyrack-sdk" }
+dirtydata-core = { path = "../dirtydata-core" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+arc-swap = "1.7"
+rand = "0.8"
+libm = "0.2"
+wide = "0.7"
+libloading = "0.8"
+rand_chacha = "0.3"
+hound = "3.5"
+blake3 = { workspace = true }
+dirtydata-dsp-circuit = { path = "../dirtydata-dsp-circuit" }
+rayon = "1.12.0"
+
+[dev-dependencies]

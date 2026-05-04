@@ -1,0 +1,75 @@
+{
+  "identity": "01KQRVZT7GPMTNG9CWBG63CE4G",
+  "operations": [
+    {
+      "ModifyConfig": {
+        "node_id": "01KQRVZCRQH2RWWV1SCC7P5D8G",
+        "delta": {
+          "cutoff": {
+            "old": {
+              "Float": 400.0
+            },
+            "new": {
+              "Float": 399.9582333884914
+            }
+          }
+        }
+      }
+    },
+    {
+      "ModifyConfig": {
+        "node_id": "01KQRVZCRQH2RWWV1SCC7P5D8G",
+        "delta": {
+          "resonance": {
+            "old": {
+              "Float": 0.8
+            },
+            "new": {
+              "Float": 0.8023264963784893
+            }
+          }
+        }
+      }
+    }
+  ],
+  "intent_ref": null,
+  "deterministic_hash": [
+    134,
+    67,
+    213,
+    6,
+    116,
+    63,
+    13,
+    10,
+    114,
+    30,
+    207,
+    245,
+    60,
+    183,
+    141,
+    176,
+    25,
+    73,
+    154,
+    57,
+    5,
+    228,
+    107,
+    118,
+    171,
+    21,
+    202,
+    41,
+    183,
+    117,
+    233,
+    60
+  ],
+  "parents": [],
+  "parent_hashes": [],
+  "timestamp": 1777877379312713,
+  "source": "UserDirect",
+  "trust": "Untrusted"
+}

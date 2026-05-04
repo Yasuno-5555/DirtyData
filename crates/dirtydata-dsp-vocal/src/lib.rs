@@ -232,12 +232,12 @@ impl VocalTract {
                 // 3-port junction at velum
                 let nasal_area = self
                     .nasal_sections
-                    .first()
+                    .get(0)
                     .map(|s| s.area * self.velum_opening)
                     .unwrap_or(0.0);
                 let nasal_backward = self
                     .nasal_sections
-                    .first()
+                    .get(0)
                     .map(|s| s.backward)
                     .unwrap_or(0.0);
 

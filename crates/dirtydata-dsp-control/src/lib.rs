@@ -13,15 +13,6 @@ impl FunctionGenerator {
             stage: 0,
         }
     }
-}
-
-impl Default for FunctionGenerator {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl FunctionGenerator {
     pub fn process(
         &mut self,
         trigger: f32,
@@ -76,15 +67,6 @@ impl RandomSource {
             val: 0.0,
         }
     }
-}
-
-impl Default for RandomSource {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl RandomSource {
     pub fn process(&mut self, clock: f32, mode: u8) -> f32 {
         if clock > 0.5 && self.prev_clock <= 0.5 {
             let r = rand::random::<f32>();

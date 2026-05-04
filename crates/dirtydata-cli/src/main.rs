@@ -109,6 +109,8 @@ enum EdgeCommands {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    tracing_subscriber::fmt::init();
+
     let cli = Cli::parse();
 
     match cli.command {
@@ -172,15 +174,37 @@ async fn main() -> Result<()> {
         }
         Commands::Log { graph } => {
             println!("{} Displaying Merkle DAG lineage...", "📜".bold());
+            let workspace = Workspace::open(".")?;
             if graph {
-                println!("(ASCII Graph Visualization would go here)");
+                let dsl = dirtydata_core::dsl::render_dsl(workspace.graph());
+                println!("\n{}", dsl);
+            } else {
+                for (id, patch) in &workspace.graph().lineage.history {
+                    println!("  {} [{}] {}", "•".blue(), id, patch.timestamp.0);
+                }
             }
         }
         Commands::Patch { file, intent } => {
             println!("{} Applying patch: {:?}", "🩹".bold(), file);
+            let mut workspace = Workspace::open(".")?;
+            let content = std::fs::read_to_string(&file)?;
+            
+            // Try parsing as UserPatchFile (high-level actions)
+            if let Ok(patch_file) = serde_json::from_str::<dirtydata_core::actions::UserPatchFile>(&content) {
+                if let Err(e) = workspace.apply_user_patch(patch_file) {
+                    println!("Failed to apply user patch: {:?}", e);
+                    std::process::exit(1);
+                }
+            } else {
+                // Try parsing as raw Patch (low-level operations)
+                let patch: dirtydata_core::patch::Patch = serde_json::from_str(&content)?;
+                workspace.apply_patch(patch)?;
+            }
+            
             if let Some(i) = intent {
                 println!("   Linked intent: {}", i.blue());
             }
+            println!("{} Patch applied successfully.", "✓".green());
         }
         Commands::Mutate {
             node_id,
@@ -202,11 +226,21 @@ async fn main() -> Result<()> {
                 _ => 0.1,
             };
             let patch = Mutator::evolve(workspace.graph(), &node_id, epochs, mutation_level)?;
+<<<<<<< HEAD
             println!(
                 "{} Mutation generated. Apply it with `dirty patch`.",
                 "✓".green()
             );
             println!("   Hash: {}", hex::encode(patch.deterministic_hash));
+=======
+            
+            let patch_name = format!("patch_{}.json", hex::encode(&patch.deterministic_hash[..4]));
+            let patch_path = std::env::current_dir()?.join(&patch_name);
+            std::fs::write(&patch_path, serde_json::to_string_pretty(&patch)?)?;
+
+            println!("{} Mutation generated and saved to {}.", "✓".green(), patch_name);
+            println!("   Apply it with `dirty patch {}`.", patch_name);
+>>>>>>> fe9c97d (feat: enhance modular synthesis architecture, add circuit simulation modules, and update GUI/SDK)
         }
         Commands::Build { target, release } => {
             let mode = if release { "release" } else { "debug" };

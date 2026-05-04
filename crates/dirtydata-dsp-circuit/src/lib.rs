@@ -397,6 +397,85 @@ pub enum CircuitElement {
     },
 }
 
+impl CircuitElement {
+    pub fn nodes(&self) -> Vec<NodeId> {
+        match self {
+            CircuitElement::Resistor { a, b, .. } => vec![*a, *b],
+            CircuitElement::Capacitor { a, b, .. } => vec![*a, *b],
+            CircuitElement::Diode { a, k, .. } => vec![*a, *k],
+            CircuitElement::VoltageSource { pos, neg, .. } => vec![*pos, *neg],
+            CircuitElement::Inductor { a, b, .. } => vec![*a, *b],
+            CircuitElement::CurrentSource { pos, neg, .. } => vec![*pos, *neg],
+            CircuitElement::Triode { g, k, p, .. } => vec![*g, *k, *p],
+            CircuitElement::Pentode { g1, g2, k, p, .. } => vec![*g1, *g2, *k, *p],
+            CircuitElement::Bjt { b, c, e, .. } => vec![*b, *c, *e],
+            CircuitElement::Jfet { g, d, s, .. } => vec![*g, *d, *s],
+            CircuitElement::Transformer { a1, b1, a2, b2, .. } => vec![*a1, *b1, *a2, *b2],
+            CircuitElement::OpAmp { pos, neg, out, .. } => vec![*pos, *neg, *out],
+            CircuitElement::Potentiometer { a, wiper, b, .. } => vec![*a, *wiper, *b],
+            CircuitElement::Zener { a, k, .. } => vec![*a, *k],
+            CircuitElement::Switch { a, b, .. } => vec![*a, *b],
+            CircuitElement::ControlledSource {
+                target_a,
+                target_b,
+                control_a,
+                control_b,
+                ..
+            } => vec![*target_a, *target_b, *control_a, *control_b],
+            CircuitElement::TransmissionLine { a1, b1, a2, b2, .. } => vec![*a1, *b1, *a2, *b2],
+            CircuitElement::Memristor { a, b, .. } => vec![*a, *b],
+            CircuitElement::ThermalCoupler { a, b, .. } => vec![*a, *b],
+            CircuitElement::Mosfet { g, d, s, .. } => vec![*g, *d, *s],
+            CircuitElement::Igbt { g, c, e, .. } => vec![*g, *c, *e],
+            CircuitElement::Scr { a, k, g, .. } => vec![*a, *k, *g],
+            CircuitElement::Triac { m1, m2, g, .. } => vec![*m1, *m2, *g],
+            CircuitElement::DcMotor { pos, neg, .. } => vec![*pos, *neg],
+            CircuitElement::Thermistor { a, b, .. } => vec![*a, *b],
+            CircuitElement::Photodiode { a, k, .. } => vec![*a, *k],
+            CircuitElement::Ldr { a, b, .. } => vec![*a, *b],
+            CircuitElement::Piezoelectric { a, b, .. } => vec![*a, *b],
+            CircuitElement::HallSensor { pos, neg, out, .. } => vec![*pos, *neg, *out],
+            CircuitElement::Crystal { a, b, .. } => vec![*a, *b],
+            CircuitElement::Balun {
+                p1a, p1b, p2a, p2b, ..
+            } => vec![*p1a, *p1b, *p2a, *p2b],
+            CircuitElement::Microstrip { a, b, .. } => vec![*a, *b],
+            CircuitElement::VoltageNoise { a, b, .. } => vec![*a, *b],
+            CircuitElement::CurrentNoise { a, b, .. } => vec![*a, *b],
+            CircuitElement::LogicGate { inputs, out, .. } => {
+                let mut v = inputs.clone();
+                v.push(*out);
+                v
+            }
+            CircuitElement::Comparator { pos, neg, out, .. } => vec![*pos, *neg, *out],
+            CircuitElement::PulseSource { pos, neg, .. } => vec![*pos, *neg],
+            CircuitElement::Ota {
+                p, n, iabc, out, ..
+            } => vec![*p, *n, *iabc, *out],
+            CircuitElement::Vactrol {
+                led_p,
+                led_n,
+                ldr_a,
+                ldr_b,
+                ..
+            } => vec![*led_p, *led_n, *ldr_a, *ldr_b],
+            CircuitElement::DyingBattery { pos, neg, .. } => vec![*pos, *neg],
+            CircuitElement::Bbd { input, output, .. } => vec![*input, *output],
+            CircuitElement::Relay {
+                coil_p,
+                coil_n,
+                a,
+                b,
+                ..
+            } => vec![*coil_p, *coil_n, *a, *b],
+            CircuitElement::NeonBulb { a, b, .. } => vec![*a, *b],
+            CircuitElement::DirtyGround { node, .. } => vec![*node],
+            CircuitElement::Loudspeaker { a, b, .. } => vec![*a, *b],
+            CircuitElement::GuitarPickup { a, b, .. } => vec![*a, *b],
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq)]
 pub enum LogicKind {
     AND,
@@ -1006,7 +1085,7 @@ impl MnaSolver {
                         self.static_triplets.push((r, out.0, 1.0));
                     }
                     plan.logic_gates.push((
-                        *kind,
+                        kind.clone(),
                         inputs.iter().map(|n| n.0).collect(),
                         out.0,
                         *v_high,
@@ -1476,6 +1555,7 @@ impl MnaSolver {
                     f_x[out] += x[r];
                 }
                 f_x[r] = x_val(&x, out, n) - v_out;
+                _bi += 1;
             }
             for &(a, b, re, le, bl, mms, rms, cms, idx, ri, rv) in &plan.loudspeakers {
                 if let CircuitElement::Loudspeaker {
@@ -1613,7 +1693,7 @@ impl MnaSolver {
                 let vpk = (x_val(&x, p, n) - x_val(&x, k, n)).max(0.001);
                 let e1 = (vpk / kp) * (kp * (1.0 / mu + vgk / (vpk.powi(2) + kvb).sqrt())).ln_1p();
                 let ip = if e1 > 0.0 {
-                    (e1.powf(ex) / kg1).max(0.0)
+                    (e1.powf(ex as f64) / kg1).max(0.0)
                 } else {
                     0.0
                 };
@@ -1627,7 +1707,7 @@ impl MnaSolver {
                 let vg2k = (x_val(&x, g2, n) - x_val(&x, k, n)).max(0.001);
                 let e1 = (vpk / kp) * (kp * (1.0 / mu + vg1k / (vpk.powi(2) + kvb).sqrt())).ln_1p();
                 let ik = if e1 > 0.0 {
-                    (e1.powf(ex) / kg1).max(0.0)
+                    (e1.powf(ex as f64) / kg1).max(0.0)
                 } else {
                     0.0
                 };
@@ -1848,8 +1928,8 @@ impl MnaSolver {
                     LogicKind::NOR => soft_vals.iter().fold(1.0, |acc, &v| acc * (1.0 - v)),
                     LogicKind::XOR => {
                         let mut p = soft_vals[0];
-                        for soft_val in soft_vals.iter().skip(1) {
-                            p = p * (1.0 - soft_val) + (1.0 - p) * soft_val;
+                        for i in 1..soft_vals.len() {
+                            p = p * (1.0 - soft_vals[i]) + (1.0 - p) * soft_vals[i];
                         }
                         p
                     }
@@ -1858,8 +1938,10 @@ impl MnaSolver {
                 f_x[r] = x_val(&x, out, n) - target;
                 for (i, &inp) in inputs.iter().enumerate() {
                     if inp > 0 && inp < n {
-                        let g_smooth =
-                            (v_h - v_l) * 0.5 * (1.0 - (soft_vals[i] * 2.0 - 1.0).powi(2)) / 1.0;
+                        let g_smooth = (v_h - v_l)
+                            * 0.5
+                            * (1.0 - ((vals[i] - threshold) / 1.0).tanh().powi(2))
+                            / 1.0;
                         let d_res_soft = match kind {
                             LogicKind::AND => soft_vals
                                 .iter()
@@ -2008,8 +2090,8 @@ impl MnaSolver {
                     scale = scale.min(50.0 / step.read(i, 0).abs());
                 }
             }
-            for (i, x_i) in x.iter_mut().enumerate().take(dim) {
-                *x_i += step.read(i, 0) * scale;
+            for i in 0..dim {
+                x[i] += step.read(i, 0) * scale;
             }
             let mut step_norm = 0.0;
             for i in 0..dim {
@@ -2041,8 +2123,8 @@ impl MnaSolver {
                     let rhs = faer::Mat::from_fn(dim, 1, |_, _| 0.0);
                     if let Ok(lu) = mat.sp_lu() {
                         let step = lu.solve(&rhs);
-                        for (i, x_i) in x.iter_mut().enumerate().take(dim) {
-                            *x_i += step.read(i, 0);
+                        for i in 0..dim {
+                            x[i] += step.read(i, 0);
                         }
                     }
                 }
@@ -2305,11 +2387,10 @@ impl MnaSolver {
                 CircuitElement::DirtyGround { noise_density, .. } => {
                     provenance.insert("ground_hum".to_string(), (*noise_density * 100.0) as f32);
                 }
-                CircuitElement::Resistor {
-                    material: Material::CarbonComposition,
-                    ..
-                } => {
-                    provenance.insert("carbon_drift".to_string(), 0.06);
+                CircuitElement::Resistor { material, .. } => {
+                    if let Material::CarbonComposition = material {
+                        provenance.insert("carbon_drift".to_string(), 0.06);
+                    }
                 }
                 _ => {}
             }
@@ -2348,7 +2429,7 @@ impl MnaSolver {
             triplets.push((b, a, -g));
         }
     }
-    fn stamp_f(n: usize, f: &mut [f64], a: usize, b: usize, cond: f64, x: &[f64]) {
+    fn stamp_f(n: usize, f: &mut Vec<f64>, a: usize, b: usize, cond: f64, x: &[f64]) {
         let v = x_val(x, a, n) - x_val(x, b, n);
         if a > 0 && a < n {
             f[a] += cond * v;
@@ -2357,7 +2438,7 @@ impl MnaSolver {
             f[b] -= cond * v;
         }
     }
-    fn stamp_current(n: usize, f: &mut [f64], p: usize, neg: usize, i: f64) {
+    fn stamp_current(n: usize, f: &mut Vec<f64>, p: usize, neg: usize, i: f64) {
         if p > 0 && p < n {
             f[p] += i;
         }

@@ -1,4 +1,4 @@
-use crate::nodes::base::{DspNode, ProcessContext};
+use crate::nodes::base::{DspNode, NodeState, ProcessContext};
 use dirtydata_core::types::{ConfigSnapshot, NodeKind, StableId};
 use std::collections::HashMap;
 use wasm_encoder::{
@@ -6,41 +6,6 @@ use wasm_encoder::{
     Module as WasmModule, TypeSection, ValType,
 };
 use wasmtime::*;
-
-#[derive(Clone, Debug)]
-pub enum DspOp {
-    LoadConst {
-        val: f32,
-        out: usize,
-    },
-    Copy {
-        src: usize,
-        dst: usize,
-    },
-    Add {
-        a: usize,
-        b: usize,
-        out: usize,
-    },
-    Mul {
-        a: usize,
-        b: usize,
-        out: usize,
-    },
-    Sin {
-        src: usize,
-        out: usize,
-    },
-    Tanh {
-        src: usize,
-        out: usize,
-    },
-    CallLegacy {
-        node_idx: usize,
-        input_regs: Vec<usize>,
-        output_regs: Vec<usize>,
-    },
-}
 
 pub struct JitStoreData {
     pub legacy_nodes: Vec<Box<dyn DspNode>>,
@@ -52,7 +17,9 @@ pub struct JitStoreData {
 pub struct JitProgram {
     store: Store<JitStoreData>,
     instance: Instance,
-    process_fn: TypedFunc<(f32, u64), (f32, f32)>,
+    process_fn: TypedFunc<(f32, f32, f32, u64), (f32, f32)>,
+    parameter_map: HashMap<(StableId, String), usize>,
+    legacy_node_ids: Vec<StableId>,
 }
 
 impl JitProgram {
@@ -60,7 +27,9 @@ impl JitProgram {
         engine: &Engine,
         wasm_bytes: &[u8],
         legacy_nodes: Vec<Box<dyn DspNode>>,
+        legacy_node_ids: Vec<StableId>,
         configs: Vec<ConfigSnapshot>,
+        parameter_map: HashMap<(StableId, String), usize>,
     ) -> anyhow::Result<Self> {
         let data = JitStoreData {
             legacy_nodes,
@@ -129,7 +98,6 @@ impl JitProgram {
             },
         )?;
 
-        // NATIVE MNA PATH
         linker.func_wrap(
             "host",
             "call_mna",
@@ -186,23 +154,82 @@ impl JitProgram {
 
         let instance = linker.instantiate(&mut store, &module)?;
         let process_fn =
-            instance.get_typed_func::<(f32, u64), (f32, f32)>(&mut store, "process")?;
+            instance.get_typed_func::<(f32, f32, f32, u64), (f32, f32)>(&mut store, "process")?;
         Ok(Self {
             store,
             instance,
             process_fn,
+            parameter_map,
+            legacy_node_ids,
         })
     }
 
+    pub fn set_parameter(&mut self, node_id: &StableId, param: &str, value: f32) {
+        // 1. Update native JIT parameters in WASM memory
+        if let Some(&offset) = self.parameter_map.get(&(*node_id, param.to_string())) {
+            if let Some(Extern::Memory(mem)) = self.instance.get_export(&mut self.store, "memory") {
+                let mem_data = mem.data_mut(&mut self.store);
+                if offset + 4 <= mem_data.len() {
+                    mem_data[offset..offset + 4].copy_from_slice(&value.to_le_bytes());
+                }
+            }
+        }
+
+        // 2. Update legacy nodes in the store
+        if let Some(idx) = self.legacy_node_ids.iter().position(|id| id == node_id) {
+            let data = self.store.data_mut();
+            data.legacy_nodes[idx].update_parameter(param, value);
+        }
+    }
+
+    pub fn reset(&mut self) {
+        let data = self.store.data_mut();
+        for node in &mut data.legacy_nodes {
+            node.inject_state(&NodeState::Empty);
+        }
+        // TODO: Reset state memory in WASM if necessary (e.g. oscillators)
+        if let Some(Extern::Memory(mem)) = self.instance.get_export(&mut self.store, "memory") {
+            let mem_data = mem.data_mut(&mut self.store);
+            // Reset state block (assumed at 0..65536)
+            for i in 0..65536 {
+                if i < mem_data.len() {
+                    mem_data[i] = 0;
+                }
+            }
+        }
+    }
+
+    pub fn set_parameter_by_name(&mut self, name: &str, value: f32) {
+        let keys: Vec<(StableId, String)> = self
+            .parameter_map
+            .keys()
+            .filter(|(_, k)| k == name)
+            .cloned()
+            .collect();
+        for (id, k) in keys {
+            self.set_parameter(&id, &k, value);
+        }
+    }
+
+    pub fn latency_samples(&self) -> u32 {
+        self.store
+            .data()
+            .legacy_nodes
+            .iter()
+            .map(|n| n.latency())
+            .max()
+            .unwrap_or(0)
+    }
+
     #[inline(always)]
-    pub fn execute(&mut self, ctx: &ProcessContext) -> [f32; 2] {
+    pub fn execute(&mut self, input_l: f32, input_r: f32, ctx: &ProcessContext) -> [f32; 2] {
         let data = self.store.data_mut();
         data.sample_rate = ctx.sample_rate;
         data.global_sample_index = ctx.global_sample_index;
-        match self
-            .process_fn
-            .call(&mut self.store, (ctx.sample_rate, ctx.global_sample_index))
-        {
+        match self.process_fn.call(
+            &mut self.store,
+            (input_l, input_r, ctx.sample_rate, ctx.global_sample_index),
+        ) {
             Ok((l, r)) => [l, r],
             Err(e) => {
                 tracing::error!("JIT execution error: {}", e);
@@ -216,8 +243,10 @@ pub struct JitCompiler {
     engine: Engine,
     register_map: HashMap<StableId, u32>,
     state_map: HashMap<StableId, u32>,
+    parameter_map: HashMap<(StableId, String), usize>,
     next_local: u32,
     next_state_offset: u32,
+    next_param_offset: usize,
 }
 
 impl JitCompiler {
@@ -229,8 +258,10 @@ impl JitCompiler {
             engine,
             register_map: HashMap::new(),
             state_map: HashMap::new(),
-            next_local: 2,
+            parameter_map: HashMap::new(),
+            next_local: 4,
             next_state_offset: 0,
+            next_param_offset: 131072, // Param block starts after state and scratch
         }
     }
 
@@ -244,7 +275,7 @@ impl JitCompiler {
 
         types.ty().function(vec![ValType::F32], vec![ValType::F32]);
         types.ty().function(
-            vec![ValType::F32, ValType::I64],
+            vec![ValType::F32, ValType::F32, ValType::F32, ValType::I64],
             vec![ValType::F32, ValType::F32],
         );
         types.ty().function(
@@ -259,7 +290,7 @@ impl JitCompiler {
         );
 
         memory.memory(wasm_encoder::MemoryType {
-            minimum: 2,
+            minimum: 4, // 256KB
             maximum: None,
             memory64: false,
             shared: false,
@@ -278,6 +309,7 @@ impl JitCompiler {
         let mut func = Function::new(vec![(1024, ValType::F32)]);
         let graph = runner.get_graph();
         let mut legacy_nodes = Vec::new();
+        let mut legacy_node_ids = Vec::new();
         let mut configs = Vec::new();
         let scratch_in = 65536;
         let scratch_out = 65536 + 1024;
@@ -286,6 +318,9 @@ impl JitCompiler {
             self.register_map.insert(*id, self.next_local);
             self.next_local += 1;
             if let Some(node_ir) = graph.nodes.get(id) {
+                if node_ir.kind == NodeKind::Source || node_ir.kind == NodeKind::InputProxy {
+                    // Input nodes are mapped to input parameters (local 0 and 1)
+                }
                 if let Some(name) = node_ir.config.get("name").and_then(|v| v.as_string()) {
                     if name == "Oscillator" {
                         self.state_map.insert(*id, self.next_state_offset);
@@ -304,12 +339,12 @@ impl JitCompiler {
                 match name.as_deref().map(|s| s.as_str()) {
                     Some("Oscillator") => {
                         natively_lowered = true;
-                        let freq = node_ir
-                            .config
-                            .get("frequency")
-                            .and_then(|v| v.as_float())
-                            .unwrap_or(440.0) as f32;
                         let state_offset = *self.state_map.get(id).unwrap();
+                        let param_offset = self.next_param_offset;
+                        self.parameter_map
+                            .insert((*id, "frequency".to_string()), param_offset);
+                        self.next_param_offset += 4;
+
                         func.instruction(&Instruction::I32Const(state_offset as i32));
                         func.instruction(&Instruction::F32Load(wasm_encoder::MemArg {
                             offset: 0,
@@ -321,10 +356,19 @@ impl JitCompiler {
                         func.instruction(&Instruction::F32Mul);
                         func.instruction(&Instruction::Call(0)); // host.sin
                         func.instruction(&Instruction::LocalSet(out_reg));
+
                         func.instruction(&Instruction::I32Const(state_offset as i32));
                         func.instruction(&Instruction::LocalGet(1023));
-                        func.instruction(&Instruction::F32Const(freq));
-                        func.instruction(&Instruction::LocalGet(0)); // sample_rate
+
+                        // Load frequency from parameter memory
+                        func.instruction(&Instruction::I32Const(param_offset as i32));
+                        func.instruction(&Instruction::F32Load(wasm_encoder::MemArg {
+                            offset: 0,
+                            align: 2,
+                            memory_index: 0,
+                        }));
+
+                        func.instruction(&Instruction::LocalGet(2)); // sample_rate
                         func.instruction(&Instruction::F32Div);
                         func.instruction(&Instruction::F32Add);
                         func.instruction(&Instruction::LocalTee(1023));
@@ -339,13 +383,21 @@ impl JitCompiler {
                     }
                     Some("Gain") => {
                         natively_lowered = true;
-                        let gain = node_ir
-                            .config
-                            .get("gain")
-                            .and_then(|v| v.as_float())
-                            .unwrap_or(1.0) as f32;
+                        let param_offset = self.next_param_offset;
+                        self.parameter_map
+                            .insert((*id, "gain".to_string()), param_offset);
+                        self.next_param_offset += 4;
+
                         func.instruction(&Instruction::LocalGet(self.find_input_reg(graph, id)));
-                        func.instruction(&Instruction::F32Const(gain));
+
+                        // Load gain from parameter memory
+                        func.instruction(&Instruction::I32Const(param_offset as i32));
+                        func.instruction(&Instruction::F32Load(wasm_encoder::MemArg {
+                            offset: 0,
+                            align: 2,
+                            memory_index: 0,
+                        }));
+
                         func.instruction(&Instruction::F32Mul);
                         func.instruction(&Instruction::LocalSet(out_reg));
                     }
@@ -377,7 +429,22 @@ impl JitCompiler {
                         }
                         func.instruction(&Instruction::LocalSet(out_reg));
                     }
-                    _ if node_ir.kind == NodeKind::Sink => {
+                    _ if node_ir.kind == NodeKind::Source
+                        || node_ir.kind == NodeKind::InputProxy =>
+                    {
+                        natively_lowered = true;
+                        // Map Input to local 0 (L) or 1 (R)
+                        let channel = node_ir
+                            .config
+                            .get("channel")
+                            .and_then(|v| v.as_float())
+                            .unwrap_or(0.0) as u32;
+                        func.instruction(&Instruction::LocalGet(channel.min(1)));
+                        func.instruction(&Instruction::LocalSet(out_reg));
+                    }
+                    _ if node_ir.kind == NodeKind::Sink
+                        || node_ir.kind == NodeKind::OutputProxy =>
+                    {
                         natively_lowered = true;
                         func.instruction(&Instruction::LocalGet(self.find_input_reg(graph, id)));
                         func.instruction(&Instruction::LocalSet(out_reg));
@@ -389,6 +456,7 @@ impl JitCompiler {
             if !natively_lowered {
                 let node_idx = legacy_nodes.len() as i32;
                 legacy_nodes.push(dyn_clone::clone_box(&**node_impl));
+                legacy_node_ids.push(*id);
                 configs.push(graph.nodes.get(id).unwrap().config.clone());
                 let in_regs = self.find_all_input_regs(graph, id);
                 for (i, &reg) in in_regs.iter().enumerate() {
@@ -447,7 +515,28 @@ impl JitCompiler {
         module.section(&memory);
         module.section(&exports);
         module.section(&code);
-        JitProgram::new(&self.engine, &module.finish(), legacy_nodes, configs)
+
+        let mut prog = JitProgram::new(
+            &self.engine,
+            &module.finish(),
+            legacy_nodes,
+            legacy_node_ids,
+            configs,
+            self.parameter_map.clone(),
+        )?;
+
+        // Initialize default parameters
+        for (id, node_impl) in &runner.nodes {
+            if let Some(node_ir) = graph.nodes.get(id) {
+                for (key, val) in &node_ir.config {
+                    if let Some(f) = val.as_float() {
+                        prog.set_parameter(id, key, f as f32);
+                    }
+                }
+            }
+        }
+
+        Ok(prog)
     }
 
     fn find_input_reg(&self, graph: &dirtydata_core::ir::Graph, node_id: &StableId) -> u32 {

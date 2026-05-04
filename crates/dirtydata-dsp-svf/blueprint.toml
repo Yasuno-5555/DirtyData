@@ -1,0 +1,25 @@
+[blueprint]
+id_name = "filter.svf"
+display_name = "SVF Filter"
+category = "Filter"
+tier = "Core"
+tags = ["Standard", "ZDF", "Nonlinear"]
+version = "1.0.0"
+
+[[params]]
+name = "Cutoff"
+unit = "Hertz"
+default = 1000.0
+range = [20.0, 20000.0]
+
+[[params]]
+name = "Resonance"
+unit = "Normalized"
+default = 0.5
+range = [0.0, 1.0]
+
+[[params]]
+name = "Drive"
+unit = "Normalized"
+default = 0.0
+range = [0.0, 1.0]
