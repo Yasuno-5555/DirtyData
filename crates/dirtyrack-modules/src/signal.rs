@@ -3,10 +3,10 @@
 //! 内蔵モジュールも SDK の定義に従うことで、サードパーティ製との完全な互換性を保証。
 
 pub use dirtyrack_sdk::{
-    f32x4, EngineStats, ForensicData, ImperfectionData,
-    ModuleDescriptor as BuiltinModuleDescriptor, ModuleVisuals, PanelTexture, ParamDescriptor,
-    ParamKind, ParamResponse, PortDescriptor, PortDirection, RackDspNode, RackProcessContext,
-    SignalType,
+    f32x4, dirty_module, voice_process, EngineStats, ForensicData, ImperfectionData,
+    KnobStyle, ModuleDescriptor as BuiltinModuleDescriptor, ModuleVisuals, PanelTexture,
+    ParamDescriptor, ParamKind, ParamResponse, PortDescriptor, PortDirection, RackDspNode,
+    RackProcessContext, SignalImperfection, SignalType,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]

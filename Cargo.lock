@@ -1580,9 +1580,19 @@ dependencies = [
 name = "dirtyrack-sdk"
 version = "0.1.0"
 dependencies = [
+ "dirtyrack-sdk-macros",
  "libm",
  "serde",
  "wide",
+]
+
+[[package]]
+name = "dirtyrack-sdk-macros"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
 ]
 
 [[package]]

@@ -79,7 +79,7 @@ pub fn descriptor() -> crate::signal::BuiltinModuleDescriptor {
             background_color: [20, 20, 30],
             text_color: [200, 200, 255],
             accent_color: [100, 100, 255],
-            panel_texture: crate::signal::PanelTexture::MatteBlack,
+            panel_texture: crate::signal::PanelTexture::MatteBlack, knob_style: crate::signal::KnobStyle::ClassicSilver,
         },
         tags: &["Builtin", "FLT", "VCF"],
         params: &[

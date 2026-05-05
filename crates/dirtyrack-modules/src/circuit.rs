@@ -149,7 +149,7 @@ pub fn descriptor() -> crate::signal::BuiltinModuleDescriptor {
             background_color: [40, 45, 50],
             accent_color: [0, 255, 150],
             text_color: [200, 220, 200],
-            panel_texture: crate::signal::PanelTexture::MatteBlack,
+            panel_texture: crate::signal::PanelTexture::MatteBlack, knob_style: crate::signal::KnobStyle::ClassicSilver,
         },
         tags: &["Builtin", "Circuit", "Simulation", "Sandbox"],
         params: &[], // エディタ側で制御するため、固定パラメータはなし

@@ -15,6 +15,7 @@ members = [
     "crates/dirtyrack-modules",
     "crates/dirtyrack-gui",
     "crates/dirtyrack-sdk",
+    "crates/dirtyrack-sdk-macros",
     "crates/example-thirdparty-module",
     "crates/dirtyrack-cli", "crates/dirtydata-plugin-lorenz", "crates/dirtydata-plugin-sdk",
 ]

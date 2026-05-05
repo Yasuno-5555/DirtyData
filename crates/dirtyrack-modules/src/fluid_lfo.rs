@@ -304,7 +304,7 @@ pub fn descriptor() -> crate::signal::BuiltinModuleDescriptor {
             background_color: [20, 30, 40],
             text_color: [150, 200, 255],
             accent_color: [50, 150, 255],
-            panel_texture: crate::signal::PanelTexture::BrushedAluminium,
+            panel_texture: crate::signal::PanelTexture::BrushedAluminium, knob_style: crate::signal::KnobStyle::ClassicSilver,
         },
         tags: &["Builtin", "LFO", "CHAOS", "MOD"],
         params: &[

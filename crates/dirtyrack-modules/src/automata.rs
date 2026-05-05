@@ -139,7 +139,7 @@ pub fn descriptor() -> crate::signal::BuiltinModuleDescriptor {
             background_color: [20, 20, 20],
             text_color: [0, 255, 0], // Matrix green
             accent_color: [50, 255, 50],
-            panel_texture: crate::signal::PanelTexture::MatteBlack,
+            panel_texture: crate::signal::PanelTexture::MatteBlack, knob_style: crate::signal::KnobStyle::ClassicSilver,
         },
         tags: &["Builtin", "GEN", "OSC", "CHAOS"],
         params: &[

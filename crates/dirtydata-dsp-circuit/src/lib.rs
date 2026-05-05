@@ -1558,7 +1558,6 @@ impl MnaSolver {
                     f_x[out] += x[r];
                 }
                 f_x[r] = x_val(&x, out, n) - v_out;
-                _bi += 1;
             }
             for &(a, b, re, le, bl, mms, rms, cms, idx, ri, rv) in &plan.loudspeakers {
                 if let CircuitElement::Loudspeaker {

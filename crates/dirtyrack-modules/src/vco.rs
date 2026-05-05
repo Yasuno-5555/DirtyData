@@ -4,10 +4,8 @@
 //! - 入力がポリフォニック（16ch）の場合、全チャンネルを並列またはループで処理。
 //! - 1V/Oct 入力を各ボイスの周波数に変換。
 
-use crate::signal::{
-    voct_to_hz, ParamDescriptor, ParamKind, ParamResponse, PortDescriptor, PortDirection,
-    RackDspNode, RackProcessContext, SignalType, SmoothedParam, TriggerDetector,
-};
+use dirtyrack_sdk::*;
+use crate::signal::{voct_to_hz, SmoothedParam, TriggerDetector};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -16,6 +14,7 @@ struct VcoVoiceState {
     phase: f32,
 }
 
+#[dirty_module]
 pub struct VcoModule {
     phases: [f32; 16],
     sample_rate: f32,
@@ -60,7 +59,6 @@ impl RackDspNode for VcoModule {
 
         // Scale detuning by aging
         let p_mult = 0.0001 + _ctx.aging * 0.05;
-        let d_mult = 0.00001 + _ctx.aging * 0.005;
 
         for i in 0..16 {
             let voct_in = inputs.get(0 * 16 + i).copied().unwrap_or(0.0);
@@ -69,19 +67,13 @@ impl RackDspNode for VcoModule {
             let sync_in = inputs.get(3 * 16 + i).copied().unwrap_or(0.0);
 
             let p_offset = _ctx.imperfection.personality.get(i).copied().unwrap_or(0.0) * p_mult;
-            let d_offset = _ctx.imperfection.drift.get(i).copied().unwrap_or(0.0) * d_mult;
+            
+            // Apply drift and aging using the new SDK trait
+            let total_voltage = (freq_val + voct_in + fine + p_offset)
+                .apply_drift(i, _ctx)
+                .apply_aging(i, _ctx);
 
-            // 熱ドリフト (Signal Memory)
-            // 高周波数ほど熱を持ち、ピッチがわずかに下がる
-            let h_offset = self.heat[i] * -0.002 * _ctx.aging;
-            let freq_hz_pre =
-                voct_to_hz(freq_val + voct_in + fine + p_offset + d_offset + h_offset);
-            self.heat[i] += (freq_hz_pre / 1000.0) * 0.000001;
-            self.heat[i] *= 0.99999;
-
-            let pitch_voltage = freq_val + voct_in + fine + p_offset + d_offset + h_offset;
-            let total_voltage = pitch_voltage + fm_in * fm_amt;
-            let freq_hz = voct_to_hz(total_voltage);
+            let freq_hz = voct_to_hz(total_voltage + fm_in * fm_amt);
             let pw = (pw_val + pw_cv_in * 0.1).clamp(0.01, 0.99);
 
             if self.sync_detectors[i].process(sync_in) {
@@ -119,8 +111,8 @@ impl RackDspNode for VcoModule {
             outputs[3 * 16 + i] = sq * gain;
         }
     }
-    fn get_forensic_data(&self) -> Option<crate::signal::ForensicData> {
-        let mut data = crate::signal::ForensicData::default();
+    fn get_forensic_data(&self) -> Option<ForensicData> {
+        let mut data = ForensicData::default();
         data.thermal_heat = self.heat;
         data.internal_state_summary = format!(
             "VCO Active Voices: {}",
@@ -130,7 +122,7 @@ impl RackDspNode for VcoModule {
     }
 
     fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
-        self
+        self.as_any_mut_impl()
     }
 }
 

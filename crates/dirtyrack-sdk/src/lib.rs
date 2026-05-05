@@ -3,6 +3,7 @@
 //! DirtyRack SDK — The Constitution of Signal
 
 pub use wide::f32x4;
+pub use dirtyrack_sdk_macros::*;
 
 /// 信号タイプ
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -114,6 +115,21 @@ pub struct ImperfectionData {
     pub drift: [f32; 16],
 }
 
+pub trait SignalImperfection {
+    fn apply_drift(self, voice_idx: usize, ctx: &RackProcessContext) -> Self;
+    fn apply_aging(self, voice_idx: usize, ctx: &RackProcessContext) -> Self;
+}
+
+impl SignalImperfection for f32 {
+    fn apply_drift(self, voice_idx: usize, ctx: &RackProcessContext) -> Self {
+        self + ctx.imperfection.drift[voice_idx] * ctx.aging
+    }
+    fn apply_aging(self, _voice_idx: usize, ctx: &RackProcessContext) -> Self {
+        // 例: 高域の減衰やノイズの付加
+        self * (1.0 - ctx.aging * 0.1)
+    }
+}
+
 impl Default for ImperfectionData {
     fn default() -> Self {
         Self {
@@ -185,12 +201,21 @@ pub enum PanelTexture {
     IndustrialGrey,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum KnobStyle {
+    ClassicSilver,
+    ModernPlastic,
+    VintageBakelite,
+    IndustrialMetal,
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct ModuleVisuals {
     pub background_color: [u8; 3],
     pub text_color: [u8; 3],
     pub accent_color: [u8; 3],
     pub panel_texture: PanelTexture,
+    pub knob_style: KnobStyle,
 }
 
 impl ModuleVisuals {
@@ -200,6 +225,7 @@ impl ModuleVisuals {
             text_color: [220, 220, 220],
             accent_color: [255, 100, 50],
             panel_texture: PanelTexture::MatteBlack,
+            knob_style: KnobStyle::ClassicSilver,
         }
     }
 }
