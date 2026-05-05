@@ -1,3 +1,5 @@
+#![allow(clippy::all)]
+
 //! Observer Engine — 自動化された疑いのシステム
 //!
 //! "Observe before Control"

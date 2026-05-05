@@ -12,17 +12,17 @@ use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
 pub struct ClockTreeModule {
-    trigger: TriggerDetector,
-    counts: [u32; 4],
-    rng: ChaCha8Rng,
+    triggers: [TriggerDetector; 16],
+    counts: [[u32; 4]; 16],
+    rngs: [ChaCha8Rng; 16],
 }
 
 impl ClockTreeModule {
     pub fn new(_sr: f32) -> Self {
         Self {
-            trigger: TriggerDetector::new(),
-            counts: [0; 4],
-            rng: ChaCha8Rng::seed_from_u64(0x42),
+            triggers: [TriggerDetector::new(); 16],
+            counts: [[0; 4]; 16],
+            rngs: std::array::from_fn(|i| ChaCha8Rng::seed_from_u64(0x42 + i as u64)),
         }
     }
 }
@@ -35,32 +35,36 @@ impl RackDspNode for ClockTreeModule {
         params: &[f32],
         _ctx: &RackProcessContext,
     ) {
-        let clock = inputs[0];
-        let is_tick = self.trigger.process(clock);
+        for v in 0..16 {
+            let clock = inputs[0 * 16 + v];
+            let is_tick = self.triggers[v].process(clock);
 
-        for i in 0..4 {
-            let div = (params[i * 2] as u32).max(1);
-            let prob = params[i * 2 + 1]; // 0.0 .. 1.0
+            for i in 0..4 {
+                let div = (params[i * 2] as u32).max(1);
+                let prob = params[i * 2 + 1]; // 0.0 .. 1.0
 
-            if is_tick {
-                self.counts[i] += 1;
-                if self.counts[i] >= div {
-                    self.counts[i] = 0;
-                    // Probability check
-                    if self.rng.gen_bool(prob as f64) {
-                        outputs[i] = 5.0;
+                let out_idx = i * 16 + v;
+
+                if is_tick {
+                    self.counts[v][i] += 1;
+                    if self.counts[v][i] >= div {
+                        self.counts[v][i] = 0;
+                        // Probability check
+                        if self.rngs[v].gen_bool(prob as f64) {
+                            outputs[out_idx] = 5.0;
+                        } else {
+                            outputs[out_idx] = 0.0;
+                        }
                     } else {
-                        outputs[i] = 0.0;
+                        outputs[out_idx] = 0.0;
                     }
                 } else {
-                    outputs[i] = 0.0;
-                }
-            } else {
-                // Keep gate high for a short burst (simplified)
-                if outputs[i] > 0.0 {
-                    outputs[i] *= 0.9;
-                    if outputs[i] < 0.1 {
-                        outputs[i] = 0.0;
+                    // Keep gate high for a short burst (simplified)
+                    if outputs[out_idx] > 0.0 {
+                        outputs[out_idx] *= 0.9;
+                        if outputs[out_idx] < 0.1 {
+                            outputs[out_idx] = 0.0;
+                        }
                     }
                 }
             }

@@ -68,7 +68,11 @@ impl RackRunner {
         }
     }
 
-    pub fn apply_snapshot(&mut self, snapshot: &mut GraphSnapshot, nodes: Vec<Box<dyn RackDspNode>>) {
+    pub fn apply_snapshot(
+        &mut self,
+        snapshot: &mut GraphSnapshot,
+        nodes: Vec<Box<dyn RackDspNode>>,
+    ) {
         let mut order_map = vec![0; nodes.len()];
         for (i, &node_idx) in snapshot.order.iter().enumerate() {
             order_map[node_idx] = i;
@@ -98,7 +102,7 @@ impl RackRunner {
             .iter()
             .map(|(inp, _)| vec![0.0; inp * 16])
             .collect();
-        
+
         self.modulated_params = vec![vec![0.0; 64]; self.active_nodes.len()];
         self.stats = vec![crate::signal::EngineStats::default(); self.active_nodes.len()];
 
@@ -155,8 +159,9 @@ impl RackRunner {
                 // Apply modulations on top
                 for mod_entry in &snapshot.modulations[idx] {
                     if let Some(src_buf) = self.output_buffers.get(mod_entry.src_module_idx) {
-                        let mod_val = src_buf[mod_entry.src_port_idx * 16]; 
-                        self.modulated_params[idx][mod_entry.param_idx] += mod_val * mod_entry.amount;
+                        let mod_val = src_buf[mod_entry.src_port_idx * 16];
+                        self.modulated_params[idx][mod_entry.param_idx] +=
+                            mod_val * mod_entry.amount;
                     }
                 }
 
@@ -170,7 +175,7 @@ impl RackRunner {
                 for val in outs.iter_mut() {
                     let abs_val = val.abs();
                     current_energy += abs_val;
-                    
+
                     // Peak detection
                     if abs_val > stats.peak_db {
                         stats.peak_db = abs_val;
@@ -187,7 +192,7 @@ impl RackRunner {
                         stats.denormal_count += 1;
                         *val = 0.0;
                     }
-                    
+
                     // DC Offset tracking (Simple leaky integrator)
                     stats.dc_offset = stats.dc_offset * 0.999 + (*val) * 0.001;
 

@@ -1,3 +1,5 @@
+#![allow(clippy::all)]
+
 use std::collections::BTreeMap;
 use std::io::{Read, Write};
 use std::process::{Child, Command, Stdio};
@@ -216,16 +218,18 @@ impl Workspace {
     // --- High Level API ---
 
     pub fn apply_patch(&mut self, patch: dirtydata_core::patch::Patch) -> Result<(), HostError> {
-        self.graph.apply_patch(&patch)
-            .map_err(|e| {
-                println!("Failed to apply patch: {:?}", e);
-                HostError::Crashed
-            })?;
+        self.graph.apply_patch(&patch).map_err(|e| {
+            println!("Failed to apply patch: {:?}", e);
+            HostError::Crashed
+        })?;
         self.save()?;
         Ok(())
     }
 
-    pub fn apply_user_patch(&mut self, patch_file: dirtydata_core::actions::UserPatchFile) -> Result<(), HostError> {
+    pub fn apply_user_patch(
+        &mut self,
+        patch_file: dirtydata_core::actions::UserPatchFile,
+    ) -> Result<(), HostError> {
         let ops = dirtydata_core::actions::compile_actions(&patch_file.actions, &self.graph)
             .map_err(|e| {
                 println!("Failed to compile actions: {:?}", e);

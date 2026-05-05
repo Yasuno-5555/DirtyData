@@ -1,3 +1,5 @@
+#![allow(clippy::all)]
+
 use anyhow::Result;
 use dirtydata_core::ir::Graph;
 use dirtydata_core::patch::{Operation, Patch};

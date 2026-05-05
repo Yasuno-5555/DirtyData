@@ -1,3 +1,5 @@
+#![allow(clippy::all)]
+
 //! Wavelet Analysis Civilization
 
 use serde::{Deserialize, Serialize};

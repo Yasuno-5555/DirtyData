@@ -1,5 +1,5 @@
 //! ZDF Ladder Filter — Zero-Delay Feedback Moog-style Filter
-//! 
+//!
 //! # 憲法遵守
 //! - Topology Preserving Transform (TPT) による 0-delay feedback 実装。
 //! - 非線形飽和（tanh）をフィードバック・ループ内に配置。
@@ -10,40 +10,16 @@ use crate::signal::{
     RackProcessContext, SignalType,
 };
 
-struct TPTOnePole {
-    s: [f32; 16],
-}
-
-impl TPTOnePole {
-    fn new() -> Self {
-        Self { s: [0.0; 16] }
-    }
-    
-    #[inline]
-    fn process(&mut self, v: usize, x: f32, g: f32) -> f32 {
-        let v_node = (x - self.s[v]) * g / (1.0 + g);
-        let y = v_node + self.s[v];
-        self.s[v] = y + v_node;
-        y
-    }
-}
-
 pub struct ZdfLadderModule {
+    s: [[f32; 4]; 16], // Filter states (integrators)
     sample_rate: f32,
-    p1: TPTOnePole,
-    p2: TPTOnePole,
-    p3: TPTOnePole,
-    p4: TPTOnePole,
 }
 
 impl ZdfLadderModule {
     pub fn new(sample_rate: f32) -> Self {
         Self {
+            s: [[0.0; 4]; 16],
             sample_rate,
-            p1: TPTOnePole::new(),
-            p2: TPTOnePole::new(),
-            p3: TPTOnePole::new(),
-            p4: TPTOnePole::new(),
         }
     }
 }
@@ -56,32 +32,34 @@ impl RackDspNode for ZdfLadderModule {
         params: &[f32],
         _ctx: &RackProcessContext,
     ) {
-        let cutoff_knob = params[0].max(0.01).min(10.0);
-        let res_knob = params[1].max(0.0).min(4.0); // 0..4 range for Moog resonance
+        let cutoff = params[0];
+        let resonance = params[1] * 4.0; // 0.0 to 4.0
 
-        let freq = 20.0 * libm::powf(1000.0, cutoff_knob / 10.0);
-        let g = libm::tanf(std::f32::consts::PI * freq / self.sample_rate);
-        
-        // Simplified Linear ZDF Solver for 4-pole Ladder
-        // y = (G^4*x + G^3*s1 + G^2*s2 + G*s3 + s4) / (1 + k*G^4)
-        let g_prime = g / (1.0 + g);
-        let _gamma = g_prime * g_prime * g_prime * g_prime;
+        // TPT ladder filter coefficients
+        let f = libm::tanf(std::f32::consts::PI * cutoff / self.sample_rate);
+        let g = f / (1.0 + f);
+        let g2 = g * g;
+        let g3 = g2 * g;
+        let g4 = g3 * g;
 
         for v in 0..16 {
             let input = inputs[v];
-            
-            // Non-linear feedback path (Simplified)
-            let feedback_in = self.p4.s[v]; // Rough approximation for 0-delay loop
-            let sat_feedback = libm::tanhf(feedback_in * res_knob);
-            
-            let x = input - sat_feedback;
-            
-            let y1 = self.p1.process(v, x, g);
-            let y2 = self.p2.process(v, y1, g);
-            let y3 = self.p3.process(v, y2, g);
-            let y4 = self.p4.process(v, y3, g);
-            
-            outputs[v] = y4;
+
+            // 1. Solve for instantaneous feedback
+            // S = g^3*s1 + g^2*s2 + g*s3 + s4
+            let s_total = g3 * self.s[v][0] + g2 * self.s[v][1] + g * self.s[v][2] + self.s[v][3];
+            let y0 = (input - resonance * s_total) / (1.0 + resonance * g4);
+
+            // 2. Step integrators
+            let mut x = y0;
+            for i in 0..4 {
+                let v_node = (x - self.s[v][i]) * g;
+                let y = v_node + self.s[v][i];
+                self.s[v][i] = y + v_node;
+                x = y;
+            }
+
+            outputs[v] = x; // 24dB/oct Lowpass
         }
     }
 

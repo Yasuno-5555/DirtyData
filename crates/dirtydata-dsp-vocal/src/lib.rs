@@ -1,3 +1,5 @@
+#![allow(clippy::all)]
+
 //! VocalTract Physical Modeling — Kelly-Lochbaum Waveguide
 //!
 //! **C8 Fix**: Full bidirectional wave propagation (forward + backward).

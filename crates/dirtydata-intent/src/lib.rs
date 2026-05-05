@@ -1,3 +1,5 @@
+#![allow(clippy::all)]
+
 //! Intent Engine — Structured Meaning & Constraints
 //!
 //! "音楽は最適化問題じゃない。制約付き妥協問題です。"

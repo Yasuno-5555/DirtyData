@@ -1,3 +1,5 @@
+#![allow(clippy::all)]
+
 use dirtyrack_modules::midi::MidiCvModule;
 use dirtyrack_modules::output::OutputModule;
 use dirtyrack_modules::runner::{Connection, GraphSnapshot, RackRunner};

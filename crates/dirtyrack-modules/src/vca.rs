@@ -37,10 +37,10 @@ impl RackDspNode for VcaModule {
 
             // target gain calculation
             let target_gain = (level_knob + (cv / 5.0) * cv_amt + p_offset).clamp(0.0, 4.0);
-            
+
             // Smoothing filter (1-pole LP) to prevent clicks
             // Time constant ~ 1ms
-            let alpha = 0.99; 
+            let alpha = 0.99;
             self.gain_states[i] = self.gain_states[i] * alpha + target_gain * (1.0 - alpha);
 
             // 非線形性 (Analog saturation)

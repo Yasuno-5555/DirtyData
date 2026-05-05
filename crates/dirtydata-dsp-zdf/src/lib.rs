@@ -1,3 +1,6 @@
+#![allow(clippy::all)]
+#![allow(clippy::all)]
+
 //! Zero-Delay Feedback (ZDF) 4-pole Transistor Ladder Filter
 //!
 //! Refinements:

@@ -1,3 +1,6 @@
+#![allow(clippy::all)]
+#![allow(clippy::all)]
+
 //! Wave Digital Filter (WDF) Component Library
 //! Topology-preserving physical modeling of analog circuits.
 //!

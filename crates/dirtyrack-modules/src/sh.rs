@@ -5,20 +5,20 @@
 //! - 決定論的リプレイにおいて、同一のタイミングで同一の値を保持することを保証。
 
 use crate::signal::{
-    BuiltinModuleDescriptor, PortDescriptor, PortDirection, RackDspNode,
-    RackProcessContext, SignalType, TriggerDetector,
+    BuiltinModuleDescriptor, PortDescriptor, PortDirection, RackDspNode, RackProcessContext,
+    SignalType, TriggerDetector,
 };
 
 pub struct SampleHoldModule {
-    held_value: f32,
-    trigger: TriggerDetector,
+    held_values: [f32; 16],
+    triggers: [TriggerDetector; 16],
 }
 
 impl SampleHoldModule {
     pub fn new(_sr: f32) -> Self {
         Self {
-            held_value: 0.0,
-            trigger: TriggerDetector::new(),
+            held_values: [0.0; 16],
+            triggers: [TriggerDetector::new(); 16],
         }
     }
 }
@@ -31,15 +31,15 @@ impl RackDspNode for SampleHoldModule {
         _params: &[f32],
         _ctx: &RackProcessContext,
     ) {
-        let input = inputs[0 * 16]; // Port 0 (IN)
-        let trig_in = inputs[1 * 16]; // Port 1 (TRIG)
-
-        if self.trigger.process(trig_in) {
-            self.held_value = input;
-        }
-
         for v in 0..16 {
-            outputs[0 * 16 + v] = self.held_value;
+            let input = inputs[0 * 16 + v]; // Port 0 (IN)
+            let trig_in = inputs[1 * 16 + v]; // Port 1 (TRIG)
+
+            if self.triggers[v].process(trig_in) {
+                self.held_values[v] = input;
+            }
+
+            outputs[0 * 16 + v] = self.held_values[v];
         }
     }
     fn as_any_mut(&mut self) -> &mut dyn std::any::Any {

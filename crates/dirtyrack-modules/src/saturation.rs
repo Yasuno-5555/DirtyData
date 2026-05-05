@@ -1,5 +1,5 @@
 //! Saturation Module — 非線形回路モデリング (Soft Saturation)
-//! 
+//!
 //! # 憲法遵守
 //! - Diode Clipper: tanh ベースのソフトクリッピング。
 //! - Transistor: 非対称な飽和特性。
@@ -23,7 +23,9 @@ pub struct SaturationModule {
 
 impl SaturationModule {
     pub fn new() -> Self {
-        Self { mode: SatMode::Diode }
+        Self {
+            mode: SatMode::Diode,
+        }
     }
 
     fn process_sample(&self, x: f32, drive: f32, mode: &SatMode) -> f32 {
@@ -34,7 +36,7 @@ impl SaturationModule {
                 if x > 0.0 {
                     1.0 - libm::expf(-x)
                 } else {
-                    - (1.0 - libm::expf(x)) * 0.7 // Asymmetry
+                    -(1.0 - libm::expf(x)) * 0.7 // Asymmetry
                 }
             }
             SatMode::Tape => {

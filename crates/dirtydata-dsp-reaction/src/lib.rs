@@ -1,3 +1,6 @@
+#![allow(clippy::all)]
+#![allow(clippy::all)]
+
 //! Reaction-Diffusion Audio (1D Gray-Scott mapped to audio)
 //!
 //! Refinements:

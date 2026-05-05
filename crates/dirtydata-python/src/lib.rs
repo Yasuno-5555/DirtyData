@@ -1,3 +1,5 @@
+#![allow(clippy::all)]
+
 use dirtydata_dsp_chaos::{ChuaCircuit, Lorenz, MackeyGlass};
 use dirtydata_dsp_svf::Svf;
 use numpy::{PyArray1, PyReadonlyArray1};

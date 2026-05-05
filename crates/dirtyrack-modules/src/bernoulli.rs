@@ -12,24 +12,26 @@ use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
 pub struct BernoulliModule {
-    rng: ChaCha8Rng,
-    trigger: TriggerDetector,
-    last_choice: bool, // false = A, true = B
+    rngs: [ChaCha8Rng; 16],
+    triggers: [TriggerDetector; 16],
+    last_choices: [bool; 16], // false = A, true = B
 }
 
 impl BernoulliModule {
     pub fn new(_sr: f32) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(0x42), // TODO: Use SeedScope
-            trigger: TriggerDetector::new(),
-            last_choice: false,
+            rngs: std::array::from_fn(|i| ChaCha8Rng::seed_from_u64(0x42 + i as u64)),
+            triggers: [TriggerDetector::new(); 16],
+            last_choices: [false; 16],
         }
     }
 }
 
 impl RackDspNode for BernoulliModule {
     fn randomize(&mut self, seed: u64) {
-        self.rng = ChaCha8Rng::seed_from_u64(seed);
+        for i in 0..16 {
+            self.rngs[i] = ChaCha8Rng::seed_from_u64(seed + i as u64);
+        }
     }
 
     fn process(
@@ -45,13 +47,11 @@ impl RackDspNode for BernoulliModule {
             let input = inputs[0 * 16 + v];
             let trig_in = inputs[1 * 16 + v];
 
-            if self.trigger.process(trig_in) {
-                // TODO: In a more polyphonic-friendly version, we'd need 16 trigger detectors and 16 RNGs/seeds.
-                // For now, we use one detector but update the choice for all voices or just this sample.
-                self.last_choice = self.rng.gen_bool(prob as f64);
+            if self.triggers[v].process(trig_in) {
+                self.last_choices[v] = self.rngs[v].gen_bool(prob as f64);
             }
 
-            if !self.last_choice {
+            if !self.last_choices[v] {
                 outputs[0 * 16 + v] = input;
                 outputs[1 * 16 + v] = 0.0;
             } else {

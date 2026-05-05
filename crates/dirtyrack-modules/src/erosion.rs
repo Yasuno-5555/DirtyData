@@ -4,8 +4,8 @@
 //! 従って徐々にノイズへと還元されていく。
 
 use crate::signal::{
-    ParamDescriptor, ParamKind, ParamResponse, PortDescriptor, PortDirection,
-    RackDspNode, RackProcessContext, SignalType, SmoothedParam,
+    ParamDescriptor, ParamKind, ParamResponse, PortDescriptor, PortDirection, RackDspNode,
+    RackProcessContext, SignalType, SmoothedParam,
 };
 
 const MAX_TAPE_SAMPLES: usize = 44100 * 4; // 4 seconds
@@ -61,28 +61,39 @@ impl RackDspNode for ErosionModule {
 
         for i in 0..16 {
             let input = inputs[0 * 16 + i];
-            
-            let delay_samples = (time_val * self.sample_rate) as usize;
+
+            let delay_samples = time_val * self.sample_rate;
             let current_w_idx = self.write_idx[i];
-            
-            let read_idx = (current_w_idx + MAX_TAPE_SAMPLES - delay_samples) % MAX_TAPE_SAMPLES;
-            let mut delayed_sample = self.buffer[i][read_idx];
+
+            // Linear Interpolation
+            let read_ptr = (current_w_idx as f32 + MAX_TAPE_SAMPLES as f32 - delay_samples)
+                % MAX_TAPE_SAMPLES as f32;
+            let i0 = read_ptr as usize;
+            let i1 = (i0 + 1) % MAX_TAPE_SAMPLES;
+            let frac = read_ptr - i0 as f32;
+
+            let mut delayed_sample = self.buffer[i][i0] * (1.0 - frac) + self.buffer[i][i1] * frac;
 
             // --- Erosion Process ---
             if entropy > 0.001 {
+                let effective_entropy = entropy * _ctx.aging;
+
                 // 1. Amplitude decay (energy loss)
-                delayed_sample *= 1.0 - (entropy * 0.001);
+                delayed_sample *= 1.0 - (effective_entropy * 0.001);
 
                 // 2. Add thermal noise (entropy increase)
                 let noise = Self::fast_rand(&mut self.noise_state[i]);
-                delayed_sample += noise * entropy * 0.05;
+                delayed_sample += noise * effective_entropy * 0.05;
 
                 // 3. Simple Lowpass filtering to simulate magnetic particle loss
-                // Use the adjacent sample in the buffer to average
-                let prev_read_idx = if read_idx == 0 { MAX_TAPE_SAMPLES - 1 } else { read_idx - 1 };
+                let prev_read_idx = if i0 == 0 {
+                    MAX_TAPE_SAMPLES - 1
+                } else {
+                    i0 - 1
+                };
                 let prev_sample = self.buffer[i][prev_read_idx];
-                
-                let filter_coeff = (entropy * 0.1).clamp(0.0, 0.99);
+
+                let filter_coeff = (effective_entropy * 0.1).clamp(0.0, 0.99);
                 delayed_sample = delayed_sample * (1.0 - filter_coeff) + prev_sample * filter_coeff;
             }
 

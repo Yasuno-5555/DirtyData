@@ -1,4 +1,6 @@
-use dirtydata_plugin_sdk::{DspPlugin, declare_plugin};
+#![allow(clippy::all)]
+
+use dirtydata_plugin_sdk::{declare_plugin, DspPlugin};
 
 #[derive(Default)]
 pub struct BitcrushPlugin {

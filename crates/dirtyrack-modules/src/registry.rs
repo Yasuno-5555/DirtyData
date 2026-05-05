@@ -1,8 +1,6 @@
 //! Module Registry — Built-in & Third-party Module Catalog
 
-use crate::signal::{
-    ParamDescriptor, PortDescriptor, ProvenanceZone, RackDspNode,
-};
+use crate::signal::{ParamDescriptor, PortDescriptor, ProvenanceZone, RackDspNode};
 use std::sync::Arc;
 
 /// モジュールのメタ情報（不変データ）
@@ -78,6 +76,9 @@ impl ModuleRegistry {
             crate::merkle_delay::descriptor(),
             crate::fluid_lfo::descriptor(),
             crate::erosion::descriptor(),
+            crate::subpatch_io::input_descriptor(),
+            crate::subpatch_io::output_descriptor(),
+            crate::subpatch_io::parameter_descriptor(),
         ];
 
         for d in builtins {

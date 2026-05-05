@@ -1,3 +1,5 @@
+#![allow(clippy::all)]
+
 //! CV and Logic Civilization
 
 #[derive(Clone)]

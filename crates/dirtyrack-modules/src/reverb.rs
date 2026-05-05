@@ -11,13 +11,12 @@ use crate::signal::{
 };
 
 pub struct ReverbModule {
-    buffers: [Vec<f32>; 4],
-    write_pos: [usize; 4],
+    buffers: [[Vec<f32>; 4]; 16],
+    write_pos: [[usize; 4]; 16],
 }
 
 impl ReverbModule {
     pub fn new(sr: f32) -> Self {
-        // Prime numbers or distinct lengths for better density
         let lengths = [
             (sr * 0.029).as_usize(),
             (sr * 0.037).as_usize(),
@@ -25,13 +24,15 @@ impl ReverbModule {
             (sr * 0.047).as_usize(),
         ];
         Self {
-            buffers: [
-                vec![0.0; lengths[0]],
-                vec![0.0; lengths[1]],
-                vec![0.0; lengths[2]],
-                vec![0.0; lengths[3]],
-            ],
-            write_pos: [0; 4],
+            buffers: std::array::from_fn(|_| {
+                [
+                    vec![0.0; lengths[0]],
+                    vec![0.0; lengths[1]],
+                    vec![0.0; lengths[2]],
+                    vec![0.0; lengths[3]],
+                ]
+            }),
+            write_pos: [[0; 4]; 16],
         }
     }
 }
@@ -53,36 +54,36 @@ impl RackDspNode for ReverbModule {
         params: &[f32],
         _ctx: &RackProcessContext,
     ) {
-        let input = inputs[0 * 16]; // Port 0 (IN)
         let size = params[0]; // Decay time
         let dry_wet = params[1];
 
-        // 1. Read from delays
-        let mut d = [0.0; 4];
-        for i in 0..4 {
-            d[i] = self.buffers[i][self.write_pos[i]];
-        }
-
-        // 2. Householder Matrix Mixing (Unitary)
-        let sum = d[0] + d[1] + d[2] + d[3];
-        let mut mixed = [0.0; 4];
-        for i in 0..4 {
-            mixed[i] = d[i] - 0.5 * sum;
-        }
-
-        // 3. Feedback & Write
-        for i in 0..4 {
-            let val = input * 0.25 + mixed[i] * size;
-            self.buffers[i][self.write_pos[i]] = val;
-            self.write_pos[i] = (self.write_pos[i] + 1) % self.buffers[i].len();
-        }
-
-        // Output (Mono sum of FDN)
-        let reverb_out = (d[0] + d[1] + d[2] + d[3]) * 0.5;
-        let final_out = input * (1.0 - dry_wet) + reverb_out * dry_wet;
-
         for v in 0..16 {
-            outputs[0 * 16 + v] = final_out;
+            let input = inputs[0 * 16 + v]; // Port 0 (IN)
+
+            // 1. Read from delays
+            let mut d = [0.0; 4];
+            for i in 0..4 {
+                d[i] = self.buffers[v][i][self.write_pos[v][i]];
+            }
+
+            // 2. Householder Matrix Mixing (Unitary)
+            let sum = d[0] + d[1] + d[2] + d[3];
+            let mut mixed = [0.0; 4];
+            for i in 0..4 {
+                mixed[i] = d[i] - 0.5 * sum;
+            }
+
+            // 3. Feedback & Write
+            for i in 0..4 {
+                let val = input * 0.25 + mixed[i] * size;
+                let len = self.buffers[v][i].len();
+                self.buffers[v][i][self.write_pos[v][i]] = val;
+                self.write_pos[v][i] = (self.write_pos[v][i] + 1) % len;
+            }
+
+            // Output (Mono sum of FDN)
+            let reverb_out = (d[0] + d[1] + d[2] + d[3]) * 0.5;
+            outputs[0 * 16 + v] = input * (1.0 - dry_wet) + reverb_out * dry_wet;
         }
     }
     fn as_any_mut(&mut self) -> &mut dyn std::any::Any {

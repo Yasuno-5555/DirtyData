@@ -16,17 +16,17 @@ use crate::signal::{
 };
 
 pub struct SequencerModule {
-    clock_detector: TriggerDetector,
-    reset_detector: TriggerDetector,
-    current_step: usize,
+    clock_detectors: [TriggerDetector; 16],
+    reset_detectors: [TriggerDetector; 16],
+    current_steps: [usize; 16],
 }
 
 impl SequencerModule {
     pub fn new(_sample_rate: f32) -> Self {
         Self {
-            clock_detector: TriggerDetector::new(),
-            reset_detector: TriggerDetector::new(),
-            current_step: 0,
+            clock_detectors: [TriggerDetector::new(); 16],
+            reset_detectors: [TriggerDetector::new(); 16],
+            current_steps: [0; 16],
         }
     }
 }
@@ -39,21 +39,21 @@ impl RackDspNode for SequencerModule {
         params: &[f32],
         _ctx: &RackProcessContext,
     ) {
-        let clock_in = inputs[0 * 16]; // Port 0 (CLOCK)
-        let reset_in = inputs[1 * 16]; // Port 1 (RESET)
-
-        if self.reset_detector.process(reset_in) {
-            self.current_step = 0;
-        }
-
-        if self.clock_detector.process(clock_in) {
-            self.current_step = (self.current_step + 1) % 8;
-        }
-
-        let step_val = params[self.current_step];
-        let gate = if step_val > 0.5 { 5.0 } else { 0.0 };
         for v in 0..16 {
-            outputs[v] = gate;
+            let clock_in = inputs[0 * 16 + v]; // Port 0 (CLOCK)
+            let reset_in = inputs[1 * 16 + v]; // Port 1 (RESET)
+
+            if self.reset_detectors[v].process(reset_in) {
+                self.current_steps[v] = 0;
+            }
+
+            if self.clock_detectors[v].process(clock_in) {
+                self.current_steps[v] = (self.current_steps[v] + 1) % 8;
+            }
+
+            let step_val = params[self.current_steps[v]];
+            let gate = if step_val > 0.5 { 5.0 } else { 0.0 };
+            outputs[0 * 16 + v] = gate;
         }
     }
     fn as_any_mut(&mut self) -> &mut dyn std::any::Any {

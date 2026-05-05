@@ -13,17 +13,17 @@ use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
 pub struct DriftModule {
-    rng: ChaCha8Rng,
-    current_val: f32,
-    target_val: f32,
+    rngs: [ChaCha8Rng; 16],
+    current_vals: [f32; 16],
+    target_vals: [f32; 16],
 }
 
 impl DriftModule {
     pub fn new(_sr: f32) -> Self {
         Self {
-            rng: ChaCha8Rng::seed_from_u64(0x99),
-            current_val: 0.0,
-            target_val: 0.0,
+            rngs: std::array::from_fn(|i| ChaCha8Rng::seed_from_u64(0x99 + i as u64)),
+            current_vals: [0.0; 16],
+            target_vals: [0.0; 16],
         }
     }
 }
@@ -39,14 +39,16 @@ impl RackDspNode for DriftModule {
         let rate = params[0]; // 0.0001 .. 0.01
         let depth = params[1]; // 0.0 .. 5.0
 
-        // Linear interpolation towards a random target
-        if (self.current_val - self.target_val).abs() < 0.01 {
-            self.target_val = self.rng.gen_range(-1.0..1.0);
+        for v in 0..16 {
+            // Linear interpolation towards a random target
+            if (self.current_vals[v] - self.target_vals[v]).abs() < 0.01 {
+                self.target_vals[v] = self.rngs[v].gen_range(-1.0..1.0);
+            }
+
+            self.current_vals[v] += (self.target_vals[v] - self.current_vals[v]) * rate;
+
+            outputs[0 * 16 + v] = self.current_vals[v] * depth;
         }
-
-        self.current_val += (self.target_val - self.current_val) * rate;
-
-        outputs[0] = self.current_val * depth;
     }
     fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
         self

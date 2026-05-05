@@ -1,11 +1,13 @@
+#![allow(unused, dead_code)]
+#![allow(clippy::all)]
+
 //! Faceplate Drawing — モジュールフェースプレート描画
 //!
 //! ノブ・ジャック・スイッチ・LEDをegui上でカスタム描画。
 
 use crate::rack::{CableAction, RackState};
 use dirtyrack_modules::signal::{
-    IntentBoundary, IntentClass, IntentMetadata, ParamKind,
-    PortDirection, SignalType,
+    IntentBoundary, IntentClass, IntentMetadata, ParamKind, PortDirection, SignalType,
 };
 use egui::{vec2, Color32, Pos2, Rect, Stroke, Ui, Vec2};
 
@@ -58,51 +60,84 @@ pub fn draw_module(
     let screen_rect = layout.screen_rect;
 
     // --- Faceplate Interaction ---
-    let handle_height = 30.0 * zoom;
+    // --- 1. Draw Faceplate Background ---
+    ui.painter()
+        .rect_filled(screen_rect, 2.0, egui::Color32::from_rgb(45, 42, 40));
+    ui.painter().rect_stroke(
+        screen_rect,
+        2.0,
+        egui::Stroke::new(1.0, egui::Color32::from_rgb(80, 75, 70)),
+    );
+
+    // --- 2. Draw Visual Handle (The "Grab" bar) ---
+    let handle_height = 18.0 * zoom;
     let handle_rect = Rect::from_min_max(
         screen_rect.left_top(),
         screen_rect.left_top() + vec2(screen_rect.width(), handle_height),
     );
 
+    // Semi-transparent background so original module art can peek through
+    ui.painter().rect_filled(
+        handle_rect,
+        0.0,
+        Color32::from_rgba_unmultiplied(30, 30, 30, 180),
+    );
+    ui.painter().line_segment(
+        [handle_rect.left_bottom(), handle_rect.right_bottom()],
+        Stroke::new(1.0 * zoom, Color32::from_gray(80)),
+    );
+
+    // --- 3. Interaction Logic ---
     let face_id = ui.make_persistent_id(("face_panel", module_idx));
+
+    // Module Name in Handle (Foreground Layer for Absolute Visibility)
+    let name_font_size = (12.0 * zoom).max(11.0);
+    ui.with_layer_id(egui::LayerId::new(egui::Order::Foreground, face_id), |ui| {
+        ui.painter().text(
+            handle_rect.center(),
+            egui::Align2::CENTER_CENTER,
+            &layout.descriptor.name.to_uppercase(),
+            egui::FontId::proportional(name_font_size),
+            Color32::WHITE,
+        );
+    });
+
     let face_resp = ui.interact(screen_rect, face_id, egui::Sense::click_and_drag());
-    
+
     if face_resp.drag_started() {
         if let Some(pos) = ui.input(|i| i.pointer.press_origin()) {
-            cable_action = Some(CableAction::StartModuleDrag {
-                module_idx,
-                press_pos: pos,
-            });
+            if handle_rect.contains(pos) {
+                cable_action = Some(CableAction::StartModuleDrag {
+                    module_idx,
+                    press_pos: pos,
+                });
+            }
         }
     }
     if face_resp.dragged() {
         if let Some(pos) = ui.input(|i| i.pointer.interact_pos()) {
-            cable_action = Some(CableAction::MoveModule {
-                module_idx,
-                pointer_pos: pos,
-            });
+            if rack.dragging_module.as_ref().map(|d| d.module_idx) == Some(module_idx) {
+                cable_action = Some(CableAction::MoveModule {
+                    module_idx,
+                    pointer_pos: pos,
+                });
+            }
         }
     }
     if face_resp.drag_stopped() {
         cable_action = Some(CableAction::CancelDrag);
     }
-    
-    if face_resp.clicked() {
+
+    if face_resp.clicked()
+        && !handle_rect.contains(ui.input(|i| i.pointer.interact_pos()).unwrap_or(Pos2::ZERO))
+    {
         let stable_id = rack.modules[module_idx].stable_id;
         let additive = ui.input(|i| i.modifiers.command || i.modifiers.shift);
-        cable_action = Some(CableAction::SelectModule { stable_id, additive });
+        cable_action = Some(CableAction::SelectModule {
+            stable_id,
+            additive,
+        });
     }
-
-    // Visual Handle Background
-    ui.painter().rect_filled(
-        handle_rect,
-        4.0 * zoom,
-        Color32::from_rgba_unmultiplied(255, 255, 255, 10),
-    );
-    ui.painter().line_segment(
-        [handle_rect.left_bottom(), handle_rect.right_bottom()],
-        Stroke::new(1.0 * zoom, Color32::from_gray(60)),
-    );
 
     // --- Right-click Context Menu ---
     face_resp.context_menu(|ui| {
@@ -115,6 +150,12 @@ pub fn draw_module(
         if rack.modules[module_idx].descriptor.id == "dirty_circuit" {
             if ui.button("🛠 Edit Circuit").clicked() {
                 cable_action = Some(CableAction::OpenCircuitEditor { module_idx });
+                ui.close_menu();
+            }
+        }
+        if rack.modules[module_idx].subpatch_path.is_some() {
+            if ui.button("📂 Edit Subpatch").clicked() {
+                cable_action = Some(CableAction::OpenSubpatch { module_idx });
                 ui.close_menu();
             }
         }
@@ -167,7 +208,9 @@ pub fn draw_module(
 
         let is_selected = rack.selection.contains(&rack.modules[module_idx].stable_id);
         let module_rect = layout.screen_rect;
-        let visual_state = visual_snapshot.modules.get(&rack.modules[module_idx].stable_id);
+        let visual_state = visual_snapshot
+            .modules
+            .get(&rack.modules[module_idx].stable_id);
 
         // Highlight if selected
         if is_selected {
@@ -181,41 +224,49 @@ pub fn draw_module(
         // --- Tier SSS: Patch MRI Overlay ---
         if mri_mode {
             if let Some(visual) = visual_state {
-            if let Some(f) = &visual.forensic {
-                let stats = &f.stats;
-                
-                // Clipping Glow (Red)
-                if stats.clipping_count > 0 {
-                    let intensity = (stats.clipping_count as f32 / 1000.0).min(1.0);
-                    painter.rect_filled(
-                        module_rect,
-                        0.0,
-                        Color32::from_rgba_unmultiplied(255, 0, 0, (intensity * 100.0) as u8),
-                    );
-                }
+                if let Some(f) = &visual.forensic {
+                    let stats = &f.stats;
 
-                // Energy Density (Orange Heat)
-                if stats.energy_delta > 0.1 {
-                    let intensity = (stats.energy_delta / 50.0).min(0.8);
-                    painter.rect_filled(
-                        module_rect,
-                        0.0,
-                        Color32::from_rgba_unmultiplied(255, 100, 0, (intensity * 80.0) as u8),
-                    );
-                }
+                    // Clipping Glow (Red)
+                    if stats.clipping_count > 0 {
+                        let intensity = (stats.clipping_count as f32 / 1000.0).min(1.0);
+                        painter.rect_filled(
+                            module_rect,
+                            0.0,
+                            Color32::from_rgba_unmultiplied(255, 0, 0, (intensity * 100.0) as u8),
+                        );
+                    }
 
-                // DC Drift (Purple Aura)
-                if stats.dc_offset.abs() > 0.1 {
-                    let intensity = (stats.dc_offset.abs() / 2.0).min(1.0);
-                    painter.rect_stroke(
-                        module_rect.expand(4.0 * zoom),
-                        4.0 * zoom,
-                        Stroke::new(2.0 * zoom, Color32::from_rgba_unmultiplied(200, 0, 255, (intensity * 150.0) as u8)),
-                    );
+                    // Energy Density (Orange Heat)
+                    if stats.energy_delta > 0.1 {
+                        let intensity = (stats.energy_delta / 50.0).min(0.8);
+                        painter.rect_filled(
+                            module_rect,
+                            0.0,
+                            Color32::from_rgba_unmultiplied(255, 100, 0, (intensity * 80.0) as u8),
+                        );
+                    }
+
+                    // DC Drift (Purple Aura)
+                    if stats.dc_offset.abs() > 0.1 {
+                        let intensity = (stats.dc_offset.abs() / 2.0).min(1.0);
+                        painter.rect_stroke(
+                            module_rect.expand(4.0 * zoom),
+                            4.0 * zoom,
+                            Stroke::new(
+                                2.0 * zoom,
+                                Color32::from_rgba_unmultiplied(
+                                    200,
+                                    0,
+                                    255,
+                                    (intensity * 150.0) as u8,
+                                ),
+                            ),
+                        );
+                    }
                 }
             }
         }
-    }
 
         // Left Accent Strip (Brand indicator)
         let strip_rect = Rect::from_min_max(
@@ -223,24 +274,6 @@ pub fn draw_module(
             screen_rect.left_top() + vec2(4.0 * zoom, screen_rect.height()),
         );
         painter.rect_filled(strip_rect, 0.0, accent);
-
-        // Module Name
-        painter.text(
-            screen_rect.center_top() + vec2(0.0, 18.0 * zoom),
-            egui::Align2::CENTER_TOP,
-            &layout.descriptor.name,
-            egui::FontId::proportional(13.0 * zoom),
-            text_color,
-        );
-
-        // Manufacturer
-        painter.text(
-            screen_rect.center_top() + vec2(0.0, 6.0 * zoom),
-            egui::Align2::CENTER_TOP,
-            &layout.descriptor.manufacturer,
-            egui::FontId::proportional(8.0 * zoom),
-            text_color.gamma_multiply(0.5),
-        );
     }
 
     // --- Remove Button ---
@@ -337,83 +370,73 @@ pub fn draw_module(
             screen_rect.top() + port_desc.position[1] * screen_rect.height(),
         );
 
-        let color = port_color(port_desc.signal_type);
         let is_output = port_desc.direction == PortDirection::Output;
+        let color = if is_output {
+            Color32::from_rgb(255, 180, 50)
+        } else {
+            Color32::from_rgb(150, 255, 50)
+        };
         let jack_radius = 8.0 * zoom;
+        let painter = ui.painter();
 
-        {
-            let painter = ui.painter();
-            painter.circle_filled(center, jack_radius + 2.0 * zoom, Color32::from_gray(20));
+        // 1. Jack Physical Body
+        painter.circle_filled(center, jack_radius + 2.0 * zoom, Color32::from_gray(20));
+        painter.circle_stroke(center, jack_radius, Stroke::new(2.0 * zoom, color));
+        painter.circle_stroke(
+            center,
+            jack_radius - 2.0 * zoom,
+            Stroke::new(1.0 * zoom, Color32::from_gray(60)),
+        );
 
-            // LED Glow based on voltage
-            let stable_id = rack.modules[module_idx].stable_id;
-            if let Some(vs) = visual_snapshot.modules.get(&stable_id) {
-                let voltage = if is_output {
-                    let idx = layout
-                        .descriptor
-                        .ports
-                        .iter()
-                        .filter(|p| p.direction == PortDirection::Output)
-                        .position(|p| p.name == port_desc.name)
-                        .unwrap_or(0);
-                    vs.outputs.get(idx).copied().unwrap_or(0.0)
-                } else {
-                    let idx = layout
-                        .descriptor
-                        .ports
-                        .iter()
-                        .filter(|p| p.direction == PortDirection::Input)
-                        .position(|p| p.name == port_desc.name)
-                        .unwrap_or(0);
-                    vs.inputs.get(idx).copied().unwrap_or(0.0)
-                };
-
-                let intensity = (voltage.abs() * 0.2).min(1.0);
-                if intensity > 0.05 {
-                    painter.circle_filled(
-                        center,
-                        jack_radius * 0.6,
-                        color.gamma_multiply(intensity),
-                    );
-                }
+        // 2. LED Glow (Signal Activity)
+        let stable_id = rack.modules[module_idx].stable_id;
+        if let Some(vs) = visual_snapshot.modules.get(&stable_id) {
+            let voltage = if is_output {
+                let idx = layout
+                    .descriptor
+                    .ports
+                    .iter()
+                    .filter(|p| p.direction == PortDirection::Output)
+                    .position(|p| p.name == port_desc.name)
+                    .unwrap_or(0);
+                vs.outputs.get(idx).copied().unwrap_or(0.0)
+            } else {
+                let idx = layout
+                    .descriptor
+                    .ports
+                    .iter()
+                    .filter(|p| p.direction == PortDirection::Input)
+                    .position(|p| p.name == port_desc.name)
+                    .unwrap_or(0);
+                vs.inputs.get(idx).copied().unwrap_or(0.0)
+            };
+            let intensity = (voltage.abs() * 0.3).min(1.0);
+            if intensity > 0.02 {
+                ui.painter().circle_filled(
+                    center,
+                    jack_radius * 0.5,
+                    color.gamma_multiply(intensity),
+                );
             }
-
-            painter.circle_stroke(center, jack_radius, Stroke::new(2.0 * zoom, color));
-            painter.circle_stroke(
-                center,
-                jack_radius - 2.0 * zoom,
-                Stroke::new(1.0 * zoom, Color32::from_gray(60)),
-            );
-            painter.text(
-                center + vec2(0.0, -12.0 * zoom),
-                egui::Align2::CENTER_BOTTOM,
-                &port_desc.name,
-                egui::FontId::proportional(7.0 * zoom),
-                color,
-            );
         }
 
-        // Interaction
+        // 4. Interaction
         let port_rect = Rect::from_center_size(center, vec2(jack_radius * 2.5, jack_radius * 2.5));
         let port_id = ui.make_persistent_id((module_idx, &port_desc.name));
-        let response = ui.interact(port_rect, port_id, egui::Sense::click_and_drag());
 
-        // --- Right-click Menu for Module ---
-        response.context_menu(|ui| {
-            if ui.button("Bypass").clicked() {
-                cable_action = Some(CableAction::ToggleBypass { module_idx });
-                ui.close_menu();
-            }
-            if ui.button("Randomize").clicked() {
-                cable_action = Some(CableAction::RandomizeParams { module_idx });
-                ui.close_menu();
-            }
-            ui.separator();
-            if ui.button("Remove Module").clicked() {
-                cable_action = Some(CableAction::RemoveModule { module_idx });
-                ui.close_menu();
-            }
+        // 3. High-Visibility Label (Foreground Overlay Layer)
+        let font_size = (10.0 * zoom).max(9.0);
+        ui.with_layer_id(egui::LayerId::new(egui::Order::Foreground, port_id), |ui| {
+            ui.painter().text(
+                center + vec2(0.0, -14.0 * zoom),
+                egui::Align2::CENTER_BOTTOM,
+                &port_desc.name.to_uppercase(),
+                egui::FontId::proportional(font_size),
+                Color32::WHITE,
+            );
         });
+
+        let response = ui.interact(port_rect, port_id, egui::Sense::click_and_drag());
 
         if response.hovered() {
             ui.painter().circle_stroke(
@@ -422,6 +445,13 @@ pub fn draw_module(
                 Stroke::new(1.5 * zoom, Color32::WHITE),
             );
         }
+
+        response.context_menu(|ui| {
+            if ui.button("Bypass").clicked() {
+                cable_action = Some(CableAction::ToggleBypass { module_idx });
+                ui.close_menu();
+            }
+        });
 
         if response.clicked_by(egui::PointerButton::Secondary) {
             cable_action = Some(CableAction::DisconnectPort {
@@ -438,9 +468,6 @@ pub fn draw_module(
             });
         }
 
-        // ここが重要：ドラッグが終了したとき、どのポートの上であっても、
-        // 最後にドラッグしていたポート（開始元）が drag_stopped を検知する。
-        // その瞬間のポインタ位置を送信して、lib.rs 側でヒットテストを行う。
         if response.drag_stopped() && rack.dragging_cable.is_some() {
             if let Some(pos) = ui.input(|i| i.pointer.interact_pos()) {
                 cable_action = Some(CableAction::EndDrag { pointer_pos: pos });
@@ -513,32 +540,49 @@ fn draw_knob(
     // Interaction
     let knob_rect = Rect::from_center_size(center, vec2(radius * 2.5, radius * 2.5));
     let knob_id = ui.make_persistent_id(("knob", module_idx, name));
-    let response = ui.interact(knob_rect, knob_id, egui::Sense::drag().union(egui::Sense::click()));
+    let response = ui.interact(
+        knob_rect,
+        knob_id,
+        egui::Sense::drag().union(egui::Sense::click()),
+    );
 
     // --- Right-click Mapping Menu ---
     response.context_menu(|ui| {
         ui.label(egui::RichText::new(format!("Map {}", name)).strong());
         ui.separator();
-        
-        egui::ScrollArea::vertical().max_height(200.0).show(ui, |ui| {
-            for (m_idx, m) in rack.modules.iter().enumerate() {
-                ui.menu_button(format!("{}: {}", m_idx, m.descriptor.name), |ui| {
-                    for (p_idx, p) in m.descriptor.ports.iter().filter(|p| p.direction == PortDirection::Output).enumerate() {
-                        if ui.button(&*p.name).clicked() {
-                            action = Some(CableAction::AddModMapping {
-                                target_module_idx: module_idx,
-                                param_name: name.to_string(),
-                                src_stable_id: m.stable_id,
-                                src_port_idx: p_idx,
-                            });
-                            ui.close_menu();
-                        }
-                    }
-                });
-            }
-        });
 
-        if !rack.modules[module_idx].param_modulations.get(name).map(|v| v.is_empty()).unwrap_or(true) {
+        egui::ScrollArea::vertical()
+            .max_height(200.0)
+            .show(ui, |ui| {
+                for (m_idx, m) in rack.modules.iter().enumerate() {
+                    ui.menu_button(format!("{}: {}", m_idx, m.descriptor.name), |ui| {
+                        for (p_idx, p) in m
+                            .descriptor
+                            .ports
+                            .iter()
+                            .filter(|p| p.direction == PortDirection::Output)
+                            .enumerate()
+                        {
+                            if ui.button(&*p.name).clicked() {
+                                action = Some(CableAction::AddModMapping {
+                                    target_module_idx: module_idx,
+                                    param_name: name.to_string(),
+                                    src_stable_id: m.stable_id,
+                                    src_port_idx: p_idx,
+                                });
+                                ui.close_menu();
+                            }
+                        }
+                    });
+                }
+            });
+
+        if !rack.modules[module_idx]
+            .param_modulations
+            .get(name)
+            .map(|v| v.is_empty())
+            .unwrap_or(true)
+        {
             ui.separator();
             if ui.button("🗑 Clear Mappings").clicked() {
                 action = Some(CableAction::ClearModMappings {
@@ -550,7 +594,9 @@ fn draw_knob(
         }
     });
 
-    if response.double_clicked() || (response.clicked() && ui.input(|i| i.modifiers.command || i.modifiers.ctrl)) {
+    if response.double_clicked()
+        || (response.clicked() && ui.input(|i| i.modifiers.command || i.modifiers.ctrl))
+    {
         action = Some(CableAction::ParamUpdate {
             module_idx,
             name: name.to_string(),
@@ -565,7 +611,11 @@ fn draw_knob(
             intent: IntentBoundary::Begin,
         });
     } else if response.dragged() {
-        let sensitivity = if ui.input(|i| i.modifiers.shift) { 0.0005 } else { 0.005 };
+        let sensitivity = if ui.input(|i| i.modifiers.shift) {
+            0.0005
+        } else {
+            0.005
+        };
         let delta = -response.drag_delta().y * sensitivity;
         let v = (current + delta * (max - min)).clamp(min, max);
         action = Some(CableAction::ParamUpdate {
@@ -592,11 +642,14 @@ fn draw_knob(
     response.on_hover_ui(|ui| {
         ui.horizontal(|ui| {
             ui.label(format!("{}:", name));
-            let unit = rack.modules[module_idx].descriptor.params.iter()
+            let unit = rack.modules[module_idx]
+                .descriptor
+                .params
+                .iter()
                 .find(|p| p.name == name)
                 .map(|p| p.unit)
                 .unwrap_or("");
-            
+
             // Check for snapshot diff
             let stable_id = rack.modules[module_idx].stable_id;
             let mut diff_str = String::new();
@@ -617,7 +670,7 @@ fn draw_knob(
     // Draw knob
     {
         let painter = ui.painter();
-        
+
         // --- Divergence Glow ---
         let stable_id = rack.modules[module_idx].stable_id;
         if let Some(snap_a) = rack.snapshots.get("A") {
@@ -625,7 +678,11 @@ fn draw_knob(
                 if let Some(&old_val) = mod_snap.get(name) {
                     if (old_val - current).abs() > 0.001 {
                         // Parameter has drifted! Draw an orange glow
-                        painter.circle_stroke(center, radius + 2.0 * zoom, Stroke::new(2.0 * zoom, Color32::from_rgb(255, 165, 0)));
+                        painter.circle_stroke(
+                            center,
+                            radius + 2.0 * zoom,
+                            Stroke::new(2.0 * zoom, Color32::from_rgb(255, 165, 0)),
+                        );
                     }
                 }
             }
@@ -676,7 +733,6 @@ fn draw_switch(ui: &mut Ui, center: Pos2, zoom: f32, _positions: u8) {
     let handle = Rect::from_center_size(center + vec2(0.0, -3.0 * zoom), vec2(8.0, 4.0) * zoom);
     painter.rect_filled(handle, 1.0 * zoom, Color32::from_rgb(180, 180, 180));
 }
-
 
 fn draw_button(painter: &egui::Painter, center: Pos2, zoom: f32) {
     painter.circle_filled(center, 6.0 * zoom, Color32::from_rgb(180, 40, 40));

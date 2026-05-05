@@ -48,19 +48,19 @@ impl RackDspNode for BiquadModule {
 
         for v in 0..16 {
             let input = inputs[0 * 16 + v];
-            
+
             let v3 = input - self.s2[v];
             let v1 = a1 * self.s1[v] + a2 * v3;
             let v2 = self.s2[v] + a2 * self.s1[v] + a3 * v3;
-            
+
             self.s1[v] = 2.0 * v1 - self.s1[v];
             self.s2[v] = 2.0 * v2 - self.s2[v];
 
             let out = match mode {
-                0 => v2,               // LP
-                1 => input - k*v1 - v2, // HP
-                2 => v1,               // BP
-                _ => input - k*v1,      // Notch
+                0 => v2,                  // LP
+                1 => input - k * v1 - v2, // HP
+                2 => v1,                  // BP
+                _ => input - k * v1,      // Notch
             };
 
             outputs[0 * 16 + v] = out;

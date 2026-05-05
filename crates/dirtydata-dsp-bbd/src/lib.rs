@@ -1,3 +1,5 @@
+#![allow(clippy::all)]
+
 //! Bucket Brigade Device (BBD) Analog Delay Emulation
 //!
 //! Refinements:

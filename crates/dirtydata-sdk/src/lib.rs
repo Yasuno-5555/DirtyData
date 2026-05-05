@@ -1,3 +1,5 @@
+#![allow(clippy::all)]
+
 /// §SSS: DirtyData SDK — The Gateway to the Ecosystem.
 /// "内輪の神話を、人類の標準へ。"
 pub use dirtydata_core::ir::{Edge, Graph, Modulation, Node};

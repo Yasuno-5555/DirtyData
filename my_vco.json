@@ -1,0 +1,77 @@
+{
+  "version": "0.1.0",
+  "engine_hash": "CLI_GEN",
+  "modules": [
+    {
+      "id": "dirty_vco",
+      "stable_id": 1,
+      "params": {},
+      "param_modulations": {},
+      "hp_position": 0.0,
+      "row": 0,
+      "bypassed": false,
+      "dsp_state": null,
+      "alias": null,
+      "subpatch_path": null
+    },
+    {
+      "id": "subpatch_out",
+      "stable_id": 2001,
+      "params": {},
+      "param_modulations": {},
+      "hp_position": 100.0,
+      "row": 0,
+      "bypassed": false,
+      "dsp_state": null,
+      "alias": "OUT_0",
+      "subpatch_path": null
+    },
+    {
+      "id": "subpatch_out",
+      "stable_id": 2002,
+      "params": {},
+      "param_modulations": {},
+      "hp_position": 100.0,
+      "row": 0,
+      "bypassed": false,
+      "dsp_state": null,
+      "alias": "OUT_1",
+      "subpatch_path": null
+    }
+  ],
+  "cables": [
+    {
+      "from_stable_id": 1,
+      "from_port": "out",
+      "to_stable_id": 2001,
+      "to_port": "IN",
+      "color": [
+        255,
+        100,
+        50,
+        255
+      ],
+      "channels": 1
+    },
+    {
+      "from_stable_id": 1,
+      "from_port": "out",
+      "to_stable_id": 2002,
+      "to_port": "IN",
+      "color": [
+        200,
+        200,
+        200,
+        255
+      ],
+      "channels": 1
+    }
+  ],
+  "project_seed": 12345,
+  "aging": 0.0,
+  "cable_opacity": 0.8,
+  "cable_tension": 0.15,
+  "causality_log": [],
+  "snapshots": {},
+  "aliases": {}
+}

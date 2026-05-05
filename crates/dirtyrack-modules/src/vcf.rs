@@ -5,8 +5,8 @@
 //! - パッド近似を用いた高速・決定論的 tanh。
 
 use crate::signal::{
-    ParamDescriptor, ParamKind, ParamResponse, PortDescriptor, PortDirection,
-    RackDspNode, RackProcessContext, SignalType, SmoothedParam, VcfMode,
+    ParamDescriptor, ParamKind, ParamResponse, PortDescriptor, PortDirection, RackDspNode,
+    RackProcessContext, SignalType, SmoothedParam, VcfMode,
 };
 use serde::{Deserialize, Serialize};
 

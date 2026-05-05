@@ -3,9 +3,9 @@
 //! 抵抗、コンデンサ、真空管等を配置し、ノード間を配線。
 //! MNAソルバー用の構成データを出力。
 
-use egui::{Color32, Pos2, Stroke, Vec2};
-use dirtydata_dsp_circuit::{CircuitElement, NodeId, Material};
+use dirtydata_dsp_circuit::{CircuitElement, Material, NodeId};
 use dirtyrack_modules::circuit::CircuitDefinition;
+use egui::{Color32, Pos2, Stroke, Vec2};
 
 pub struct CircuitEditor {
     pub open: bool,
@@ -39,7 +39,9 @@ impl CircuitEditor {
 
     pub fn show(&mut self, ctx: &egui::Context) -> Option<CircuitDefinition> {
         let mut result = None;
-        if !self.open { return None; }
+        if !self.open {
+            return None;
+        }
 
         let mut open = self.open;
         let mut apply_clicked = false;
@@ -53,22 +55,41 @@ impl CircuitEditor {
                         ui.heading("Components");
                         if ui.button("➕ Resistor").clicked() {
                             self.add_element(CircuitElement::Resistor {
-                                a: NodeId(0), b: NodeId(0), value: 1000.0, tolerance: 0.01, material: Material::MetalFilm
+                                a: NodeId(0),
+                                b: NodeId(0),
+                                value: 1000.0,
+                                tolerance: 0.01,
+                                material: Material::MetalFilm,
                             });
                         }
                         if ui.button("➕ Capacitor").clicked() {
                             self.add_element(CircuitElement::Capacitor {
-                                a: NodeId(0), b: NodeId(0), value: 1e-7, tolerance: 0.1, state_v: 0.0, material: Material::Ceramic
+                                a: NodeId(0),
+                                b: NodeId(0),
+                                value: 1e-7,
+                                tolerance: 0.1,
+                                state_v: 0.0,
+                                material: Material::Ceramic,
                             });
                         }
                         if ui.button("➕ Diode").clicked() {
                             self.add_element(CircuitElement::Diode {
-                                a: NodeId(0), k: NodeId(0), material: Material::Silicon, is: 1e-12
+                                a: NodeId(0),
+                                k: NodeId(0),
+                                material: Material::Silicon,
+                                is: 1e-12,
                             });
                         }
                         if ui.button("➕ Tube (Triode)").clicked() {
                             self.add_element(CircuitElement::Triode {
-                                g: NodeId(0), k: NodeId(0), p: NodeId(0), mu: 100.0, kg1: 1060.0, kp: 600.0, kvb: 300.0, ex: 1.4
+                                g: NodeId(0),
+                                k: NodeId(0),
+                                p: NodeId(0),
+                                mu: 100.0,
+                                kg1: 1060.0,
+                                kp: 600.0,
+                                kvb: 300.0,
+                                ex: 1.4,
                             });
                         }
                         ui.separator();
@@ -80,9 +101,10 @@ impl CircuitEditor {
                     ui.separator();
 
                     // --- Canvas Area ---
-                    let (rect, response) = ui.allocate_at_least(ui.available_size(), egui::Sense::click_and_drag());
+                    let (rect, response) =
+                        ui.allocate_at_least(ui.available_size(), egui::Sense::click_and_drag());
                     self.hover_pos = response.hover_pos();
-                    
+
                     let painter = ui.painter_at(rect);
                     painter.rect_filled(rect, 0.0, Color32::from_rgb(20, 25, 20));
 
@@ -90,12 +112,18 @@ impl CircuitEditor {
                     let grid_size = 20.0 * self.zoom;
                     let mut x = rect.left() + self.pan.x % grid_size;
                     while x < rect.right() {
-                        painter.line_segment([Pos2::new(x, rect.top()), Pos2::new(x, rect.bottom())], Stroke::new(1.0, Color32::from_gray(30)));
+                        painter.line_segment(
+                            [Pos2::new(x, rect.top()), Pos2::new(x, rect.bottom())],
+                            Stroke::new(1.0, Color32::from_gray(30)),
+                        );
                         x += grid_size;
                     }
                     let mut y = rect.top() + self.pan.y % grid_size;
                     while y < rect.bottom() {
-                        painter.line_segment([Pos2::new(rect.left(), y), Pos2::new(rect.right(), y)], Stroke::new(1.0, Color32::from_gray(30)));
+                        painter.line_segment(
+                            [Pos2::new(rect.left(), y), Pos2::new(rect.right(), y)],
+                            Stroke::new(1.0, Color32::from_gray(30)),
+                        );
                         y += grid_size;
                     }
 
@@ -105,7 +133,13 @@ impl CircuitEditor {
                     }
 
                     // Draw elements (dummy for now)
-                    ui.painter().text(rect.center(), egui::Align2::CENTER_CENTER, "Circuit Canvas - WIP\n(Schematic capture logic to be implemented)", egui::FontId::proportional(20.0), Color32::GRAY);
+                    ui.painter().text(
+                        rect.center(),
+                        egui::Align2::CENTER_CENTER,
+                        "Circuit Canvas - WIP\n(Schematic capture logic to be implemented)",
+                        egui::FontId::proportional(20.0),
+                        Color32::GRAY,
+                    );
                 });
             });
 

@@ -4,10 +4,7 @@
 //! - MIDIイベントをサンプル精度でCVに変換。
 //! - 16チャンネル（1V/Oct, Gate, Vel, Trig）を1本のケーブルに多重化して出力。
 
-use crate::signal::{
-    PortDescriptor, PortDirection, RackDspNode, RackProcessContext,
-    SignalType,
-};
+use crate::signal::{PortDescriptor, PortDirection, RackDspNode, RackProcessContext, SignalType};
 
 #[derive(Debug, Clone, Copy)]
 struct Voice {

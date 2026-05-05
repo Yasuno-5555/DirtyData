@@ -3,9 +3,10 @@
 //! 内蔵モジュールも SDK の定義に従うことで、サードパーティ製との完全な互換性を保証。
 
 pub use dirtyrack_sdk::{
-    f32x4, EngineStats, ForensicData, ImperfectionData, ModuleDescriptor as BuiltinModuleDescriptor,
-    ModuleVisuals, PanelTexture, ParamDescriptor, ParamKind, ParamResponse, PortDescriptor,
-    PortDirection, RackDspNode, RackProcessContext, SignalType,
+    f32x4, EngineStats, ForensicData, ImperfectionData,
+    ModuleDescriptor as BuiltinModuleDescriptor, ModuleVisuals, PanelTexture, ParamDescriptor,
+    ParamKind, ParamResponse, PortDescriptor, PortDirection, RackDspNode, RackProcessContext,
+    SignalType,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -103,7 +104,7 @@ pub fn voct_to_hz(voct: f32) -> f32 {
 }
 
 /// トリガー検出ユーティリティ
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
 pub struct TriggerDetector {
     last_val: f32,
 }
@@ -120,7 +121,7 @@ impl TriggerDetector {
 }
 
 /// ゲート追跡
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
 pub struct GateTracker {
     last_val: f32,
 }
@@ -142,6 +143,7 @@ impl GateTracker {
 }
 
 /// パラメータ平滑化ユーティリティ
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct SmoothedParam {
     current: f32,
     target: f32,

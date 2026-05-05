@@ -11,6 +11,9 @@ pub fn draw_browser(
     rack: &mut RackState,
     browser_open: &mut bool,
     search_query: &mut String,
+    pending_spawn_pos: &mut Option<egui::Pos2>,
+    zoom: f32,
+    pan: egui::Vec2,
 ) {
     egui::SidePanel::left("module_browser")
         .resizable(true)
@@ -96,7 +99,15 @@ pub fn draw_browser(
                         });
 
                         if ui.button("+ Add to Rack").clicked() {
-                            rack.add_module(std::sync::Arc::clone(descriptor));
+                            if let Some(pos) = pending_spawn_pos.take() {
+                                let world_pos = (pos.to_vec2() - pan) / zoom;
+                                rack.add_module_at(
+                                    std::sync::Arc::clone(descriptor),
+                                    world_pos.to_pos2(),
+                                );
+                            } else {
+                                rack.add_module(std::sync::Arc::clone(descriptor));
+                            }
                         }
                     });
                     ui.add_space(2.0);

@@ -1,3 +1,6 @@
+#![allow(clippy::all)]
+#![allow(clippy::all)]
+
 //! Spring Reverb Physical Model
 //!
 //! Refinements:

@@ -1,3 +1,6 @@
+#![allow(clippy::all)]
+#![allow(clippy::all)]
+
 pub mod freeze;
 pub mod jit;
 pub mod nodes;

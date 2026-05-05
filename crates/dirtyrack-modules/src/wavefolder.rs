@@ -25,19 +25,21 @@ impl RackDspNode for WavefolderModule {
         params: &[f32],
         _ctx: &RackProcessContext,
     ) {
-        let input = inputs[0] + inputs[1]; // IN + CV
         let fold_gain = params[0]; // 1.0 .. 10.0
         let bias = params[1]; // -5.0 .. 5.0
 
-        let mut x = (input + bias) * fold_gain;
+        for v in 0..16 {
+            let input = inputs[0 * 16 + v] + inputs[1 * 16 + v]; // IN + CV
+            let mut x = (input + bias) * fold_gain;
 
-        // Recursive folding (sin-based for smooth transitions)
-        // 4 stages of folding
-        for _ in 0..4 {
-            x = 5.0 * libm::sinf(x * (std::f32::consts::PI / 5.0));
+            // Recursive folding (sin-based for smooth transitions)
+            // 4 stages of folding
+            for _ in 0..4 {
+                x = 5.0 * libm::sinf(x * (std::f32::consts::PI / 5.0));
+            }
+
+            outputs[0 * 16 + v] = x;
         }
-
-        outputs[0] = x;
     }
     fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
         self

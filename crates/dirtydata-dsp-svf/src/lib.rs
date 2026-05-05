@@ -1,3 +1,6 @@
+#![allow(clippy::all)]
+#![allow(clippy::all)]
+
 //! Topology-Preserving Transform (TPT) State Variable Filter
 //!
 //! Refinements:

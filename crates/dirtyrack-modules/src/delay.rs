@@ -18,8 +18,8 @@ struct DelayStateData {
 }
 
 pub struct DelayModule {
-    buffer: Vec<f32>,
-    write_pos: usize,
+    buffers: [Vec<f32>; 16],
+    write_pos: [usize; 16],
     #[allow(dead_code)]
     sample_rate: f32,
 }
@@ -29,8 +29,8 @@ impl DelayModule {
         // Max 2 seconds delay
         let size = (sample_rate * 2.0) as usize;
         Self {
-            buffer: vec![0.0; size],
-            write_pos: 0,
+            buffers: std::array::from_fn(|_| vec![0.0; size]),
+            write_pos: [0; 16],
             sample_rate,
         }
     }
@@ -44,29 +44,31 @@ impl RackDspNode for DelayModule {
         params: &[f32],
         _ctx: &RackProcessContext,
     ) {
-        let input = inputs[0 * 16]; // Port 0 (IN)
-        let time_cv = inputs[1 * 16]; // Port 1 (TIME_CV)
         let time_knob = params[0]; // 0.0 .. 1.0 (0 .. 2s)
         let feedback = params[1].clamp(0.0, 0.99);
         let dry_wet = params[2].clamp(0.0, 1.0);
 
-        let total_time = (time_knob + time_cv * 0.1).clamp(0.0, 1.0);
-        let delay_samples = (total_time * (self.buffer.len() as f32 - 1.0)).max(1.0);
-
-        // Read position with linear interpolation for bit-identical determinism
-        let read_pos = (self.write_pos as f32 - delay_samples + self.buffer.len() as f32)
-            % self.buffer.len() as f32;
-        let idx0 = read_pos as usize;
-        let idx1 = (idx0 + 1) % self.buffer.len();
-        let frac = read_pos - idx0 as f32;
-
-        let delayed = self.buffer[idx0] * (1.0 - frac) + self.buffer[idx1] * frac;
-
-        // Write back with feedback
-        self.buffer[self.write_pos] = input + delayed * feedback;
-        self.write_pos = (self.write_pos + 1) % self.buffer.len();
-
         for v in 0..16 {
+            let input = inputs[0 * 16 + v]; // Port 0 (IN)
+            let time_cv = inputs[1 * 16 + v]; // Port 1 (TIME_CV)
+
+            let total_time = (time_knob + time_cv * 0.1).clamp(0.0, 1.0);
+            let buffer_len = self.buffers[v].len();
+            let delay_samples = (total_time * (buffer_len as f32 - 1.0)).max(1.0);
+
+            // Read position with linear interpolation for bit-identical determinism
+            let read_pos =
+                (self.write_pos[v] as f32 - delay_samples + buffer_len as f32) % buffer_len as f32;
+            let idx0 = read_pos as usize;
+            let idx1 = (idx0 + 1) % buffer_len;
+            let frac = read_pos - idx0 as f32;
+
+            let delayed = self.buffers[v][idx0] * (1.0 - frac) + self.buffers[v][idx1] * frac;
+
+            // Write back with feedback
+            self.buffers[v][self.write_pos[v]] = input + delayed * feedback;
+            self.write_pos[v] = (self.write_pos[v] + 1) % buffer_len;
+
             outputs[0 * 16 + v] = input * (1.0 - dry_wet) + delayed * dry_wet;
         }
     }

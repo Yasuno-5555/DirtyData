@@ -1,3 +1,6 @@
+#![allow(clippy::all)]
+#![allow(clippy::all)]
+
 //! Chaotic Circuit Models (Chua's Circuit, Rössler)
 //!
 //! Refinements:

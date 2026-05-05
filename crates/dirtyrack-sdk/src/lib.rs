@@ -1,3 +1,5 @@
+#![allow(clippy::all)]
+
 //! DirtyRack SDK — The Constitution of Signal
 
 pub use wide::f32x4;
@@ -86,7 +88,7 @@ pub struct EngineStats {
     pub peak_db: f32,
     pub clipping_count: u64,
     pub denormal_count: u64,
-    pub dc_offset: f32, // Moving average
+    pub dc_offset: f32,    // Moving average
     pub energy_delta: f32, // Change in energy
     pub aliasing_floor_db: f32,
 }

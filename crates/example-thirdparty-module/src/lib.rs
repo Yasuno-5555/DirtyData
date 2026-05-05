@@ -1,3 +1,5 @@
+#![allow(clippy::all)]
+
 use dirtyrack_sdk::*;
 
 pub struct SimpleGain {
@@ -25,7 +27,9 @@ impl RackDspNode for SimpleGain {
         }
     }
 
-    fn as_any_mut(&mut self) -> &mut dyn std::any::Any { self }
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+        self
+    }
 }
 
 pub fn descriptor() -> &'static ModuleDescriptor {

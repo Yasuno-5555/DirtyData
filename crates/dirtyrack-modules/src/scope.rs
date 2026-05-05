@@ -1,11 +1,10 @@
 //! Forensic Scope Module — 鑑識用オシロスコープ
-//! 
+//!
 //! 16ボイスすべての信号を個別に、または重ねて表示し、
 //! ボイスごとの不完全さ（ドリフト等）による挙動の差異を視覚化する。
 
 use crate::signal::{
-    ForensicData, PortDescriptor, PortDirection,
-    RackDspNode, RackProcessContext, SignalType,
+    ForensicData, PortDescriptor, PortDirection, RackDspNode, RackProcessContext, SignalType,
 };
 use std::collections::VecDeque;
 
@@ -50,7 +49,7 @@ impl RackDspNode for ScopeModule {
             }
             trace.push(sample);
         }
-        
+
         let mut data = ForensicData::default();
         data.internal_state_summary = format!("Buffer: {} samples", self.max_len);
         data.signal_trace = Some(trace);

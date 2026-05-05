@@ -1,0 +1,52 @@
+{
+  "version": "0.1.0",
+  "engine_hash": "CLI_GEN",
+  "modules": [
+    {
+      "id": "dirty_vcf",
+      "stable_id": 101,
+      "params": {},
+      "param_modulations": {},
+      "hp_position": 60.0,
+      "row": 0,
+      "bypassed": false,
+      "dsp_state": null,
+      "alias": null,
+      "subpatch_path": null
+    },
+    {
+      "id": "subpatch_in",
+      "stable_id": 1101,
+      "params": {},
+      "param_modulations": {},
+      "hp_position": -10.0,
+      "row": 0,
+      "bypassed": false,
+      "dsp_state": null,
+      "alias": "IN_0",
+      "subpatch_path": null
+    }
+  ],
+  "cables": [
+    {
+      "from_stable_id": 1101,
+      "from_port": "OUT",
+      "to_stable_id": 101,
+      "to_port": "in",
+      "color": [
+        200,
+        200,
+        200,
+        255
+      ],
+      "channels": 1
+    }
+  ],
+  "project_seed": 12345,
+  "aging": 0.0,
+  "cable_opacity": 0.8,
+  "cable_tension": 0.15,
+  "causality_log": [],
+  "snapshots": {},
+  "aliases": {}
+}

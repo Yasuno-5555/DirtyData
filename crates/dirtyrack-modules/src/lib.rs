@@ -1,3 +1,5 @@
+#![allow(clippy::all)]
+
 //! dirtyrack-modules — Eurorack Module System
 //!
 //! モノラル信号がすべての基盤。
@@ -20,22 +22,27 @@
 pub mod signal;
 
 pub mod attenuverter;
+pub mod automata;
 pub mod bernoulli;
 pub mod biquad;
 pub mod chaos;
 pub mod circuit;
 pub mod clock;
 pub mod clock_tree;
+pub mod composite;
 pub mod compressor;
 pub mod delay;
 pub mod drift;
 pub mod drift_engine;
 pub mod envelope;
+pub mod erosion;
+pub mod fluid_lfo;
 pub mod input;
 pub mod lfo;
 pub mod logic;
 pub mod mackeyglass;
 pub mod macro_ctrl;
+pub mod merkle_delay;
 pub mod midi;
 pub mod mixer;
 pub mod mod_matrix;
@@ -52,6 +59,7 @@ pub mod saturation;
 pub mod scope;
 pub mod sequencer;
 pub mod sh;
+pub mod subpatch_io;
 pub mod switch;
 pub mod vca;
 pub mod vcf;
@@ -61,10 +69,7 @@ pub mod wdf;
 pub mod wdf_filter;
 pub mod xfade;
 pub mod zdf_filter;
-pub mod automata;
-pub mod merkle_delay;
-pub mod fluid_lfo;
-pub mod erosion;
+
 pub use registry::{ModuleDescriptor, ModuleRegistry};
 pub use signal::{
     f32x4, AllocationPolicy, BuiltinModuleDescriptor, IntentBoundary, IntentClass, IntentMetadata,

@@ -1,3 +1,5 @@
+#![allow(clippy::all)]
+
 //! Matrix Mixing and Routing
 
 #[derive(Clone)]

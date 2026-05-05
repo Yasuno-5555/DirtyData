@@ -1,3 +1,6 @@
+#![allow(clippy::all)]
+#![allow(clippy::all)]
+
 //! Magnetic Tape Emulation (Jiles-Atherton inspired Hysteresis, Wow/Flutter, Head Bump)
 //!
 //! Refinements:

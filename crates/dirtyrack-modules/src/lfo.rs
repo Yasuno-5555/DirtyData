@@ -11,14 +11,14 @@ use crate::signal::{
 };
 
 pub struct LfoModule {
-    phase: f32,
+    phases: [f32; 16],
     sample_rate: f32,
 }
 
 impl LfoModule {
     pub fn new(sample_rate: f32) -> Self {
         Self {
-            phase: 0.0,
+            phases: [0.0; 16],
             sample_rate,
         }
     }
@@ -37,12 +37,14 @@ impl RackDspNode for LfoModule {
         let amt = params[2];
 
         let freq = 0.01 * 2.0_f32.powf(rate * 10.0);
-        self.phase = (self.phase + freq / self.sample_rate).fract();
-
-        let sin_val = (self.phase * 2.0 * std::f32::consts::PI).sin() * amt * 5.0;
-        let sq_val = (if self.phase < 0.5 { 1.0 } else { -1.0 }) * amt * 5.0;
+        let dt = freq / self.sample_rate;
 
         for v in 0..16 {
+            self.phases[v] = (self.phases[v] + dt).fract();
+
+            let sin_val = (self.phases[v] * 2.0 * std::f32::consts::PI).sin() * amt * 5.0;
+            let sq_val = (if self.phases[v] < 0.5 { 1.0 } else { -1.0 }) * amt * 5.0;
+
             outputs[0 * 16 + v] = sin_val; // TRI/SINE Port 0
             outputs[1 * 16 + v] = sq_val; // SQUARE Port 1
         }

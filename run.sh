@@ -1,5 +1,5 @@
 #!/bin/bash
-# DirtyData Launcher for macOS / Linux
-# Usage: ./run.sh [--demo-mutation]
+# DirtyRack Launcher
+# Usage: ./run.sh [args]
 
-cargo run -p dirtydata-gui -- "$@"
+cargo run --release -p dirtyrack-gui -- "$@"

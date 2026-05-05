@@ -1,0 +1,81 @@
+{
+  "version": "0.1.0",
+  "engine_hash": "CLI_GEN",
+  "modules": [
+    {
+      "id": "dirty_output",
+      "stable_id": 100,
+      "params": {},
+      "param_modulations": {},
+      "hp_position": 30.0,
+      "row": 0,
+      "bypassed": false,
+      "dsp_state": null,
+      "alias": null,
+      "subpatch_path": null
+    },
+    {
+      "id": "composite",
+      "stable_id": 101,
+      "params": {},
+      "param_modulations": {},
+      "hp_position": 0.0,
+      "row": 0,
+      "bypassed": false,
+      "dsp_state": null,
+      "alias": "my_filter",
+      "subpatch_path": "my_filter.json"
+    },
+    {
+      "id": "composite",
+      "stable_id": 102,
+      "params": {},
+      "param_modulations": {},
+      "hp_position": 0.0,
+      "row": 0,
+      "bypassed": false,
+      "dsp_state": null,
+      "alias": "vco_sub",
+      "subpatch_path": "my_vco.json"
+    }
+  ],
+  "cables": [
+    {
+      "from_stable_id": 102,
+      "from_port": "OUT_0",
+      "to_stable_id": 100,
+      "to_port": "in_l",
+      "color": [
+        255,
+        100,
+        50,
+        255
+      ],
+      "channels": 1
+    },
+    {
+      "from_stable_id": 102,
+      "from_port": "OUT_1",
+      "to_stable_id": 101,
+      "to_port": "IN_0",
+      "color": [
+        200,
+        200,
+        200,
+        255
+      ],
+      "channels": 1
+    }
+  ],
+  "project_seed": 12345,
+  "aging": 0.0,
+  "cable_opacity": 0.8,
+  "cable_tension": 0.15,
+  "causality_log": [],
+  "snapshots": {},
+  "aliases": {
+    "my_filter": 101,
+    "my_vco": 102,
+    "vco_sub": 102
+  }
+}

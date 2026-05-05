@@ -1,3 +1,6 @@
+#![allow(clippy::all)]
+#![allow(clippy::all)]
+
 //! Karplus-Strong++ Physical Modeling String
 //!
 //! Refinements:

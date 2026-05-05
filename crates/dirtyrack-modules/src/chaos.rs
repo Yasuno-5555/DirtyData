@@ -11,18 +11,18 @@ use crate::signal::{
 };
 
 pub struct ChaosModule {
-    x: f32,
-    y: f32,
-    z: f32,
+    x: [f32; 16],
+    y: [f32; 16],
+    z: [f32; 16],
     dt: f32,
 }
 
 impl ChaosModule {
     pub fn new(_sr: f32) -> Self {
         Self {
-            x: 0.1,
-            y: 0.0,
-            z: 0.0,
+            x: std::array::from_fn(|i| 0.1 + i as f32 * 0.001),
+            y: [0.0; 16],
+            z: [0.0; 16],
             dt: 0.001, // 固定ステップで決定論を維持
         }
     }
@@ -41,23 +41,19 @@ impl RackDspNode for ChaosModule {
         let beta = params[2]; // 8.0/3.0
         let speed = params[3]; // 1.0
 
-        let dx = sigma * (self.y - self.x);
-        let dy = self.x * (rho - self.z) - self.y;
-        let dz = self.x * self.y - beta * self.z;
-
-        self.x += dx * self.dt * speed;
-        self.y += dy * self.dt * speed;
-        self.z += dz * self.dt * speed;
-
-        // Scaling to Eurorack levels (+/- 5V)
-        let x_out = self.x * 0.2;
-        let y_out = self.y * 0.2;
-        let z_out = (self.z - 25.0) * 0.2;
-
         for v in 0..16 {
-            outputs[0 * 16 + v] = x_out;
-            outputs[1 * 16 + v] = y_out;
-            outputs[2 * 16 + v] = z_out;
+            let dx = sigma * (self.y[v] - self.x[v]);
+            let dy = self.x[v] * (rho - self.z[v]) - self.y[v];
+            let dz = self.x[v] * self.y[v] - beta * self.z[v];
+
+            self.x[v] += dx * self.dt * speed;
+            self.y[v] += dy * self.dt * speed;
+            self.z[v] += dz * self.dt * speed;
+
+            // Scaling to Eurorack levels (+/- 5V)
+            outputs[0 * 16 + v] = self.x[v] * 0.2;
+            outputs[1 * 16 + v] = self.y[v] * 0.2;
+            outputs[2 * 16 + v] = (self.z[v] - 25.0) * 0.2;
         }
     }
     fn as_any_mut(&mut self) -> &mut dyn std::any::Any {

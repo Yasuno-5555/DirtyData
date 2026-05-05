@@ -1,3 +1,5 @@
+#![allow(clippy::all)]
+
 //! Rack State & Rail Drawing
 //!
 //! ラックの状態管理とレール描画。
@@ -43,6 +45,7 @@ pub struct ModuleInstance {
     pub row: usize,
     pub bypassed: bool,
     pub alias: Option<String>,
+    pub subpatch_path: Option<String>,
 }
 
 impl ModuleInstance {
@@ -75,6 +78,7 @@ impl ModuleInstance {
             row: 0,
             bypassed: false,
             alias: None,
+            subpatch_path: None,
         }
     }
 
@@ -165,6 +169,14 @@ pub enum CableAction {
         module_idx: usize,
         definition: dirtyrack_modules::circuit::CircuitDefinition,
     },
+    OpenSubpatch {
+        module_idx: usize,
+    },
+    ReturnToParent,
+    AddModuleAt {
+        id: String,
+        world_pos: Pos2,
+    },
     CancelDrag,
 }
 
@@ -191,6 +203,7 @@ pub struct SerializableModule {
     pub bypassed: bool,
     pub dsp_state: Option<Vec<u8>>,
     pub alias: Option<String>,
+    pub subpatch_path: Option<String>,
 }
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
@@ -232,14 +245,16 @@ pub struct RackState {
     pub schema_version: u32,
     /// Snapshots for Diff Viewer [snapshot_name] -> [module_stable_id] -> [param_name] -> value
     pub snapshots: BTreeMap<String, BTreeMap<u64, BTreeMap<String, f32>>>,
-    pub snapshot_blend: f32, // 0.0 = A, 1.0 = B
+    pub snapshot_blend: f32,             // 0.0 = A, 1.0 = B
     pub blend_targets: (String, String), // (SnapA, SnapB)
-    pub selection: Vec<u64>, // List of stable_ids
-    pub box_select_start: Option<Pos2>, // World position
+    pub selection: Vec<u64>,             // List of stable_ids
+    pub box_select_start: Option<Pos2>,  // World position
     pub clipboard: Option<SerializableRack>,
     pub history: VecDeque<SerializableRack>,
     pub causality_log: Vec<CausalityEvent>,
     pub aliases: BTreeMap<String, u64>,
+    /// Hierarchical navigation: (parent_rack, entering_module_idx)
+    pub parent_rack_stack: Vec<(SerializableRack, usize)>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -274,6 +289,7 @@ impl RackState {
             history: VecDeque::with_capacity(MAX_HISTORY),
             causality_log: Vec::new(),
             aliases: BTreeMap::new(),
+            parent_rack_stack: Vec::new(),
         }
     }
 
@@ -309,17 +325,27 @@ impl RackState {
     pub fn apply_blend(&mut self) {
         let (name_a, name_b) = &self.blend_targets;
         let t = self.snapshot_blend;
-        
-        let snap_a = if let Some(s) = self.snapshots.get(name_a) { s } else { return; };
-        let snap_b = if let Some(s) = self.snapshots.get(name_b) { s } else { return; };
+
+        let snap_a = if let Some(s) = self.snapshots.get(name_a) {
+            s
+        } else {
+            return;
+        };
+        let snap_b = if let Some(s) = self.snapshots.get(name_b) {
+            s
+        } else {
+            return;
+        };
 
         for m in &mut self.modules {
-            if let (Some(params_a), Some(params_b)) = (snap_a.get(&m.stable_id), snap_b.get(&m.stable_id)) {
+            if let (Some(params_a), Some(params_b)) =
+                (snap_a.get(&m.stable_id), snap_b.get(&m.stable_id))
+            {
                 for (name, val_a) in params_a {
                     if let Some(val_b) = params_b.get(name) {
                         let blended = val_a * (1.0 - t) + val_b * t;
                         m.params.insert(name.clone(), blended);
-                        
+
                         // Notify engine
                         self.event_queue.push(PatchEvent::ParamChanged {
                             stable_id: m.stable_id,
@@ -343,29 +369,46 @@ impl RackState {
         SerializableRack {
             version: env!("CARGO_PKG_VERSION").to_string(),
             engine_hash: "TODO_CALC_DSP_HASH".to_string(),
-            modules: self.modules.iter().map(|m| SerializableModule {
-                id: m.descriptor.id.to_string(),
-                stable_id: m.stable_id,
-                params: m.params.clone(),
-                param_modulations: m.param_modulations.clone(),
-                hp_position: m.hp_position,
-                row: m.row,
-                bypassed: m.bypassed,
-                dsp_state: m.dsp.extract_state(),
-                alias: m.alias.clone(),
-            }).collect(),
-            cables: self.cables.iter().map(|c| {
-                let from_stable = self.modules.get(c.from_module).map(|m| m.stable_id).unwrap_or(0);
-                let to_stable = self.modules.get(c.to_module).map(|m| m.stable_id).unwrap_or(0);
-                SerializableCable {
-                    from_stable_id: from_stable,
-                    from_port: c.from_port.clone(),
-                    to_stable_id: to_stable,
-                    to_port: c.to_port.clone(),
-                    color: [c.color.r(), c.color.g(), c.color.b(), c.color.a()],
-                    channels: c.channels,
-                }
-            }).collect(),
+            modules: self
+                .modules
+                .iter()
+                .map(|m| SerializableModule {
+                    id: m.descriptor.id.to_string(),
+                    stable_id: m.stable_id,
+                    params: m.params.clone(),
+                    param_modulations: m.param_modulations.clone(),
+                    hp_position: m.hp_position,
+                    row: m.row,
+                    bypassed: m.bypassed,
+                    dsp_state: m.dsp.extract_state(),
+                    alias: m.alias.clone(),
+                    subpatch_path: m.subpatch_path.clone(),
+                })
+                .collect(),
+            cables: self
+                .cables
+                .iter()
+                .map(|c| {
+                    let from_stable = self
+                        .modules
+                        .get(c.from_module)
+                        .map(|m| m.stable_id)
+                        .unwrap_or(0);
+                    let to_stable = self
+                        .modules
+                        .get(c.to_module)
+                        .map(|m| m.stable_id)
+                        .unwrap_or(0);
+                    SerializableCable {
+                        from_stable_id: from_stable,
+                        from_port: c.from_port.clone(),
+                        to_stable_id: to_stable,
+                        to_port: c.to_port.clone(),
+                        color: [c.color.r(), c.color.g(), c.color.b(), c.color.a()],
+                        channels: c.channels,
+                    }
+                })
+                .collect(),
             project_seed: self.project_seed,
             aging: self.aging,
             cable_opacity: self.cable_opacity,
@@ -376,7 +419,11 @@ impl RackState {
         }
     }
 
-    pub fn from_serializable(serial: SerializableRack, registry: &ModuleRegistry, sample_rate: f32) -> Self {
+    pub fn from_serializable(
+        serial: SerializableRack,
+        registry: &ModuleRegistry,
+        sample_rate: f32,
+    ) -> Self {
         let mut modules = Vec::new();
         let mut max_stable_id = 0;
 
@@ -393,6 +440,7 @@ impl RackState {
                     inst.dsp.inject_state(&state);
                 }
                 inst.alias = sm.alias.clone();
+                inst.subpatch_path = sm.subpatch_path.clone();
                 if inst.stable_id > max_stable_id {
                     max_stable_id = inst.stable_id;
                 }
@@ -410,13 +458,21 @@ impl RackState {
 
         let mut cables = Vec::new();
         for sc in serial.cables {
-            if let (Some(&from_idx), Some(&to_idx)) = (stable_to_idx.get(&sc.from_stable_id), stable_to_idx.get(&sc.to_stable_id)) {
+            if let (Some(&from_idx), Some(&to_idx)) = (
+                stable_to_idx.get(&sc.from_stable_id),
+                stable_to_idx.get(&sc.to_stable_id),
+            ) {
                 cables.push(Cable {
                     from_module: from_idx,
                     from_port: sc.from_port,
                     to_module: to_idx,
                     to_port: sc.to_port,
-                    color: Color32::from_rgba_unmultiplied(sc.color[0], sc.color[1], sc.color[2], sc.color[3]),
+                    color: Color32::from_rgba_unmultiplied(
+                        sc.color[0],
+                        sc.color[1],
+                        sc.color[2],
+                        sc.color[3],
+                    ),
                     channels: sc.channels,
                 });
             }
@@ -443,12 +499,19 @@ impl RackState {
             history: VecDeque::with_capacity(MAX_HISTORY),
             causality_log: serial.causality_log,
             aliases: serial.aliases,
+            parent_rack_stack: Vec::new(),
         }
     }
 
-    pub fn handle_action(&mut self, action: CableAction, registry: &ModuleRegistry, zoom: f32, pan: Vec2) {
+    pub fn handle_action(
+        &mut self,
+        action: CableAction,
+        registry: &ModuleRegistry,
+        zoom: f32,
+        pan: Vec2,
+    ) {
         match action {
-// ... (I'll add resolve_overlaps here after the handle_action block or inside it)
+            // ... (I'll add resolve_overlaps here after the handle_action block or inside it)
             CableAction::StartDrag {
                 module_idx,
                 port_name,
@@ -467,7 +530,7 @@ impl RackState {
 
                     if let Some(cable_idx) = cable_to_pickup {
                         let cable = self.cables.remove(cable_idx);
-                        
+
                         // Notify engine of disconnection
                         self.event_queue.push(PatchEvent::CableDisconnected {
                             to_id: self.modules[cable.to_module].stable_id,
@@ -507,26 +570,26 @@ impl RackState {
                             };
 
                             if src_mod != dst_mod {
-                            let color = drag.color.unwrap_or_else(|| {
-                                crate::cable::CABLE_COLORS
-                                    [self.cables.len() % crate::cable::CABLE_COLORS.len()]
-                            });
-                            let channels = self.modules[src_mod]
-                                .descriptor
-                                .ports
-                                .iter()
-                                .find(|p| p.name == src_port)
-                                .map(|p| p.max_channels)
-                                .unwrap_or(1);
+                                let color = drag.color.unwrap_or_else(|| {
+                                    crate::cable::CABLE_COLORS
+                                        [self.cables.len() % crate::cable::CABLE_COLORS.len()]
+                                });
+                                let channels = self.modules[src_mod]
+                                    .descriptor
+                                    .ports
+                                    .iter()
+                                    .find(|p| p.name == src_port)
+                                    .map(|p| p.max_channels)
+                                    .unwrap_or(1);
 
-                            self.cables.push(Cable {
-                                from_module: src_mod,
-                                from_port: src_port.clone(),
-                                to_module: dst_mod,
-                                to_port: dst_port.clone(),
-                                color,
-                                channels,
-                            });
+                                self.cables.push(Cable {
+                                    from_module: src_mod,
+                                    from_port: src_port.clone(),
+                                    to_module: dst_mod,
+                                    to_port: dst_port.clone(),
+                                    color,
+                                    channels,
+                                });
                                 self.event_queue.push(PatchEvent::CableConnected {
                                     from_id: self.modules[src_mod].stable_id,
                                     from_port: src_port,
@@ -569,7 +632,10 @@ impl RackState {
                         self.causality_log.push(CausalityEvent {
                             timestamp: 0.0, // Should use real time if possible
                             event_type: "PARAM".to_string(),
-                            description: format!("Module {} param '{}' -> {:.3}", m.descriptor.name, name, value),
+                            description: format!(
+                                "Module {} param '{}' -> {:.3}",
+                                m.descriptor.name, name, value
+                            ),
                         });
                         self.event_queue.push(PatchEvent::ParamChanged {
                             stable_id: m.stable_id,
@@ -598,7 +664,7 @@ impl RackState {
             } => {
                 if let Some(drag) = &self.dragging_module {
                     let target_world_pos = (pointer_pos + drag.offset - pan) / zoom;
-                    
+
                     let new_hp = (target_world_pos.x / HP_PIXELS).round();
                     let new_row_f = target_world_pos.y / (RACK_HEIGHT + 20.0);
                     let new_row = new_row_f.round().max(0.0) as usize;
@@ -614,7 +680,9 @@ impl RackState {
                         if self.selection.contains(&dragging_stable_id) {
                             // Move entire selection
                             for m_id in &self.selection {
-                                if let Some(m) = self.modules.iter_mut().find(|m| m.stable_id == *m_id) {
+                                if let Some(m) =
+                                    self.modules.iter_mut().find(|m| m.stable_id == *m_id)
+                                {
                                     m.hp_position += delta_hp;
                                     let r = m.row as i32 + delta_row;
                                     m.row = r.max(0) as usize;
@@ -653,7 +721,7 @@ impl RackState {
                         let h = (seed.wrapping_add(i as u64)).wrapping_mul(0x517cc1b727220a95);
                         let h = h ^ (h >> 32);
                         let hash = (h as f64 / u64::MAX as f64) as f32;
-                        
+
                         let val = p.min + hash.abs() * (p.max - p.min);
                         m.params.insert(p.name.to_string(), val);
                         self.event_queue.push(PatchEvent::ParamChanged {
@@ -680,7 +748,12 @@ impl RackState {
                     m.dsp.reset();
                 }
             }
-            CableAction::AddModMapping { target_module_idx, param_name, src_stable_id, src_port_idx } => {
+            CableAction::AddModMapping {
+                target_module_idx,
+                param_name,
+                src_stable_id,
+                src_port_idx,
+            } => {
                 if let Some(m) = self.modules.get_mut(target_module_idx) {
                     let bindings = m.param_modulations.entry(param_name).or_insert(Vec::new());
                     bindings.push(ModBinding {
@@ -697,7 +770,10 @@ impl RackState {
                     });
                 }
             }
-            CableAction::ClearModMappings { module_idx, param_name } => {
+            CableAction::ClearModMappings {
+                module_idx,
+                param_name,
+            } => {
                 if let Some(m) = self.modules.get_mut(module_idx) {
                     m.param_modulations.remove(&param_name);
                     self.event_queue.push(PatchEvent::ParamChanged {
@@ -709,7 +785,10 @@ impl RackState {
                 }
             }
             CableAction::InspectForensics { .. } => {}
-            CableAction::SelectModule { stable_id, additive } => {
+            CableAction::SelectModule {
+                stable_id,
+                additive,
+            } => {
                 if additive {
                     if let Some(pos) = self.selection.iter().position(|&id| id == stable_id) {
                         self.selection.remove(pos);
@@ -722,19 +801,26 @@ impl RackState {
                 }
             }
             CableAction::CopySelection => {
-                if self.selection.is_empty() { return; }
-                
+                if self.selection.is_empty() {
+                    return;
+                }
+
                 // Get selected modules
-                let selected_modules: Vec<_> = self.modules.iter()
+                let selected_modules: Vec<_> = self
+                    .modules
+                    .iter()
                     .enumerate()
                     .filter(|(_, m)| self.selection.contains(&m.stable_id))
                     .collect();
-                
-                let min_hp = selected_modules.iter().map(|(_, m)| m.hp_position).fold(f32::INFINITY, f32::min);
-                
+
+                let min_hp = selected_modules
+                    .iter()
+                    .map(|(_, m)| m.hp_position)
+                    .fold(f32::INFINITY, f32::min);
+
                 let mut serial_modules = Vec::new();
                 let mut old_to_new_idx = BTreeMap::new();
-                
+
                 for (i, (old_idx, m)) in selected_modules.iter().enumerate() {
                     serial_modules.push(SerializableModule {
                         id: m.descriptor.id.to_string(),
@@ -746,13 +832,17 @@ impl RackState {
                         bypassed: m.bypassed,
                         dsp_state: m.dsp.extract_state(),
                         alias: m.alias.clone(),
+                        subpatch_path: m.subpatch_path.clone(),
                     });
                     old_to_new_idx.insert(*old_idx, i);
                 }
-                
+
                 let mut serial_cables = Vec::new();
                 for c in &self.cables {
-                    if let (Some(&from_new), Some(&to_new)) = (old_to_new_idx.get(&c.from_module), old_to_new_idx.get(&c.to_module)) {
+                    if let (Some(&from_new), Some(&to_new)) = (
+                        old_to_new_idx.get(&c.from_module),
+                        old_to_new_idx.get(&c.to_module),
+                    ) {
                         serial_cables.push(SerializableCable {
                             from_stable_id: selected_modules[from_new].1.stable_id,
                             from_port: c.from_port.clone(),
@@ -763,7 +853,7 @@ impl RackState {
                         });
                     }
                 }
-                
+
                 self.clipboard = Some(SerializableRack {
                     version: env!("CARGO_PKG_VERSION").to_string(),
                     engine_hash: String::new(),
@@ -781,12 +871,12 @@ impl RackState {
             CableAction::PasteSelection { pointer_pos } => {
                 if let Some(serial) = self.clipboard.clone() {
                     let base_hp = (pointer_pos.x / HP_PIXELS).round();
-                    
+
                     let mut new_modules = Vec::new();
                     let start_module_idx = self.modules.len();
-                    
+
                     let mut old_stable_to_new_idx = BTreeMap::new();
-                    
+
                     for (i, sm) in serial.modules.iter().enumerate() {
                         if let Some(desc) = registry.find(&sm.id) {
                             let mut inst = ModuleInstance::new(desc, self.sample_rate);
@@ -802,20 +892,25 @@ impl RackState {
                             new_modules.push(inst);
                         }
                     }
-                    
+
                     for c in serial.cables {
-                        if let (Some(&from_idx), Some(&to_idx)) = (old_stable_to_new_idx.get(&c.from_stable_id), old_stable_to_new_idx.get(&c.to_stable_id)) {
+                        if let (Some(&from_idx), Some(&to_idx)) = (
+                            old_stable_to_new_idx.get(&c.from_stable_id),
+                            old_stable_to_new_idx.get(&c.to_stable_id),
+                        ) {
                             self.cables.push(Cable {
                                 from_module: from_idx,
                                 from_port: c.from_port,
                                 to_module: to_idx,
                                 to_port: c.to_port,
-                                color: Color32::from_rgba_unmultiplied(c.color[0], c.color[1], c.color[2], c.color[3]),
+                                color: Color32::from_rgba_unmultiplied(
+                                    c.color[0], c.color[1], c.color[2], c.color[3],
+                                ),
                                 channels: c.channels,
                             });
                         }
                     }
-                    
+
                     self.modules.extend(new_modules);
                     // Rebuild will happen after event processing
                 }
@@ -826,60 +921,145 @@ impl RackState {
             }
             CableAction::OpenCircuitEditor { .. } => {}
             CableAction::UpdateCircuit { .. } => {}
-        }
-    }
+            CableAction::OpenSubpatch { module_idx } => {
+                if let Some(m) = self.modules.get(module_idx) {
+                    if let Some(path_str) = &m.subpatch_path {
+                        let path = std::path::Path::new(path_str);
+                        if path.exists() {
+                            if let Ok(json) = std::fs::read_to_string(path) {
+                                if let Ok(sub_serial) =
+                                    serde_json::from_str::<SerializableRack>(&json)
+                                {
+                                    // Save current state
+                                    let current_serial = self.to_serializable();
+                                    self.parent_rack_stack.push((current_serial, module_idx));
 
-    pub fn resolve_overlaps(&mut self, dragging_idx: usize) {
-        let row = self.modules[dragging_idx].row;
-        
-        // Sort modules in this row by position
-        let mut row_indices: Vec<usize> = (0..self.modules.len())
-            .filter(|&i| self.modules[i].row == row)
-            .collect();
-        
-        row_indices.sort_by(|&a, &b| self.modules[a].hp_position.partial_cmp(&self.modules[b].hp_position).unwrap_or(std::cmp::Ordering::Equal));
-
-        // Recursive push (Simplified iterative version)
-        for _ in 0..self.modules.len() {
-            let mut changed = false;
-            for i in 0..row_indices.len() {
-                for j in 0..row_indices.len() {
-                    if i == j { continue; }
-                    let idx_a = row_indices[i];
-                    let idx_b = row_indices[j];
-                    
-                    let a_start = self.modules[idx_a].hp_position;
-                    let a_end = a_start + self.modules[idx_a].descriptor.hp_width as f32;
-                    let b_start = self.modules[idx_b].hp_position;
-                    let b_end = b_start + self.modules[idx_b].descriptor.hp_width as f32;
-
-                    if a_start < b_end && a_end > b_start {
-                        // Overlap!
-                        // Push to the right
-                        if i < j {
-                            self.modules[idx_b].hp_position = a_end;
-                            changed = true;
-                        } else {
-                            // If i > j, it means idx_b is to the left of idx_a but they overlap
-                            // We should push idx_a to the right of idx_b
-                            self.modules[idx_a].hp_position = b_end;
-                            changed = true;
+                                    // Load subpatch
+                                    let new_state = Self::from_serializable(
+                                        sub_serial,
+                                        registry,
+                                        self.sample_rate,
+                                    );
+                                    let stack =
+                                        std::mem::replace(&mut self.parent_rack_stack, Vec::new());
+                                    *self = new_state;
+                                    self.parent_rack_stack = stack;
+                                }
+                            }
                         }
                     }
                 }
             }
-            if !changed { break; }
+            CableAction::ReturnToParent => {
+                if let Some((parent_serial, _mod_idx)) = self.parent_rack_stack.pop() {
+                    let new_state =
+                        Self::from_serializable(parent_serial, registry, self.sample_rate);
+                    let stack = std::mem::replace(&mut self.parent_rack_stack, Vec::new());
+                    *self = new_state;
+                    self.parent_rack_stack = stack;
+                }
+            }
+            CableAction::AddModuleAt { id, world_pos } => {
+                if let Some(desc) = registry.find(&id) {
+                    self.add_module_at(desc, world_pos);
+                }
+            }
+        }
+    }
+
+    pub fn resolve_overlaps(&mut self, dragging_idx: usize) {
+        if dragging_idx >= self.modules.len() {
+            return;
         }
 
-        // Ensure no module is at HP < 0
-        // Find the min HP and shift everything if it's < 0
-        let mut min_hp: f32 = 0.0;
-        for &idx in &row_indices {
-            min_hp = min_hp.min(self.modules[idx].hp_position);
-        }
-        if min_hp < 0.0 {
+        let target_row = self.modules[dragging_idx].row;
+        let dragging_id = self.modules[dragging_idx].stable_id;
+
+        // 1. Collect modules in this row and sort them by HP position
+        let mut row_indices: Vec<usize> = (0..self.modules.len())
+            .filter(|&i| self.modules[i].row == target_row)
+            .collect();
+
+        // Sort primarily by position, but keep dragging module's intent
+        row_indices.sort_by(|&a, &b| {
+            self.modules[a]
+                .hp_position
+                .partial_cmp(&self.modules[b].hp_position)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
+
+        let mut changed = true;
+        let mut iterations = 0;
+        const MAX_ITER: usize = 10; // Fewer iterations needed for proportional resolution
+
+        while changed && iterations < MAX_ITER {
+            changed = false;
+            iterations += 1;
+
+            for i in 0..row_indices.len() {
+                for j in 0..row_indices.len() {
+                    if i == j {
+                        continue;
+                    }
+
+                    let idx_a = row_indices[i];
+                    let idx_b = row_indices[j];
+
+                    let width_a = self.modules[idx_a].descriptor.hp_width as f32;
+                    let width_b = self.modules[idx_b].descriptor.hp_width as f32;
+                    let pos_a = self.modules[idx_a].hp_position;
+                    let pos_b = self.modules[idx_b].hp_position;
+
+                    // Check for overlap
+                    if pos_a < pos_b + width_b && pos_a + width_a > pos_b {
+                        // Collision detected!
+                        let overlap = if pos_a < pos_b {
+                            (pos_a + width_a) - pos_b
+                        } else {
+                            (pos_b + width_b) - pos_a
+                        };
+
+                        if overlap > 0.001 {
+                            // Determine who pushes whom
+                            let pusher_is_a = self.modules[idx_a].stable_id == dragging_id;
+                            let pusher_is_b = self.modules[idx_b].stable_id == dragging_id;
+
+                            if pusher_is_a {
+                                // A is dragging, push B
+                                if pos_a < pos_b {
+                                    self.modules[idx_b].hp_position += overlap;
+                                } else {
+                                    self.modules[idx_b].hp_position -= overlap;
+                                }
+                                changed = true;
+                            } else if pusher_is_b {
+                                // B is dragging, push A
+                                if pos_b < pos_a {
+                                    self.modules[idx_a].hp_position += overlap;
+                                } else {
+                                    self.modules[idx_a].hp_position -= overlap;
+                                }
+                                changed = true;
+                            } else {
+                                // Neither is dragging, push based on relative order
+                                if i < j {
+                                    self.modules[idx_b].hp_position += overlap;
+                                } else {
+                                    self.modules[idx_a].hp_position += overlap;
+                                }
+                                changed = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Bounds check after each iteration
             for &idx in &row_indices {
-                self.modules[idx].hp_position -= min_hp;
+                if self.modules[idx].hp_position < 0.0 {
+                    self.modules[idx].hp_position = 0.0;
+                    changed = true;
+                }
             }
         }
     }
@@ -920,23 +1100,34 @@ impl RackState {
         ))
     }
 
-    pub fn add_module(&mut self, descriptor: Arc<ModuleDescriptor>) {
+    pub fn add_module_at(&mut self, descriptor: Arc<ModuleDescriptor>, world_pos: Pos2) {
         let mut inst = ModuleInstance::new(Arc::clone(&descriptor), self.sample_rate);
-        let mut next_hp: f32 = 0.0;
-        for m in &self.modules {
-            let end = m.hp_position + m.descriptor.hp_width as f32;
-            if end > next_hp {
-                next_hp = end;
-            }
-        }
-        inst.hp_position = next_hp;
+        inst.hp_position = (world_pos.x / HP_PIXELS).round();
+        inst.row = (world_pos.y / (RACK_HEIGHT + 20.0)).round().max(0.0) as usize;
+
         self.event_queue.push(PatchEvent::ModuleAdded {
             id: descriptor.id.to_string(),
             stable_id: inst.stable_id,
             ancestry: None,
             zone: descriptor.zone,
         });
+
         self.modules.push(inst);
+        let new_idx = self.modules.len() - 1;
+        self.resolve_overlaps(new_idx);
+    }
+
+    pub fn add_module(&mut self, descriptor: Arc<ModuleDescriptor>) {
+        let mut next_hp: f32 = 0.0;
+        for m in &self.modules {
+            if m.row == 0 {
+                let end = m.hp_position + m.descriptor.hp_width as f32;
+                if end > next_hp {
+                    next_hp = end;
+                }
+            }
+        }
+        self.add_module_at(descriptor, Pos2::new(next_hp * HP_PIXELS, 0.0));
     }
 
     pub fn remove_module(&mut self, idx: usize) {
@@ -1026,8 +1217,11 @@ impl RackState {
             let m = &self.modules[idx];
             node_ids.push(m.stable_id);
             node_type_ids.push(m.descriptor.id.to_string());
+
+            // Optimization: If the module is a heavy circuit, we should ideally reuse it.
+            // For now, ensure we only create what is absolutely necessary.
             new_nodes.push((m.descriptor.factory)(self.sample_rate));
-            
+
             let mut p_vals = Vec::new();
             for p_desc in &m.descriptor.params {
                 p_vals.push(*m.params.get(p_desc.name).unwrap_or(&p_desc.default));
@@ -1129,8 +1323,10 @@ pub fn draw_rack_rails(painter: &Painter, viewport: Rect, zoom: f32, pan: Vec2) 
         );
         let screw_spacing = 1.0 * HP_PIXELS * zoom; // Every 1HP
         let mut x = pan.x % screw_spacing;
-        if x < 0.0 { x += screw_spacing; }
-        
+        if x < 0.0 {
+            x += screw_spacing;
+        }
+
         while x < viewport.width() {
             for rail_y in [
                 base_y + rail_h * 0.5,
@@ -1138,8 +1334,8 @@ pub fn draw_rack_rails(painter: &Painter, viewport: Rect, zoom: f32, pan: Vec2) 
             ] {
                 // Screw hole
                 painter.circle_filled(Pos2::new(x, rail_y), 1.5 * zoom, Color32::from_gray(10));
-                
-                // Only draw actual screws every 4HP or something? 
+
+                // Only draw actual screws every 4HP or something?
                 // In VCV it depends on the module, but the rails have holes everywhere.
                 if (x / screw_spacing).round() as i32 % 2 == 0 {
                     painter.circle_filled(Pos2::new(x, rail_y), 2.5 * zoom, screw_color);

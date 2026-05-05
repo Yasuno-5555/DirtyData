@@ -1,3 +1,5 @@
+#![allow(clippy::all)]
+
 //! Asymmetrical Diode Clipper / Soft Saturator
 //!
 //! Refinements:

@@ -3,8 +3,8 @@
 //! 簡易な2Dグリッド上で流体力学をシミュレートし、その運動をモジュレーション信号として出力する。
 
 use crate::signal::{
-    ParamDescriptor, ParamKind, ParamResponse, PortDescriptor, PortDirection,
-    RackDspNode, RackProcessContext, SignalType, SmoothedParam,
+    ParamDescriptor, ParamKind, ParamResponse, PortDescriptor, PortDirection, RackDspNode,
+    RackProcessContext, SignalType, SmoothedParam,
 };
 
 const GRID_SIZE: usize = 16;
@@ -50,29 +50,54 @@ impl FluidLfoModule {
 
     // Simplified solver steps (Based on Jos Stam's Stable Fluids)
     fn add_source(x: &mut [f32], s: &[f32], dt: f32) {
-        for i in 0..N*N {
+        for i in 0..N * N {
             x[i] += dt * s[i];
         }
     }
 
     fn set_bnd(b: usize, x: &mut [f32]) {
         for i in 1..=GRID_SIZE {
-            x[Self::ix(0, i)] = if b == 1 { -x[Self::ix(1, i)] } else { x[Self::ix(1, i)] };
-            x[Self::ix(GRID_SIZE + 1, i)] = if b == 1 { -x[Self::ix(GRID_SIZE, i)] } else { x[Self::ix(GRID_SIZE, i)] };
-            x[Self::ix(i, 0)] = if b == 2 { -x[Self::ix(i, 1)] } else { x[Self::ix(i, 1)] };
-            x[Self::ix(i, GRID_SIZE + 1)] = if b == 2 { -x[Self::ix(i, GRID_SIZE)] } else { x[Self::ix(i, GRID_SIZE)] };
+            x[Self::ix(0, i)] = if b == 1 {
+                -x[Self::ix(1, i)]
+            } else {
+                x[Self::ix(1, i)]
+            };
+            x[Self::ix(GRID_SIZE + 1, i)] = if b == 1 {
+                -x[Self::ix(GRID_SIZE, i)]
+            } else {
+                x[Self::ix(GRID_SIZE, i)]
+            };
+            x[Self::ix(i, 0)] = if b == 2 {
+                -x[Self::ix(i, 1)]
+            } else {
+                x[Self::ix(i, 1)]
+            };
+            x[Self::ix(i, GRID_SIZE + 1)] = if b == 2 {
+                -x[Self::ix(i, GRID_SIZE)]
+            } else {
+                x[Self::ix(i, GRID_SIZE)]
+            };
         }
         x[Self::ix(0, 0)] = 0.5 * (x[Self::ix(1, 0)] + x[Self::ix(0, 1)]);
-        x[Self::ix(0, GRID_SIZE + 1)] = 0.5 * (x[Self::ix(1, GRID_SIZE + 1)] + x[Self::ix(0, GRID_SIZE)]);
-        x[Self::ix(GRID_SIZE + 1, 0)] = 0.5 * (x[Self::ix(GRID_SIZE, 0)] + x[Self::ix(GRID_SIZE + 1, 1)]);
-        x[Self::ix(GRID_SIZE + 1, GRID_SIZE + 1)] = 0.5 * (x[Self::ix(GRID_SIZE, GRID_SIZE + 1)] + x[Self::ix(GRID_SIZE + 1, GRID_SIZE)]);
+        x[Self::ix(0, GRID_SIZE + 1)] =
+            0.5 * (x[Self::ix(1, GRID_SIZE + 1)] + x[Self::ix(0, GRID_SIZE)]);
+        x[Self::ix(GRID_SIZE + 1, 0)] =
+            0.5 * (x[Self::ix(GRID_SIZE, 0)] + x[Self::ix(GRID_SIZE + 1, 1)]);
+        x[Self::ix(GRID_SIZE + 1, GRID_SIZE + 1)] =
+            0.5 * (x[Self::ix(GRID_SIZE, GRID_SIZE + 1)] + x[Self::ix(GRID_SIZE + 1, GRID_SIZE)]);
     }
 
     fn lin_solve(b: usize, x: &mut [f32], x0: &[f32], a: f32, c: f32) {
-        for _k in 0..4 { // Fewer iterations for performance
+        for _k in 0..4 {
+            // Fewer iterations for performance
             for i in 1..=GRID_SIZE {
                 for j in 1..=GRID_SIZE {
-                    x[Self::ix(i, j)] = (x0[Self::ix(i, j)] + a * (x[Self::ix(i - 1, j)] + x[Self::ix(i + 1, j)] + x[Self::ix(i, j - 1)] + x[Self::ix(i, j + 1)])) / c;
+                    x[Self::ix(i, j)] = (x0[Self::ix(i, j)]
+                        + a * (x[Self::ix(i - 1, j)]
+                            + x[Self::ix(i + 1, j)]
+                            + x[Self::ix(i, j - 1)]
+                            + x[Self::ix(i, j + 1)]))
+                        / c;
                 }
             }
             Self::set_bnd(b, x);
@@ -90,20 +115,28 @@ impl FluidLfoModule {
             for j in 1..=GRID_SIZE {
                 let mut x = i as f32 - dt0 * u[Self::ix(i, j)];
                 let mut y = j as f32 - dt0 * v[Self::ix(i, j)];
-                if x < 0.5 { x = 0.5; }
-                if x > GRID_SIZE as f32 + 0.5 { x = GRID_SIZE as f32 + 0.5; }
+                if x < 0.5 {
+                    x = 0.5;
+                }
+                if x > GRID_SIZE as f32 + 0.5 {
+                    x = GRID_SIZE as f32 + 0.5;
+                }
                 let i0 = x as usize;
                 let i1 = i0 + 1;
-                if y < 0.5 { y = 0.5; }
-                if y > GRID_SIZE as f32 + 0.5 { y = GRID_SIZE as f32 + 0.5; }
+                if y < 0.5 {
+                    y = 0.5;
+                }
+                if y > GRID_SIZE as f32 + 0.5 {
+                    y = GRID_SIZE as f32 + 0.5;
+                }
                 let j0 = y as usize;
                 let j1 = j0 + 1;
                 let s1 = x - i0 as f32;
                 let s0 = 1.0 - s1;
                 let t1 = y - j0 as f32;
                 let t0 = 1.0 - t1;
-                d[Self::ix(i, j)] = s0 * (t0 * d0[Self::ix(i0, j0)] + t1 * d0[Self::ix(i0, j1)]) +
-                                    s1 * (t0 * d0[Self::ix(i1, j0)] + t1 * d0[Self::ix(i1, j1)]);
+                d[Self::ix(i, j)] = s0 * (t0 * d0[Self::ix(i0, j0)] + t1 * d0[Self::ix(i0, j1)])
+                    + s1 * (t0 * d0[Self::ix(i1, j0)] + t1 * d0[Self::ix(i1, j1)]);
             }
         }
         Self::set_bnd(b, d);
@@ -113,7 +146,10 @@ impl FluidLfoModule {
         let h = 1.0 / GRID_SIZE as f32;
         for i in 1..=GRID_SIZE {
             for j in 1..=GRID_SIZE {
-                div[Self::ix(i, j)] = -0.5 * h * (u[Self::ix(i + 1, j)] - u[Self::ix(i - 1, j)] + v[Self::ix(i, j + 1)] - v[Self::ix(i, j - 1)]);
+                div[Self::ix(i, j)] = -0.5
+                    * h
+                    * (u[Self::ix(i + 1, j)] - u[Self::ix(i - 1, j)] + v[Self::ix(i, j + 1)]
+                        - v[Self::ix(i, j - 1)]);
                 p[Self::ix(i, j)] = 0.0;
             }
         }
@@ -135,34 +171,54 @@ impl FluidLfoModule {
         let mut tmp = self.dens_prev.clone();
         Self::diffuse(0, &mut tmp, &self.dens, diff, self.dt);
         self.dens_prev = tmp.clone(); // Swap back basically
-        Self::advect(0, &mut self.dens, &self.dens_prev, &self.u, &self.v, self.dt);
+        Self::advect(
+            0,
+            &mut self.dens,
+            &self.dens_prev,
+            &self.u,
+            &self.v,
+            self.dt,
+        );
     }
 
     fn vel_step(&mut self, visc: f32) {
         Self::add_source(&mut self.u, &self.u_prev, self.dt);
         Self::add_source(&mut self.v, &self.v_prev, self.dt);
-        
+
         let mut tmp_u = self.u_prev.clone();
         Self::diffuse(1, &mut tmp_u, &self.u, visc, self.dt);
         self.u_prev = tmp_u.clone();
-        
+
         let mut tmp_v = self.v_prev.clone();
         Self::diffuse(2, &mut tmp_v, &self.v, visc, self.dt);
         self.v_prev = tmp_v.clone();
-        
+
         Self::project(&mut self.u_prev, &mut self.v_prev, &mut self.u, &mut self.v);
-        
+
         let mut tmp2_u = self.u.clone();
-        Self::advect(1, &mut tmp2_u, &self.u_prev, &self.u_prev, &self.v_prev, self.dt);
+        Self::advect(
+            1,
+            &mut tmp2_u,
+            &self.u_prev,
+            &self.u_prev,
+            &self.v_prev,
+            self.dt,
+        );
         self.u = tmp2_u.clone();
-        
+
         let mut tmp2_v = self.v.clone();
-        Self::advect(2, &mut tmp2_v, &self.v_prev, &self.u_prev, &self.v_prev, self.dt);
+        Self::advect(
+            2,
+            &mut tmp2_v,
+            &self.v_prev,
+            &self.u_prev,
+            &self.v_prev,
+            self.dt,
+        );
         self.v = tmp2_v.clone();
-        
+
         Self::project(&mut self.u, &mut self.v, &mut self.u_prev, &mut self.v_prev);
     }
-
 }
 
 impl RackDspNode for FluidLfoModule {
@@ -193,36 +249,42 @@ impl RackDspNode for FluidLfoModule {
             self.dens_prev.fill(0.0);
 
             // Inject force/density from CV inputs into the center of the grid
-            let center = Self::ix(GRID_SIZE / 2, GRID_SIZE / 2);
-            // Only using voice 0 for the force input for simplicity in this 2D field
-            let force_x = inputs[0 * 16]; 
-            let force_y = inputs[1 * 16];
-            let density_in = inputs[2 * 16];
+            for v in 0..16 {
+                // Map each voice to a slightly different location in the 16x16 grid
+                let x_pos = (2 + (v % 4) * 4).min(GRID_SIZE);
+                let y_pos = (2 + (v / 4) * 4).min(GRID_SIZE);
+                let idx = Self::ix(x_pos, y_pos);
 
-            self.u_prev[center] = force_x * 5.0;
-            self.v_prev[center] = force_y * 5.0;
-            self.dens_prev[center] = density_in.max(0.0) * 10.0;
+                let force_x = inputs[0 * 16 + v];
+                let force_y = inputs[1 * 16 + v];
+                let density_in = inputs[2 * 16 + v];
+
+                self.u_prev[idx] += force_x * 2.0;
+                self.v_prev[idx] += force_y * 2.0;
+                self.dens_prev[idx] += density_in.max(0.0) * 5.0;
+            }
 
             self.vel_step(visc);
             self.dens_step(diff);
-            
+
             // Apply slight damping to density so it doesn't build up forever
-            for i in 0..N*N {
+            for i in 0..N * N {
                 self.dens[i] *= 0.99;
                 self.u[i] *= 0.99;
                 self.v[i] *= 0.99;
             }
         }
 
-        // Read outputs from specific taps in the grid
-        let tap1 = Self::ix(GRID_SIZE / 4, GRID_SIZE / 4);
-        let tap2 = Self::ix(3 * GRID_SIZE / 4, 3 * GRID_SIZE / 4);
+        for v in 0..16 {
+            // Read from unique taps for each voice
+            // Offset reading from writing location for propagation delay
+            let x_tap = (4 + (v % 4) * 3).min(GRID_SIZE);
+            let y_tap = (4 + (v / 4) * 3).min(GRID_SIZE);
+            let tap_idx = Self::ix(x_tap, y_tap);
 
-        for i in 0..16 {
-            // Polyphonic outputs could map to different taps, but here we just copy
-            outputs[0 * 16 + i] = self.u[tap1] * 10.0; // U vel
-            outputs[1 * 16 + i] = self.v[tap1] * 10.0; // V vel
-            outputs[2 * 16 + i] = self.dens[tap2] * 2.0 - 5.0; // Density
+            outputs[0 * 16 + v] = self.u[tap_idx] * 10.0; // U vel
+            outputs[1 * 16 + v] = self.v[tap_idx] * 10.0; // V vel
+            outputs[2 * 16 + v] = self.dens[tap_idx] * 2.0 - 5.0; // Density
         }
     }
 

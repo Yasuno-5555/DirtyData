@@ -5,21 +5,18 @@
 //! - セルの状態を電圧として出力。SeedとRuleが同じなら完全に同じ波形を生成。
 
 use crate::signal::{
-    ParamDescriptor, ParamKind, ParamResponse, PortDescriptor, PortDirection,
-    RackDspNode, RackProcessContext, SignalType, SmoothedParam, TriggerDetector,
+    ParamDescriptor, ParamKind, ParamResponse, PortDescriptor, PortDirection, RackDspNode,
+    RackProcessContext, SignalType, SmoothedParam, TriggerDetector,
 };
 use serde::{Deserialize, Serialize};
 
 const FIELD_SIZE: usize = 32;
 
 #[derive(Serialize, Deserialize)]
-struct AutomataState {
-    cells: [bool; FIELD_SIZE],
-}
 
 pub struct AutomataModule {
-    cells: [bool; FIELD_SIZE],
-    next_cells: [bool; FIELD_SIZE],
+    cells: [[bool; FIELD_SIZE]; 16],
+    next_cells: [[bool; FIELD_SIZE]; 16],
     rule_smooth: SmoothedParam,
     rate_smooth: SmoothedParam,
     clock_detectors: [TriggerDetector; 16],
@@ -29,12 +26,14 @@ pub struct AutomataModule {
 
 impl AutomataModule {
     pub fn new(sample_rate: f32) -> Self {
-        let mut cells = [false; FIELD_SIZE];
-        cells[FIELD_SIZE / 2] = true; // Center seed
+        let mut cells = [[false; FIELD_SIZE]; 16];
+        for v in 0..16 {
+            cells[v][FIELD_SIZE / 2] = true; // Center seed
+        }
 
         Self {
             cells,
-            next_cells: [false; FIELD_SIZE],
+            next_cells: [[false; FIELD_SIZE]; 16],
             rule_smooth: SmoothedParam::new(30.0, sample_rate, 50.0),
             rate_smooth: SmoothedParam::new(0.5, sample_rate, 10.0), // 0.0 to 1.0 (normalized)
             clock_detectors: [TriggerDetector::new(); 16],
@@ -43,25 +42,33 @@ impl AutomataModule {
         }
     }
 
-    fn step_automaton(&mut self, rule: u8) {
+    fn step_automaton(&mut self, v: usize, rule: u8) {
         for i in 0..FIELD_SIZE {
-            let left = if i == 0 { self.cells[FIELD_SIZE - 1] } else { self.cells[i - 1] };
-            let center = self.cells[i];
-            let right = if i == FIELD_SIZE - 1 { self.cells[0] } else { self.cells[i + 1] };
+            let left = if i == 0 {
+                self.cells[v][FIELD_SIZE - 1]
+            } else {
+                self.cells[v][i - 1]
+            };
+            let center = self.cells[v][i];
+            let right = if i == FIELD_SIZE - 1 {
+                self.cells[v][0]
+            } else {
+                self.cells[v][i + 1]
+            };
 
             let pattern = ((left as u8) << 2) | ((center as u8) << 1) | (right as u8);
-            self.next_cells[i] = (rule & (1 << pattern)) != 0;
+            self.next_cells[v][i] = (rule & (1 << pattern)) != 0;
         }
-        self.cells.copy_from_slice(&self.next_cells);
+        self.cells[v].copy_from_slice(&self.next_cells[v]);
     }
 
-    fn calculate_voltage(&self) -> f32 {
-        // Convert the binary state of the cells into a float between -5.0 and +5.0
+    fn calculate_voltage(&self, v: usize) -> f32 {
         let mut sum = 0;
-        for &cell in &self.cells {
-            if cell { sum += 1; }
+        for &cell in &self.cells[v] {
+            if cell {
+                sum += 1;
+            }
         }
-        // Normalize to -5V to +5V
         (sum as f32 / FIELD_SIZE as f32) * 10.0 - 5.0
     }
 }
@@ -87,7 +94,7 @@ impl RackDspNode for AutomataModule {
         for i in 0..16 {
             let clock_in = inputs[0 * 16 + i];
             let rule_cv = inputs[1 * 16 + i];
-            
+
             let current_rule = (rule_val as f32 + rule_cv * 25.5).clamp(0.0, 255.0) as u8;
 
             let mut trigger_step = false;
@@ -99,8 +106,7 @@ impl RackDspNode for AutomataModule {
 
             // 2. Internal Oscillator Rate
             if rate_val > 0.01 {
-                // Map rate_val (0-1) to frequency (e.g., 1Hz to 10kHz exponentially)
-                let freq = 10.0f32.powf(rate_val * 4.0); // 1 to 10000 Hz
+                let freq = 10.0f32.powf(rate_val * 4.0);
                 let dt = freq / self.sample_rate;
                 self.phase[i] += dt;
                 if self.phase[i] >= 1.0 {
@@ -110,10 +116,10 @@ impl RackDspNode for AutomataModule {
             }
 
             if trigger_step {
-                self.step_automaton(current_rule);
+                self.step_automaton(i, current_rule);
             }
 
-            outputs[0 * 16 + i] = self.calculate_voltage();
+            outputs[0 * 16 + i] = self.calculate_voltage(i);
         }
     }
 

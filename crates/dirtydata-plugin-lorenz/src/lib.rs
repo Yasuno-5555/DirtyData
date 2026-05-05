@@ -1,4 +1,6 @@
-use dirtydata_plugin_sdk::{DspPlugin, declare_plugin};
+#![allow(clippy::all)]
+
+use dirtydata_plugin_sdk::{declare_plugin, DspPlugin};
 
 #[derive(Default)]
 pub struct LorenzAttractor {
@@ -17,12 +19,12 @@ impl DspPlugin for LorenzAttractor {
         self.x = 0.1;
         self.y = 0.0;
         self.z = 0.0;
-        
+
         // Classic Lorenz parameters
         self.sigma = 10.0;
         self.rho = 28.0;
         self.beta = 8.0 / 3.0;
-        
+
         self.sample_rate = sample_rate;
         self.dt = 0.001; // Base time step
     }

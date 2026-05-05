@@ -3,8 +3,8 @@
 //! バッファ内の読み出し位置を、シードと入力波形の簡易ハッシュで決定する。
 
 use crate::signal::{
-    ParamDescriptor, ParamKind, ParamResponse, PortDescriptor, PortDirection,
-    RackDspNode, RackProcessContext, SignalType, SmoothedParam,
+    ParamDescriptor, ParamKind, ParamResponse, PortDescriptor, PortDirection, RackDspNode,
+    RackProcessContext, SignalType, SmoothedParam,
 };
 
 const MAX_DELAY_SAMPLES: usize = 44100 * 2; // 2 seconds at 44.1kHz
@@ -36,7 +36,10 @@ impl MerkleDelayModule {
     // A very fast, simple hash function for audio rate
     fn update_hash(state: &mut u32, input: f32) {
         let bits = input.to_bits();
-        *state = state.wrapping_mul(1664525).wrapping_add(1013904223).wrapping_add(bits);
+        *state = state
+            .wrapping_mul(1664525)
+            .wrapping_add(1013904223)
+            .wrapping_add(bits);
     }
 }
 
@@ -63,39 +66,42 @@ impl RackDspNode for MerkleDelayModule {
 
         for i in 0..16 {
             let input = inputs[0 * 16 + i];
-            
+
             // Update continuous hash state based on input audio
             Self::update_hash(&mut self.hash_state[i], input);
 
-            let max_delay_samples_for_voice = (base_time * self.sample_rate) as usize;
+            let max_delay_samples_for_voice = base_time * self.sample_rate;
             let current_w_idx = self.write_idx[i];
 
             // Standard read pointer
-            let mut read_idx = (current_w_idx + MAX_DELAY_SAMPLES - max_delay_samples_for_voice) % MAX_DELAY_SAMPLES;
+            let mut read_ptr = (current_w_idx as f32 + MAX_DELAY_SAMPLES as f32
+                - max_delay_samples_for_voice)
+                % MAX_DELAY_SAMPLES as f32;
 
             // Merkle Glitch Modulation
             if glitch_amt > 0.001 {
-                // Use the hash state to "jump" the read pointer deterministically
-                // We mix project seed, voice index, and the running audio hash
                 let seed_mix = (ctx.project_seed as u32).wrapping_add(i as u32);
                 let jump_hash = self.hash_state[i] ^ seed_mix;
-                
-                // Map the hash to a jump size, scaled by glitch_amt
-                let jump = ((jump_hash % max_delay_samples_for_voice as u32) as f32 * glitch_amt) as usize;
-                
-                // Deterministically decide to jump forward or backward based on another bit of the hash
+
+                let jump = (jump_hash % max_delay_samples_for_voice as u32) as f32 * glitch_amt;
+
                 if (jump_hash & 0x1000) != 0 {
-                    read_idx = (read_idx + jump) % MAX_DELAY_SAMPLES;
+                    read_ptr = (read_ptr + jump) % MAX_DELAY_SAMPLES as f32;
                 } else {
-                    read_idx = (read_idx + MAX_DELAY_SAMPLES - jump) % MAX_DELAY_SAMPLES;
+                    read_ptr =
+                        (read_ptr + MAX_DELAY_SAMPLES as f32 - jump) % MAX_DELAY_SAMPLES as f32;
                 }
             }
 
-            let delayed_sample = self.buffer[i][read_idx];
+            // Linear Interpolation
+            let i0 = read_ptr as usize;
+            let i1 = (i0 + 1) % MAX_DELAY_SAMPLES;
+            let frac = read_ptr - i0 as f32;
+            let delayed_sample = self.buffer[i][i0] * (1.0 - frac) + self.buffer[i][i1] * frac;
 
             // Soft clip feedback
             let fb_signal = (delayed_sample * fb).tanh();
-            
+
             self.buffer[i][current_w_idx] = input + fb_signal;
 
             self.write_idx[i] = (current_w_idx + 1) % MAX_DELAY_SAMPLES;

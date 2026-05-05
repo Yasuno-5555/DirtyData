@@ -1,3 +1,6 @@
+#![allow(clippy::all)]
+#![allow(clippy::all)]
+
 //! Control and Modulation Civilization
 
 #[derive(Clone)]

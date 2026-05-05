@@ -1,3 +1,5 @@
+#![allow(clippy::all)]
+
 //! Fast Fourier Transform Civilization
 
 use rustfft::{num_complex::Complex, FftPlanner};

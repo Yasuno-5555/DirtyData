@@ -46,33 +46,38 @@ impl RackDspNode for VcoModule {
         params: &[f32],
         _ctx: &RackProcessContext,
     ) {
-        let freq_knob = params[0];
-        let fine = params[1];
-        let fm_amt = params[2];
-        let pw_knob = params[3];
+        let freq_knob = params.get(0).copied().unwrap_or(0.0);
+        let fine = params.get(1).copied().unwrap_or(0.0);
+        let fm_amt = params.get(2).copied().unwrap_or(0.0);
+        let pw_knob = params.get(3).copied().unwrap_or(0.0);
+        let level = params.get(4).copied().unwrap_or(0.2);
 
         self.freq_smooth.set(freq_knob);
         self.pw_smooth.set(pw_knob);
-        let jitter = _ctx.imperfection.drift[0];
+        let jitter = _ctx.imperfection.drift.get(0).copied().unwrap_or(0.0);
         let freq_val = self.freq_smooth.next(jitter);
         let pw_val = self.pw_smooth.next(jitter);
 
-        for i in 0..16 {
-            let voct_in = inputs[0 * 16 + i];
-            let fm_in = inputs[1 * 16 + i];
-            let pw_cv_in = inputs[2 * 16 + i];
-            let sync_in = inputs[3 * 16 + i];
+        // Scale detuning by aging
+        let p_mult = 0.0001 + _ctx.aging * 0.05;
+        let d_mult = 0.00001 + _ctx.aging * 0.005;
 
-            let p_offset = _ctx.imperfection.personality[i] * 0.05;
-            let d_offset = _ctx.imperfection.drift[i] * 0.005;
+        for i in 0..16 {
+            let voct_in = inputs.get(0 * 16 + i).copied().unwrap_or(0.0);
+            let fm_in = inputs.get(1 * 16 + i).copied().unwrap_or(0.0);
+            let pw_cv_in = inputs.get(2 * 16 + i).copied().unwrap_or(0.0);
+            let sync_in = inputs.get(3 * 16 + i).copied().unwrap_or(0.0);
+
+            let p_offset = _ctx.imperfection.personality.get(i).copied().unwrap_or(0.0) * p_mult;
+            let d_offset = _ctx.imperfection.drift.get(i).copied().unwrap_or(0.0) * d_mult;
 
             // 熱ドリフト (Signal Memory)
-            // 高周波数ほど熱を持ち、ピッチがわずかに下がる (物理的な熱膨張的な挙動)
-            let h_offset = self.heat[i] * -0.002;
+            // 高周波数ほど熱を持ち、ピッチがわずかに下がる
+            let h_offset = self.heat[i] * -0.002 * _ctx.aging;
             let freq_hz_pre =
                 voct_to_hz(freq_val + voct_in + fine + p_offset + d_offset + h_offset);
-            self.heat[i] += (freq_hz_pre / 1000.0) * 0.000001; // 蓄熱
-            self.heat[i] *= 0.99999; // 放熱
+            self.heat[i] += (freq_hz_pre / 1000.0) * 0.000001;
+            self.heat[i] *= 0.99999;
 
             let pitch_voltage = freq_val + voct_in + fine + p_offset + d_offset + h_offset;
             let total_voltage = pitch_voltage + fm_in * fm_amt;
@@ -86,7 +91,6 @@ impl RackDspNode for VcoModule {
             let dt = freq_hz / self.sample_rate;
             self.phases[i] = (self.phases[i] + dt).fract();
 
-            // Simplified oscillator for polyphonic context (PolyBLEP is expensive but here we use simple for now)
             let polyblep = |t: f32, dt: f32| -> f32 {
                 if t < dt {
                     let t = t / dt;
@@ -99,19 +103,20 @@ impl RackDspNode for VcoModule {
                 }
             };
 
-            // Outputs are also polyphonic (16 slots per port)
+            let gain = 5.0 * level;
             // SINE
-            outputs[0 * 16 + i] = libm::sinf(self.phases[i] * 2.0 * std::f32::consts::PI) * 5.0;
+            outputs[0 * 16 + i] = libm::sinf(self.phases[i] * 2.0 * std::f32::consts::PI) * gain;
             // SAW
-            outputs[1 * 16 + i] = (self.phases[i] * 2.0 - 1.0 - polyblep(self.phases[i], dt)) * 5.0;
+            outputs[1 * 16 + i] =
+                (self.phases[i] * 2.0 - 1.0 - polyblep(self.phases[i], dt)) * gain;
             // TRI
             let tri = (self.phases[i] * 2.0 - 1.0).abs() * 2.0 - 1.0;
-            outputs[2 * 16 + i] = tri * 5.0;
+            outputs[2 * 16 + i] = tri * gain;
             // SQUARE
             let mut sq = if self.phases[i] < pw { 1.0 } else { -1.0 };
             sq += polyblep(self.phases[i], dt);
             sq -= polyblep((self.phases[i] + (1.0 - pw)).fract(), dt);
-            outputs[3 * 16 + i] = sq * 5.0;
+            outputs[3 * 16 + i] = sq * gain;
         }
     }
     fn get_forensic_data(&self) -> Option<crate::signal::ForensicData> {
@@ -178,6 +183,16 @@ pub fn descriptor() -> crate::signal::BuiltinModuleDescriptor {
                 default: 0.5,
                 position: [0.7, 0.4],
                 unit: "",
+            },
+            ParamDescriptor {
+                name: "LEVEL",
+                kind: ParamKind::Knob,
+                response: ParamResponse::Smoothed { ms: 10.0 },
+                min: 0.0,
+                max: 1.0,
+                default: 0.2,
+                position: [0.5, 0.4],
+                unit: "V",
             },
         ],
         ports: &[

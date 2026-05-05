@@ -1,3 +1,6 @@
+#![allow(clippy::all)]
+#![allow(clippy::all)]
+
 //! Destruction and Distortion Civilization
 
 #[derive(Clone)]

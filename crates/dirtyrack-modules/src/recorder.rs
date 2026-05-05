@@ -1,5 +1,5 @@
 //! Certified Recorder Module — 監査ログ付きレンダラー
-//! 
+//!
 //! ただの録音ではなく、レンダリング結果のハッシュ値を生成し、
 //! 再現性を「証明」するための監査データを生成する。
 
@@ -7,9 +7,9 @@ use crate::signal::{
     ParamDescriptor, ParamKind, ParamResponse, PortDescriptor, PortDirection, RackDspNode,
     RackProcessContext, SignalType,
 };
+use hound::{WavSpec, WavWriter};
 use std::fs::File;
 use std::io::BufWriter;
-use hound::{WavSpec, WavWriter};
 
 pub struct RecorderModule {
     is_recording: bool,
@@ -44,7 +44,7 @@ impl RecorderModule {
             .unwrap()
             .as_secs();
         self.render_id = format!("render_{}", timestamp);
-        
+
         let spec = WavSpec {
             channels: 2,
             sample_rate: self.sample_rate as u32,
@@ -64,7 +64,7 @@ impl RecorderModule {
         if let Some(writer) = self.wav_writer.take() {
             let _ = writer.finalize();
             let hash = self.hasher.finalize();
-            
+
             // Render Certificate の生成
             let mut cert = if let Some(meta) = self.certificate_metadata.take() {
                 meta
@@ -102,19 +102,26 @@ impl RackDspNode for RecorderModule {
 
         if self.is_recording {
             if let Some(writer) = &mut self.wav_writer {
+                let mut sum_l = 0.0;
+                let mut sum_r = 0.0;
+
                 for i in 0..16 {
-                    let l = inputs[0 * 16 + i];
-                    let r = inputs[1 * 16 + i];
-
-                    // ハッシュの更新
-                    self.hasher.update(&l.to_le_bytes());
-                    self.hasher.update(&r.to_le_bytes());
-
-                    // WAVの書き込み
-                    let _ = writer.write_sample(l);
-                    let _ = writer.write_sample(r);
-                    self.sample_count += 1;
+                    sum_l += inputs[0 * 16 + i];
+                    sum_r += inputs[1 * 16 + i];
                 }
+
+                // Normalization (divide by sqrt(16) for headroom)
+                let out_l = sum_l / 4.0;
+                let out_r = sum_r / 4.0;
+
+                // ハッシュの更新 (Summed signal)
+                self.hasher.update(&out_l.to_le_bytes());
+                self.hasher.update(&out_r.to_le_bytes());
+
+                // WAVの書き込み
+                let _ = writer.write_sample(out_l);
+                let _ = writer.write_sample(out_r);
+                self.sample_count += 1;
             }
         }
     }
@@ -133,18 +140,16 @@ pub fn descriptor() -> crate::signal::BuiltinModuleDescriptor {
         hp_width: 8,
         visuals: crate::signal::ModuleVisuals::default(),
         tags: &["Builtin", "UTL", "REC"],
-        params: &[
-            ParamDescriptor {
-                name: "RECORD",
-                kind: ParamKind::Button,
-                response: ParamResponse::Immediate,
-                min: 0.0,
-                max: 1.0,
-                default: 0.0,
-                position: [0.5, 0.5],
-                unit: "",
-            },
-        ],
+        params: &[ParamDescriptor {
+            name: "RECORD",
+            kind: ParamKind::Button,
+            response: ParamResponse::Immediate,
+            min: 0.0,
+            max: 1.0,
+            default: 0.0,
+            position: [0.5, 0.5],
+            unit: "",
+        }],
         ports: &[
             PortDescriptor {
                 name: "IN_L",

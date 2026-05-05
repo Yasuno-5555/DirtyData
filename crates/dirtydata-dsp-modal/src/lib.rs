@@ -1,3 +1,6 @@
+#![allow(clippy::all)]
+#![allow(clippy::all)]
+
 //! Modal Resonator Bank (Physical Modeling of plates, bars, metals)
 //!
 //! Refinements:

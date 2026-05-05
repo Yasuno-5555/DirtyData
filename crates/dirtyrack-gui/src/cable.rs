@@ -2,9 +2,8 @@
 //!
 //! 重力シミュレーション付きベジェ曲線ケーブル。
 
-use crate::rack::{CableAction, RackState, ModuleRegistry};
+use crate::rack::{CableAction, ModuleRegistry, RackState};
 use egui::{vec2, Color32, Painter, Pos2, Stroke, Vec2};
-
 
 /// ケーブル色パレット（接続順にサイクル）
 pub const CABLE_COLORS: &[Color32] = &[
@@ -18,7 +17,13 @@ pub const CABLE_COLORS: &[Color32] = &[
 ];
 
 /// ケーブルアクションを処理（RackStateに委譲）
-pub fn handle_cable_action(rack: &mut RackState, registry: &ModuleRegistry, action: CableAction, zoom: f32, pan: Vec2) {
+pub fn handle_cable_action(
+    rack: &mut RackState,
+    registry: &ModuleRegistry,
+    action: CableAction,
+    zoom: f32,
+    pan: Vec2,
+) {
     rack.handle_action(action, registry, zoom, pan);
 }
 
@@ -31,13 +36,13 @@ pub fn draw_cables(painter: &Painter, rack: &RackState, zoom: f32, pan: Vec2) {
         if let (Some(from), Some(to)) = (from_pos, to_pos) {
             let screen_from = (from.to_vec2() * zoom + pan).to_pos2();
             let screen_to = (to.to_vec2() * zoom + pan).to_pos2();
-            
+
             // Tier B: Polyphonic Thickness & Activity
             let thickness = (2.0 + (cable.channels as f32 * 0.5)).min(8.0);
-            
+
             // Add subtle pulsing based on signal (if we had access to real-time signal here)
             // For now, use the channel count to drive thickness
-            
+
             let mut color = cable.color;
             color = Color32::from_rgba_unmultiplied(
                 color.r(),
@@ -137,7 +142,11 @@ fn draw_cable_curve(
         let t_offset = (time as f32 * 0.5 + (i as f32 / pulse_count as f32)) % 1.0;
         let p_idx = (t_offset * segments as f32) as usize;
         if let Some(&p) = points.get(p_idx) {
-            painter.circle_filled(p, 1.5 * zoom, Color32::from_rgba_unmultiplied(255, 255, 255, 180));
+            painter.circle_filled(
+                p,
+                1.5 * zoom,
+                Color32::from_rgba_unmultiplied(255, 255, 255, 180),
+            );
         }
     }
 }

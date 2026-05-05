@@ -84,7 +84,7 @@ impl RackDspNode for EnvelopeModule {
                     let target = 1.2;
                     let alpha = libm::expf(-dt / a);
                     self.values[i] = target + (self.values[i] - target) * alpha;
-                    
+
                     if self.values[i] >= 1.0 {
                         self.values[i] = 1.0;
                         self.states[i] = EnvelopeState::Decay;
@@ -94,7 +94,7 @@ impl RackDspNode for EnvelopeModule {
                     let target = s;
                     let alpha = libm::expf(-dt / d);
                     self.values[i] = target + (self.values[i] - target) * alpha;
-                    
+
                     if (self.values[i] - s).abs() < 0.001 {
                         self.values[i] = s;
                         self.states[i] = EnvelopeState::Sustain;

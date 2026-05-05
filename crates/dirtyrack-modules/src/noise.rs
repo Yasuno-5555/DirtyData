@@ -4,30 +4,36 @@
 //! - WHITE: ホワイトノイズ
 //! - PINK: ピンクノイズ (予定)
 
-use crate::signal::{
-    PortDescriptor, PortDirection, RackDspNode, RackProcessContext,
-    SignalType,
-};
+use crate::signal::{PortDescriptor, PortDirection, RackDspNode, RackProcessContext, SignalType};
+use rand::{Rng, SeedableRng};
+use rand_chacha::ChaCha8Rng;
 
 pub struct NoiseModule {
-    state: u32,
-    initial_seed: u32,
+    rngs: [ChaCha8Rng; 16],
+    pink_states: [[f32; 7]; 16],
 }
 
 impl NoiseModule {
-    pub fn new(_sample_rate: f32) -> Self {
-        Self { state: 0xACE1, initial_seed: 0xACE1 } 
+    pub fn new(_sr: f32) -> Self {
+        Self {
+            rngs: std::array::from_fn(|i| ChaCha8Rng::seed_from_u64(0x1337 + i as u64)),
+            pink_states: [[0.0; 7]; 16],
+        }
     }
 }
 
 impl RackDspNode for NoiseModule {
     fn reset(&mut self) {
-        self.state = self.initial_seed;
+        for i in 0..16 {
+            self.rngs[i] = ChaCha8Rng::seed_from_u64(0x1337 + i as u64);
+            self.pink_states[i] = [0.0; 7];
+        }
     }
 
     fn randomize(&mut self, seed: u64) {
-        self.initial_seed = (seed & 0xFFFFFFFF) as u32;
-        self.state = self.initial_seed;
+        for i in 0..16 {
+            self.rngs[i] = ChaCha8Rng::seed_from_u64(seed + i as u64);
+        }
     }
     fn process(
         &mut self,
@@ -37,22 +43,28 @@ impl RackDspNode for NoiseModule {
         _ctx: &RackProcessContext,
     ) {
         for v in 0..16 {
-            // Simple Xorshift per voice (using the same state for simplicity, but we could seed per voice)
-            let mut x = self.state.wrapping_add(v as u32);
-            x ^= x << 13;
-            x ^= x >> 17;
-            x ^= x << 5;
-            self.state = x;
+            let white: f32 = self.rngs[v].gen_range(-1.0..1.0);
 
-            // WHITE NOISE: Map u32 to -5.0..5.0
-            let white = (x as f32 / u32::MAX as f32) * 10.0 - 5.0;
-            outputs[0 * 16 + v] = white;
+            // Voss-McCartney approximation for Pink Noise
+            self.pink_states[v][0] = 0.99886 * self.pink_states[v][0] + white * 0.0555179;
+            self.pink_states[v][1] = 0.99332 * self.pink_states[v][1] + white * 0.0750312;
+            self.pink_states[v][2] = 0.96900 * self.pink_states[v][2] + white * 0.1538520;
+            self.pink_states[v][3] = 0.86650 * self.pink_states[v][3] + white * 0.3104856;
+            self.pink_states[v][4] = 0.55000 * self.pink_states[v][4] + white * 0.5329522;
+            self.pink_states[v][5] = -0.7616 * self.pink_states[v][5] - white * 0.0168980;
 
-            // PINK NOISE: Simple filter approximation
-            // (In a real implementation, we'd use a Voss-McCartney or similar)
-            // For now, a simple integrator to give it some 'weight'
-            let pink = (white * 0.1).clamp(-5.0, 5.0); // Placeholder but better than 0
-            outputs[1 * 16 + v] = pink;
+            let pink = self.pink_states[v][0]
+                + self.pink_states[v][1]
+                + self.pink_states[v][2]
+                + self.pink_states[v][3]
+                + self.pink_states[v][4]
+                + self.pink_states[v][5]
+                + self.pink_states[v][6]
+                + white * 0.5362;
+            self.pink_states[v][6] = white * 0.115926;
+
+            outputs[0 * 16 + v] = white * 5.0; // WHITE (5V peak)
+            outputs[1 * 16 + v] = pink * 0.75; // PINK
         }
     }
     fn as_any_mut(&mut self) -> &mut dyn std::any::Any {

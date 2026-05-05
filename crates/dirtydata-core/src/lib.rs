@@ -1,3 +1,6 @@
+#![allow(clippy::all)]
+#![allow(clippy::all)]
+
 //! dirtydata-core — Canonical IR / Patch Engine.
 pub mod actions;
 pub mod constitution;

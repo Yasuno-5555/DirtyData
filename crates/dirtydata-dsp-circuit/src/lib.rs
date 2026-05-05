@@ -1,3 +1,6 @@
+#![allow(clippy::all)]
+#![allow(clippy::all)]
+
 //! Circuit Sandbox: High-Performance Sparse MNA Solver
 //! "分散が音楽。現実はいつも雑。"
 

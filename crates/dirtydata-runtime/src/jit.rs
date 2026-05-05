@@ -526,7 +526,7 @@ impl JitCompiler {
         )?;
 
         // Initialize default parameters
-        for (id, node_impl) in &runner.nodes {
+        for (id, _node_impl) in &runner.nodes {
             if let Some(node_ir) = graph.nodes.get(id) {
                 for (key, val) in &node_ir.config {
                     if let Some(f) = val.as_float() {

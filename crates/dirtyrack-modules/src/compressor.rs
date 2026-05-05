@@ -11,14 +11,14 @@ use crate::signal::{
 };
 
 pub struct CompressorModule {
-    envelope: f32,
+    envelopes: [f32; 16],
     sample_rate: f32,
 }
 
 impl CompressorModule {
     pub fn new(sample_rate: f32) -> Self {
         Self {
-            envelope: 0.0,
+            envelopes: [0.0; 16],
             sample_rate,
         }
     }
@@ -32,35 +32,42 @@ impl RackDspNode for CompressorModule {
         params: &[f32],
         _ctx: &RackProcessContext,
     ) {
-        let input = inputs[0];
-        let sidechain = if inputs[1] != 0.0 { inputs[1] } else { input };
-
         let thresh = params[0]; // 0V .. 5V
         let ratio = params[1]; // 1.0 .. 20.0
         let attack = params[2]; // ms
         let release = params[3]; // ms
 
-        // Envelope follower (peak)
+        // Coefficients
         let att_coeff = libm::expf(-1.0 / (attack * 0.001 * self.sample_rate));
         let rel_coeff = libm::expf(-1.0 / (release * 0.001 * self.sample_rate));
 
-        let abs_sc = libm::fabsf(sidechain);
-        if abs_sc > self.envelope {
-            self.envelope = att_coeff * self.envelope + (1.0 - att_coeff) * abs_sc;
-        } else {
-            self.envelope = rel_coeff * self.envelope + (1.0 - rel_coeff) * abs_sc;
-        }
+        for v in 0..16 {
+            let input = inputs[0 * 16 + v];
+            let sidechain = if inputs[1 * 16 + v].abs() > 0.001 {
+                inputs[1 * 16 + v]
+            } else {
+                input
+            };
 
-        // Gain reduction
-        let mut gain = 1.0;
-        if self.envelope > thresh && thresh > 0.0 {
-            let over = self.envelope / thresh;
-            let target_gain = libm::powf(over, (1.0 / ratio) - 1.0);
-            gain = target_gain;
-        }
+            // Envelope follower (peak)
+            let abs_sc = libm::fabsf(sidechain);
+            if abs_sc > self.envelopes[v] {
+                self.envelopes[v] = att_coeff * self.envelopes[v] + (1.0 - att_coeff) * abs_sc;
+            } else {
+                self.envelopes[v] = rel_coeff * self.envelopes[v] + (1.0 - rel_coeff) * abs_sc;
+            }
 
-        outputs[0] = input * gain;
-        outputs[1] = (1.0 - gain) * 5.0; // GR Meter output
+            // Gain reduction
+            let mut gain = 1.0;
+            if self.envelopes[v] > thresh && thresh > 0.0 {
+                let over = self.envelopes[v] / thresh;
+                let target_gain = libm::powf(over, (1.0 / ratio) - 1.0);
+                gain = target_gain;
+            }
+
+            outputs[0 * 16 + v] = input * gain;
+            outputs[1 * 16 + v] = (1.0 - gain) * 5.0; // GR Meter output
+        }
     }
     fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
         self

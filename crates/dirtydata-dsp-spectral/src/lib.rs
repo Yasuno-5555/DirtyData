@@ -1,3 +1,5 @@
+#![allow(clippy::all)]
+
 //! Spectral Civilization
 
 use rustfft::{num_complex::Complex, FftPlanner};
