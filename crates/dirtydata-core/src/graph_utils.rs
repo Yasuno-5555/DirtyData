@@ -17,10 +17,12 @@ pub fn topological_sort(graph: &Graph) -> (Vec<StableId>, Vec<Vec<StableId>>) {
 
     for edge in graph.edges.values() {
         if edge.kind == EdgeKind::Normal {
-            adj.get_mut(&edge.source.node_id)
-                .unwrap()
-                .push(edge.target.node_id);
-            *in_degree.get_mut(&edge.target.node_id).unwrap() += 1;
+            if let Some(neighbors) = adj.get_mut(&edge.source.node_id) {
+                neighbors.push(edge.target.node_id);
+            }
+            if let Some(degree) = in_degree.get_mut(&edge.target.node_id) {
+                *degree += 1;
+            }
         }
     }
 
@@ -36,10 +38,11 @@ pub fn topological_sort(graph: &Graph) -> (Vec<StableId>, Vec<Vec<StableId>>) {
         sorted.push(u);
         if let Some(neighbors) = adj.get(&u) {
             for &v in neighbors {
-                let degree = in_degree.get_mut(&v).unwrap();
-                *degree -= 1;
-                if *degree == 0 {
-                    queue.push_back(v);
+                if let Some(degree) = in_degree.get_mut(&v) {
+                    *degree -= 1;
+                    if *degree == 0 {
+                        queue.push_back(v);
+                    }
                 }
             }
         }

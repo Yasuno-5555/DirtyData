@@ -14,6 +14,8 @@ pub enum HostError {
     NanStorm,
     #[error("Serialization error: {0}")]
     Serialization(#[from] serde_json::Error),
+    #[error("Security error: {0}")]
+    SecurityError(String),
 }
 #[derive(Debug, serde::Serialize)]
 pub struct AuditReport {
@@ -324,13 +326,43 @@ pub struct PluginHost {
 }
 
 impl PluginHost {
-    pub fn new(plugin_name: &str, buffer_size: usize) -> Result<Self, HostError> {
+    pub fn new(
+        plugin_name: &str,
+        buffer_size: usize,
+        workspace_root: Option<&Path>,
+        verify_manifest: bool,
+    ) -> Result<Self, HostError> {
+        if verify_manifest {
+            if let Some(root) = workspace_root {
+                let ws = Workspace::open(root)?;
+                let audit_report = ws.audit()?;
+                if !audit_report.is_healthy() {
+                    return Err(HostError::SecurityError(format!(
+                        "Manifest verification failed for workspace root: {:?}. Issues: {:?}",
+                        root, audit_report.issues
+                    )));
+                }
+            } else {
+                return Err(HostError::SecurityError(
+                    "Workspace root is required for manifest verification".into()
+                ));
+            }
+        }
+
         let exe = std::env::current_exe().unwrap_or_default();
         let dir = exe.parent().unwrap_or(std::path::Path::new("."));
         let worker_path = dir.join("dirtydata-plugin-worker");
 
-        let child = Command::new(&worker_path)
-            .arg(plugin_name)
+        let mut cmd = Command::new(&worker_path);
+        cmd.arg(plugin_name);
+
+        if let Some(root) = workspace_root {
+            cmd.current_dir(root);
+            cmd.env("DIRTYDATA_WORKSPACE_ROOT", root);
+            cmd.arg("--sandbox-root").arg(root);
+        }
+
+        let child = cmd
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn()

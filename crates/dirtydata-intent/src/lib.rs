@@ -35,11 +35,7 @@ pub enum IntentStrategy {
     Freeze { target_node: String },
 }
 
-impl Default for IntentStrategy {
-    fn default() -> Self {
-        Self::Manual
-    }
-}
+
 
 /// Intent 本体。何を実現したいか。
 #[derive(Debug, Clone, Serialize, Deserialize)]

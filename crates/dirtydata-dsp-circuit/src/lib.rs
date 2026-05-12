@@ -20,6 +20,7 @@ pub enum Material {
     Electrolytic,
     Silicon,
     Germanium,
+    Vacuum,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
@@ -77,6 +78,7 @@ pub enum CircuitElement {
         kp: f64,
         kvb: f64,
         ex: f64,
+        material: Material,
     },
     Pentode {
         g1: NodeId,
@@ -88,6 +90,7 @@ pub enum CircuitElement {
         kp: f64,
         kvb: f64,
         ex: f64,
+        material: Material,
     },
     Bjt {
         b: NodeId,
@@ -398,6 +401,55 @@ pub enum CircuitElement {
         flux_v: f64,
         state_i: f64,
     },
+    Varactor {
+        a: NodeId,
+        k: NodeId,
+        c0: f64,
+        vj: f64,
+        m: f64,
+        state_v: f64,
+    },
+    SaturableInductor {
+        a: NodeId,
+        b: NodeId,
+        l_max: f64,
+        l_min: f64,
+        i_sat: f64,
+        state_i: f64,
+    },
+    TunnelDiode {
+        a: NodeId,
+        k: NodeId,
+        ip: f64,
+        vp: f64,
+        iv: f64,
+        vv: f64,
+        state_v: f64,
+    },
+    SparkGap {
+        a: NodeId,
+        b: NodeId,
+        v_breakdown: f64,
+        v_hold: f64,
+        state_on: bool,
+    },
+    CircuitGhost {
+        a: NodeId,
+        b: NodeId,
+        c_min: f64,
+        c_max: f64,
+        drift_rate: f64,
+        state_c: f64,
+    },
+    VoltageControlledResistor {
+        a: NodeId,
+        b: NodeId,
+        ctrl: NodeId,
+        r_min: f64,
+        r_max: f64,
+        v_min: f64,
+        v_max: f64,
+    },
 }
 
 impl CircuitElement {
@@ -475,6 +527,12 @@ impl CircuitElement {
             CircuitElement::DirtyGround { node, .. } => vec![*node],
             CircuitElement::Loudspeaker { a, b, .. } => vec![*a, *b],
             CircuitElement::GuitarPickup { a, b, .. } => vec![*a, *b],
+            CircuitElement::Varactor { a, k, .. } => vec![*a, *k],
+            CircuitElement::SaturableInductor { a, b, .. } => vec![*a, *b],
+            CircuitElement::TunnelDiode { a, k, .. } => vec![*a, *k],
+            CircuitElement::SparkGap { a, b, .. } => vec![*a, *b],
+            CircuitElement::CircuitGhost { a, b, .. } => vec![*a, *b],
+            CircuitElement::VoltageControlledResistor { a, b, ctrl, .. } => vec![*a, *b, *ctrl],
         }
     }
 }
@@ -544,8 +602,8 @@ struct MnaExecutionPlan {
     i_sources: Vec<(usize, usize, f64)>,
     diodes: Vec<(usize, usize, f64, usize)>,
     zeners: Vec<(usize, usize, f64, f64, usize)>,
-    triodes: Vec<(usize, usize, usize, f64, f64, f64, f64, f64, usize)>,
-    pentodes: Vec<(usize, usize, usize, usize, f64, f64, f64, f64, f64, usize)>,
+    triodes: Vec<(usize, usize, usize, f64, f64, f64, f64, f64, Material, usize)>,
+    pentodes: Vec<(usize, usize, usize, usize, f64, f64, f64, f64, f64, Material, usize)>,
     bjts: Vec<(usize, usize, usize, f64, f64, f64, bool, usize)>,
     jfets: Vec<(usize, usize, usize, f64, f64, bool, usize)>,
     transformers: Vec<(usize, usize, usize, usize, f64, f64, f64, f64, usize)>,
@@ -590,6 +648,12 @@ struct MnaExecutionPlan {
         usize,
     )>, // (..., idx, r_i, r_v)
     pickups: Vec<(usize, usize, f64, f64, f64, usize, usize)>, // (..., idx, r)
+    varactors: Vec<(usize, usize, f64, f64, f64, usize)>,
+    saturable_inductors: Vec<(usize, usize, f64, f64, f64, usize)>,
+    tunnel_diodes: Vec<(usize, usize, f64, f64, f64, f64, usize)>,
+    spark_gaps: Vec<(usize, usize, f64, f64, usize)>,
+    ghosts: Vec<(usize, usize, f64, f64, f64, usize)>,
+    vcrs: Vec<(usize, usize, usize, f64, f64, f64, f64, usize)>,
 }
 
 impl MnaSolver {
@@ -742,6 +806,12 @@ impl MnaSolver {
             dirty_grounds: Vec::new(),
             loudspeakers: Vec::new(),
             pickups: Vec::new(),
+            varactors: Vec::new(),
+            saturable_inductors: Vec::new(),
+            tunnel_diodes: Vec::new(),
+            spark_gaps: Vec::new(),
+            ghosts: Vec::new(),
+            vcrs: Vec::new(),
         };
         let mut row_idx = 0;
         let mut t_line_idx = 0;
@@ -934,10 +1004,11 @@ impl MnaSolver {
                     kp,
                     kvb,
                     ex,
+                    material,
                 } => {
                     self.has_nonlinear = true;
                     plan.triodes
-                        .push((g.0, k.0, p.0, *mu, *kg1, *kp, *kvb, *ex, idx));
+                        .push((g.0, k.0, p.0, *mu, *kg1, *kp, *kvb, *ex, *material, idx));
                 }
                 CircuitElement::Pentode {
                     g1,
@@ -949,10 +1020,11 @@ impl MnaSolver {
                     kp,
                     kvb,
                     ex,
+                    material,
                 } => {
                     self.has_nonlinear = true;
                     plan.pentodes
-                        .push((g1.0, g2.0, k.0, p.0, *mu, *kg1, *kp, *kvb, *ex, idx));
+                        .push((g1.0, g2.0, k.0, p.0, *mu, *kg1, *kp, *kvb, *ex, *material, idx));
                 }
                 CircuitElement::Bjt {
                     b,
@@ -1343,6 +1415,29 @@ impl MnaSolver {
                     plan.memristors.push((a.0, b.0, *ron, *roff, *mu, *d, idx));
                     self.has_nonlinear = true;
                 }
+                CircuitElement::Varactor { a, k, c0, vj, m, .. } => {
+                    self.has_nonlinear = true;
+                    plan.varactors.push((a.0, k.0, *c0, *vj, *m, idx));
+                }
+                CircuitElement::SaturableInductor { a, b, l_max, l_min, i_sat, .. } => {
+                    self.has_nonlinear = true;
+                    plan.saturable_inductors.push((a.0, b.0, *l_max, *l_min, *i_sat, idx));
+                }
+                CircuitElement::TunnelDiode { a, k, ip, vp, iv, vv, .. } => {
+                    self.has_nonlinear = true;
+                    plan.tunnel_diodes.push((a.0, k.0, *ip, *vp, *iv, *vv, idx));
+                }
+                CircuitElement::SparkGap { a, b, v_breakdown, v_hold, .. } => {
+                    self.has_nonlinear = true;
+                    plan.spark_gaps.push((a.0, b.0, *v_breakdown, *v_hold, idx));
+                }
+                CircuitElement::CircuitGhost { a, b, c_min, c_max, drift_rate, .. } => {
+                    plan.ghosts.push((a.0, b.0, *c_min, *c_max, *drift_rate, idx));
+                }
+                CircuitElement::VoltageControlledResistor { a, b, ctrl, r_min, r_max, v_min, v_max } => {
+                    self.has_nonlinear = true;
+                    plan.vcrs.push((a.0, b.0, ctrl.0, *r_min, *r_max, *v_min, *v_max, idx));
+                }
                 _ => {}
             }
         }
@@ -1690,7 +1785,7 @@ impl MnaSolver {
                 Self::stamp_current(n, &mut f_x, a, k, i);
                 Self::stamp_dynamic(&mut triplets, a, k, g, n);
             }
-            for &(g, k, p, mu, kg1, kp, kvb, ex, _) in &plan.triodes {
+            for &(g, k, p, mu, kg1, kp, kvb, ex, material, _) in &plan.triodes {
                 let vgk = x_val(&x, g, n) - x_val(&x, k, n);
                 let vpk = (x_val(&x, p, n) - x_val(&x, k, n)).max(0.001);
                 let e1 = (vpk / kp) * (kp * (1.0 / mu + vgk / (vpk.powi(2) + kvb).sqrt())).ln_1p();
@@ -1702,8 +1797,21 @@ impl MnaSolver {
                 let gp = (ip / vpk).max(1e-9);
                 Self::stamp_current(n, &mut f_x, p, k, ip);
                 Self::stamp_dynamic(&mut triplets, p, k, gp, n);
+
+                // Grid Current and Microphonics
+                let micro_noise = if let Material::Vacuum = material {
+                    let t = self.dt * self.noise_seed as f64;
+                    (t * 100.0).sin() * 0.001 // subtle hum
+                } else { 0.0 };
+                let vgk_eff = vgk + micro_noise;
+                if vgk_eff > 0.0 {
+                    let ig = 1e-4 * (vgk_eff / 0.026).exp();
+                    let gg = ig / 0.026;
+                    Self::stamp_current(n, &mut f_x, g, k, ig);
+                    Self::stamp_dynamic(&mut triplets, g, k, gg, n);
+                }
             }
-            for &(g1, g2, k, p, mu, kg1, kp, kvb, ex, _idx) in &plan.pentodes {
+            for &(g1, g2, k, p, mu, kg1, kp, kvb, ex, _material, _idx) in &plan.pentodes {
                 let vg1k = x_val(&x, g1, n) - x_val(&x, k, n);
                 let vpk = (x_val(&x, p, n) - x_val(&x, k, n)).max(0.001);
                 let vg2k = (x_val(&x, g2, n) - x_val(&x, k, n)).max(0.001);
@@ -1726,6 +1834,14 @@ impl MnaSolver {
                 Self::stamp_current(n, &mut f_x, g2, k, ig2);
                 Self::stamp_dynamic(&mut triplets, p, k, gp * 0.8, n);
                 Self::stamp_dynamic(&mut triplets, g2, k, gp * 0.2, n);
+
+                // Grid Current
+                if vg1k > 0.0 {
+                    let ig = 1e-4 * (vg1k / 0.026).exp();
+                    let gg = ig / 0.026;
+                    Self::stamp_current(n, &mut f_x, g1, k, ig);
+                    Self::stamp_dynamic(&mut triplets, g1, k, gg, n);
+                }
             }
             for &(b, c, e, is, bf, br, is_npn, _) in &plan.bjts {
                 let vt = 0.026;
@@ -2005,6 +2121,64 @@ impl MnaSolver {
                             * (1.0 / (self.context.temperature_c + 273.15) - 1.0 / 298.15))
                             .exp());
                 Self::stamp_f(n, &mut f_x, a, b, g, &x);
+                Self::stamp_dynamic(&mut triplets, a, b, g, n);
+            }
+            for &(a, k, c0, vj, m, _idx) in &plan.varactors {
+                let v = x_val(&x, a, n) - x_val(&x, k, n);
+                let c = c0 / (1.0 + v.max(-vj * 0.9) / vj).powf(m);
+                let g = c / self.dt;
+                if let CircuitElement::Varactor { state_v, .. } = &self.elements[_idx] {
+                    Self::stamp_current(n, &mut f_x, a, k, g * (v - *state_v));
+                    Self::stamp_dynamic(&mut triplets, a, k, g, n);
+                }
+            }
+            for &(a, b, l_max, l_min, i_sat, _idx) in &plan.saturable_inductors {
+                let i = if let CircuitElement::SaturableInductor { state_i, .. } = &self.elements[_idx] {
+                    *state_i
+                } else { 0.0 };
+                let l_eff = l_min + (l_max - l_min) / (i / i_sat).cosh().powi(2);
+                let g = self.dt / l_eff.max(1e-9);
+                let v = x_val(&x, a, n) - x_val(&x, b, n);
+                Self::stamp_current(n, &mut f_x, a, b, g * v + i);
+                Self::stamp_dynamic(&mut triplets, a, b, g, n);
+            }
+            for &(a, k, ip, vp, iv, vv, _idx) in &plan.tunnel_diodes {
+                let v = x_val(&x, a, n) - x_val(&x, k, n);
+                let i_tunnel = ip * (v / vp) * (-(v / vp) + 1.0).exp() + iv * ((v - vv) / 0.026).exp();
+                let g = (i_tunnel / v.abs().max(1e-3)).max(1e-9);
+                Self::stamp_current(n, &mut f_x, a, k, i_tunnel);
+                Self::stamp_dynamic(&mut triplets, a, k, g, n);
+            }
+            for &(a, b, _v_break, _v_hold, idx) in &plan.spark_gaps {
+                if let CircuitElement::SparkGap { state_on, .. } = &self.elements[idx] {
+                    let g = if *state_on { 1e3 } else { 1e-12 };
+                    Self::stamp_f(n, &mut f_x, a, b, g, &x);
+                    Self::stamp_dynamic(&mut triplets, a, b, g, n);
+                }
+            }
+            for &(a, b, _c_min, _c_max, _drift, _idx) in &plan.ghosts {
+                if let CircuitElement::CircuitGhost { state_c, .. } = &self.elements[_idx] {
+                     let g = *state_c / self.dt;
+                     let v = x_val(&x, a, n) - x_val(&x, b, n);
+                     Self::stamp_current(n, &mut f_x, a, b, g * v);
+                     Self::stamp_dynamic(&mut triplets, a, b, g, n);
+                }
+            }
+            for &(a, b, ctrl, r_min, r_max, v_min, v_max, _) in &plan.vcrs {
+                let vc = x_val(&x, ctrl, n);
+                let t = ((vc - v_min) / (v_max - v_min)).clamp(0.0, 1.0);
+                let r = r_min + (r_max - r_min) * t;
+                let g = 1.0 / r.max(1e-9);
+                Self::stamp_f(n, &mut f_x, a, b, g, &x);
+                Self::stamp_dynamic(&mut triplets, a, b, g, n);
+            }
+            for &(a, b, ron, roff, _mu, _d, _idx) in &plan.memristors {
+                if let CircuitElement::Memristor { w, .. } = &self.elements[_idx] {
+                    let r = ron * w + roff * (1.0 - w);
+                    let g = 1.0 / r.max(1e-3);
+                    Self::stamp_f(n, &mut f_x, a, b, g, &x);
+                    Self::stamp_dynamic(&mut triplets, a, b, g, n);
+                }
             }
             for &(a, b, r_dark, gamma, _, idx) in &plan.ldrs {
                 if let CircuitElement::Ldr { current_lux, .. } = &self.elements[idx] {
@@ -2360,6 +2534,31 @@ impl MnaSolver {
                     let i = (x_val(&x, a.0, n) - x_val(&x, b.0, n)) / (*ron).max(1e-3);
                     *w = (*w + *mu * *ron * i * self.dt / (*d * *d)).clamp(0.0, 1.0);
                 }
+                CircuitElement::Varactor { a, k, state_v, .. } => {
+                    *state_v = x_val(&x, a.0, n) - x_val(&x, k.0, n);
+                }
+                CircuitElement::SaturableInductor { a, b, l_max, l_min, i_sat, state_i } => {
+                    let v = x_val(&x, a.0, n) - x_val(&x, b.0, n);
+                    let l_eff = *l_min + (*l_max - *l_min) / (*state_i / *i_sat).cosh().powi(2);
+                    *state_i += v * self.dt / l_eff.max(1e-9);
+                }
+                CircuitElement::TunnelDiode { a, k, state_v, .. } => {
+                    *state_v = x_val(&x, a.0, n) - x_val(&x, k.0, n);
+                }
+                CircuitElement::SparkGap { a, b, v_breakdown, v_hold, state_on } => {
+                    let v = (x_val(&x, a.0, n) - x_val(&x, b.0, n)).abs();
+                    if !*state_on && v > *v_breakdown {
+                        *state_on = true;
+                    } else if *state_on && v < *v_hold {
+                        *state_on = false;
+                    }
+                }
+                CircuitElement::CircuitGhost { state_c, c_min, c_max, drift_rate, .. } => {
+                    use rand::{Rng, SeedableRng};
+                    let mut rng = rand::rngs::StdRng::seed_from_u64(self.noise_seed ^ idx as u64);
+                    let drift = (rng.gen::<f64>() * 2.0 - 1.0) * *drift_rate * self.dt;
+                    *state_c = (*state_c + drift).clamp(*c_min, *c_max);
+                }
                 _ => {}
             }
         }
@@ -2513,6 +2712,7 @@ mod tests {
             kp: 600.0,
             kvb: 300.0,
             ex: 1.4,
+            material: Material::Vacuum,
         });
         solver.add_element(CircuitElement::VoltageSource {
             pos: NodeId(1),
@@ -2554,6 +2754,7 @@ mod tests {
             kp: 600.0,
             kvb: 300.0,
             ex: 1.4,
+            material: Material::Vacuum,
         });
         solver.add_element(CircuitElement::VoltageSource {
             pos: NodeId(1),
@@ -3234,6 +3435,7 @@ mod tests {
             kp: 600.0,
             kvb: 300.0,
             ex: 1.4,
+            material: Material::Vacuum,
         });
         solver.add_element(CircuitElement::VoltageSource {
             pos: NodeId(1),
@@ -3248,5 +3450,51 @@ mod tests {
             "Triode plate voltage out of range: {}",
             v_plate
         );
+    }
+
+    #[test]
+    fn test_spark_gap_relaxation() {
+        let mut solver = MnaSolver::new(1.0 / 44100.0);
+        solver.set_num_nodes(3);
+        solver.add_element(CircuitElement::VoltageSource {
+            pos: NodeId(1),
+            neg: NodeId(0),
+            voltage: 100.0,
+        });
+        solver.add_element(CircuitElement::Resistor {
+            a: NodeId(1),
+            b: NodeId(2),
+            value: 1e6,
+            tolerance: 0.0,
+            material: Material::MetalFilm,
+        });
+        solver.add_element(CircuitElement::Capacitor {
+            a: NodeId(2),
+            b: NodeId(0),
+            value: 1e-9,
+            tolerance: 0.0,
+            state_v: 0.0,
+            material: Material::Ceramic,
+        });
+        solver.add_element(CircuitElement::SparkGap {
+            a: NodeId(2),
+            b: NodeId(0),
+            v_breakdown: 80.0,
+            v_hold: 20.0,
+            state_on: false,
+        });
+
+        // Run for a few steps
+        let mut fired = false;
+        for _ in 0..1000 {
+            let state = solver.solve();
+            if state.voltages[2] < 30.0 && fired == false {
+                // Should eventually fire and drop voltage
+            }
+            if state.voltages[2] > 70.0 {
+                fired = true;
+            }
+        }
+        assert!(fired, "Spark gap should have reached breakdown voltage");
     }
 }

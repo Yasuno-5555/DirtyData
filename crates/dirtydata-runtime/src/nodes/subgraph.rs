@@ -52,7 +52,7 @@ impl DspNode for ForeignNode {
             return;
         }
         let host = self.host.get_or_insert_with(|| {
-            PluginHost::new(&self.plugin_name, self.buffer_size).expect("Failed to load plugin")
+            PluginHost::new(&self.plugin_name, self.buffer_size, None, false).expect("Failed to load plugin")
         });
         if inputs.len() >= 2 {
             self.in_buffer[self.buffer_idx] = inputs[0];

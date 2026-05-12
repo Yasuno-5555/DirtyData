@@ -254,6 +254,7 @@ pub fn compile_actions(
                     eprintln!("AddMod Error: src {} not found", source_node);
                     e
                 })?;
+
                 let tgt_id = resolve_name(target_node, graph, &created).map_err(|e| {
                     eprintln!("AddMod Error: tgt {} not found", target_node);
                     e

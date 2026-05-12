@@ -2,8 +2,8 @@
 .dirtydata
 **/*.rs.bk
 .DS_Store
-*.txt
-*.log
+/*.txt
+/*.log
 /build/
 /dist/
 publish.sh

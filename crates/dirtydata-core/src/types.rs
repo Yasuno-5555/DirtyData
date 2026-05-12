@@ -230,7 +230,7 @@ pub struct CircuitDefinition {
 
 impl CircuitDefinition {
     pub fn hash(&self) -> crate::types::Hash {
-        let json = serde_json::to_string(self).unwrap();
+        let json = serde_json::to_string(self).unwrap_or_default();
         *blake3::hash(json.as_bytes()).as_bytes()
     }
 }
@@ -418,6 +418,14 @@ impl ConfigValue {
         }
     }
 
+    pub fn as_f32(&self) -> Option<f32> {
+        match self {
+            Self::Float(f) => Some(*f as f32),
+            Self::Int(i) => Some(*i as f32),
+            _ => None,
+        }
+    }
+
     pub fn as_list(&self) -> Option<&Vec<ConfigValue>> {
         match self {
             Self::List(l) => Some(l),
@@ -551,4 +559,31 @@ pub enum ConfidenceScore {
     Inferred = 70,
     /// 100 — Hash match, direct API completion.
     Verified = 100,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_config_value_f32_roundtrip() {
+        let values_to_test = vec![
+            0.0f32,
+            -0.0f32,
+            1.0f32,
+            -1.0f32,
+            0.15625f32,
+            3.1415927f32,
+            -12345.6789f32,
+            f32::MIN,
+            f32::MAX,
+            f32::EPSILON,
+        ];
+
+        for original in values_to_test {
+            let config_val = ConfigValue::Float(original as f64);
+            let converted = config_val.as_f32().expect("Failed to convert to f32");
+            assert_eq!(original, converted, "Roundtrip failed for {}", original);
+        }
+    }
 }

@@ -15,7 +15,7 @@ use crate::nodes::*;
 use crate::osc::OscHandler;
 use dirtydata_core::graph_utils::topological_sort;
 use dirtydata_core::ir::{EdgeKind, Graph};
-use dirtydata_core::types::{NodeKind, PortDirection, StableId};
+use dirtydata_core::types::{NodeKind, PortDirection, StableId, PortRef};
 
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use crossbeam_channel::{Receiver, Sender};
@@ -135,6 +135,7 @@ pub struct DspRunner {
     node_saturation: HashMap<StableId, f32>,
     jit_program: Option<jit::JitProgram>,
     parameter_provenance: HashMap<StableId, HashMap<String, Vec<String>>>,
+    input_connections: HashMap<StableId, Vec<PortRef>>,
 }
 
 impl Clone for DspRunner {
@@ -150,6 +151,7 @@ impl Clone for DspRunner {
             node_saturation: self.node_saturation.clone(),
             jit_program: None,
             parameter_provenance: self.parameter_provenance.clone(),
+            input_connections: self.input_connections.clone(),
         }
     }
 }
@@ -305,6 +307,18 @@ impl DspRunner {
             node_saturation.insert(*id, 0.0);
         }
 
+        let mut input_connections: HashMap<StableId, Vec<PortRef>> = HashMap::new();
+        for id in &sorted_ids {
+            input_connections.insert(*id, Vec::new());
+        }
+        for edge in graph.edges.values() {
+            if edge.kind == EdgeKind::Normal {
+                if let Some(conns) = input_connections.get_mut(&edge.target.node_id) {
+                    conns.push(edge.source.clone());
+                }
+            }
+        }
+
         Self {
             nodes,
             node_outputs,
@@ -316,6 +330,7 @@ impl DspRunner {
             node_saturation,
             jit_program: None,
             parameter_provenance: HashMap::new(),
+            input_connections,
         }
     }
 
@@ -334,9 +349,9 @@ impl DspRunner {
 
         for (i, (id, node)) in self.nodes.iter_mut().enumerate() {
             let mut inputs = Vec::new();
-            for edge in self.graph.edges.values() {
-                if edge.kind == EdgeKind::Normal && edge.target.node_id == *id {
-                    if let Some(prev_outputs) = self.node_outputs.get(&edge.source.node_id) {
+            if let Some(conns) = self.input_connections.get(id) {
+                for src_port in conns {
+                    if let Some(prev_outputs) = self.node_outputs.get(&src_port.node_id) {
                         let val = prev_outputs[0];
                         inputs.push(val[0]);
                         inputs.push(val[1]);
@@ -526,7 +541,7 @@ impl AudioEngine {
                                         graph.nodes.len()
                                     ));
                                     let mut new_runner = DspRunner::new(
-                                        graph,
+                                        *graph,
                                         Some(midi_rx_internal.clone()),
                                         sample_rate,
                                     );
@@ -649,6 +664,6 @@ impl AudioEngine {
     pub fn replace_graph(&self, graph: Graph, jit_prog: Option<jit::JitProgram>) {
         let _ = self
             .command_tx
-            .send(EngineCommand::ReplaceGraph(graph, jit_prog));
+            .send(EngineCommand::ReplaceGraph(Box::new(graph), jit_prog));
     }
 }

@@ -15,20 +15,18 @@ pub fn render_dsl(graph: &Graph) -> String {
     let mut out = String::new();
 
     // Header
-    writeln!(
+    let _ = writeln!(
         out,
         "# DirtyData Surface DSL — revision {}",
         graph.revision.0
-    )
-    .unwrap();
-    writeln!(
+    );
+    let _ = writeln!(
         out,
         "# Hash: blake3:{}",
         hex_short(&hash::hash_graph(graph))
-    )
-    .unwrap();
-    writeln!(out, "# Patches: {}", graph.lineage.applied_patches.len()).unwrap();
-    writeln!(out).unwrap();
+    );
+    let _ = writeln!(out, "# Patches: {}", graph.lineage.applied_patches.len());
+    let _ = writeln!(out);
 
     // Build name lookup for connections
     let name_of = |id: &StableId| -> String {
@@ -49,10 +47,10 @@ pub fn render_dsl(graph: &Graph) -> String {
             NodeKind::Sink => "sink",
             NodeKind::Junction => "junction",
             NodeKind::Foreign(name) => {
-                writeln!(out, "foreign \"{}\" \"{}\" {{", node_name(node), name).unwrap();
+                let _ = writeln!(out, "foreign \"{}\" \"{}\" {{", node_name(node), name);
                 render_node_body(&mut out, node);
-                writeln!(out, "}}").unwrap();
-                writeln!(out).unwrap();
+                let _ = writeln!(out, "}}");
+                let _ = writeln!(out);
                 continue;
             }
             NodeKind::Intent => "intent",
@@ -64,34 +62,26 @@ pub fn render_dsl(graph: &Graph) -> String {
             NodeKind::CircuitModule { .. } => "circuit_module",
         };
 
-        writeln!(
-            out,
-            "{} \"{}\" {{ # id: {}",
-            kind_str,
-            node_name(node),
-            node.id
-        )
-        .unwrap();
+        let _ = writeln!(out, "{} \"{}\" {{ # id: {}", kind_str, node_name(node), node.id);
         render_node_body(&mut out, node);
-        writeln!(out, "}}").unwrap();
-        writeln!(out).unwrap();
+        let _ = writeln!(out, "}}");
+        let _ = writeln!(out);
     }
 
     // Edges
     if !graph.topology.edges.is_empty() {
-        writeln!(out, "# Connections").unwrap();
+        let _ = writeln!(out, "# Connections");
         for edge in graph.topology.edges.values() {
             let src_name = name_of(&edge.source.node_id);
             let tgt_name = name_of(&edge.target.node_id);
 
             let kind_tag = "# normal";
 
-            writeln!(
+            let _ = writeln!(
                 out,
                 "{}.{} -> {}.{}  {}",
                 src_name, edge.source.port_name, tgt_name, edge.target.port_name, kind_tag
-            )
-            .unwrap();
+            );
         }
     }
 
@@ -113,9 +103,9 @@ fn render_node_body(out: &mut String, node: &crate::ir::Node) {
         };
         let dtype = format_data_type(&port.data_type);
         if port.name == dir {
-            writeln!(out, "  {}: {} {}", dir, dtype, domain).unwrap();
+            let _ = writeln!(out, "  {}: {} {}", dir, dtype, domain);
         } else {
-            writeln!(out, "  {} \"{}\": {} {}", dir, port.name, dtype, domain).unwrap();
+            let _ = writeln!(out, "  {} \"{}\": {} {}", dir, port.name, dtype, domain);
         }
     }
 
@@ -127,11 +117,11 @@ fn render_node_body(out: &mut String, node: &crate::ir::Node) {
         .collect();
 
     if !config_entries.is_empty() {
-        writeln!(out, "  config {{").unwrap();
+        let _ = writeln!(out, "  config {{");
         for (key, value) in config_entries {
-            writeln!(out, "    {}: {}", key, format_config_value(value)).unwrap();
+            let _ = writeln!(out, "    {}: {}", key, format_config_value(value));
         }
-        writeln!(out, "  }}").unwrap();
+        let _ = writeln!(out, "  }}");
     }
 }
 
