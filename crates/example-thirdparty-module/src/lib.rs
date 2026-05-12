@@ -44,6 +44,7 @@ pub fn descriptor() -> &'static ModuleDescriptor {
             text_color: [255, 255, 255],
             accent_color: [255, 200, 0],
             panel_texture: PanelTexture::MatteBlack,
+            knob_style: KnobStyle::ModernPlastic,
         },
         tags: &["Example", "Utility"],
         params: &[ParamDescriptor {

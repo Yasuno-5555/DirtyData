@@ -90,6 +90,7 @@ impl CircuitEditor {
                                 kp: 600.0,
                                 kvb: 300.0,
                                 ex: 1.4,
+                                material: Material::Vacuum,
                             });
                         }
                         ui.separator();

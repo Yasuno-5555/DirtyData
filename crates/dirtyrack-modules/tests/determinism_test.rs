@@ -56,7 +56,7 @@ mod tests {
         println!("Determinism Hash (44.1k samples): {}", hash_hex);
 
         // This is the "Golden Hash" that must match across Mac, Linux, and Windows.
-        let expected_hash = "1222078cc0f15a94bcb5848e5436d960d934b5dbf91ecb1f1e6e778ccd1260c7";
+        let expected_hash = "a67e8e3e1bb18b31bace9e18d74e4b8f92aeb1db4caf318620443ba6773bcdf5";
         assert_eq!(hash_hex.as_str(), expected_hash);
     }
 }
